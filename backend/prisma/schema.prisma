@@ -11,3 +11,166 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum Role {
+  OWNER
+  WORKER
+  ADMIN
+}
+
+enum PaymentMethod {
+  CASH
+  QR
+}
+
+enum SyncStatus {
+  SYNCED
+  CONFLICT
+}
+
+enum ActionType {
+  PICKUP_STARTED
+  SALE_RECORDED
+  RECOUNT_PERFORMED
+  TRIP_ENDED
+  EXPENSE_RECORDED
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  phone        String?  @unique
+  passwordHash String
+  role         Role
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  trips        Trip[]
+  activityLogs ActivityLog[]
+  expenses     Expense[]
+
+  @@map("users")
+}
+
+model Plantation {
+  id        String   @id @default(uuid())
+  name      String
+  address   String?
+  createdAt DateTime @default(now())
+
+  pickups Pickup[]
+
+  @@map("plantations")
+}
+
+model Buyer {
+  id        String   @id @default(uuid())
+  name      String
+  location  String?
+  notes     String?
+  createdAt DateTime @default(now())
+
+  sales Sale[]
+
+  @@map("buyers")
+}
+
+// One work session for a worker: pickup -> route of sales -> recount
+model Trip {
+  id              String    @id @default(uuid())
+  clientId        String    @unique // offline-generated UUID, dedupe key
+  workerId        String
+  worker          User      @relation(fields: [workerId], references: [id])
+  startedAt       DateTime
+  endedAt         DateTime?
+  createdAtClient DateTime
+  syncedAt        DateTime  @default(now())
+
+  pickups      Pickup[]
+  sales        Sale[]
+  recounts     Recount[]
+  activityLogs ActivityLog[]
+
+  @@map("trips")
+}
+
+// Chicken picked up from plantation at trip start (can be multiple pickups per trip)
+model Pickup {
+  id              String     @id @default(uuid())
+  clientId        String     @unique
+  tripId          String
+  trip            Trip       @relation(fields: [tripId], references: [id])
+  plantationId    String
+  plantation      Plantation @relation(fields: [plantationId], references: [id])
+  chickenCount    Int
+  totalKilo       Decimal    @db.Decimal(10, 2)
+  createdAtClient DateTime
+  syncedAt        DateTime   @default(now())
+
+  @@map("pickups")
+}
+
+// The core ledger event — every sale decrements stock
+model Sale {
+  id              String     @id @default(uuid())
+  clientId        String     @unique
+  tripId          String
+  trip            Trip       @relation(fields: [tripId], references: [id])
+  buyerId         String?
+  buyer           Buyer?     @relation(fields: [buyerId], references: [id])
+  chickenCount    Int
+  totalKilo       Decimal    @db.Decimal(10, 2)
+  amount          Decimal    @db.Decimal(10, 2)
+  createdAtClient DateTime
+  syncedAt        DateTime   @default(now())
+  syncStatus      SyncStatus @default(SYNCED)
+  conflictReason  String?
+
+  @@map("sales")
+}
+
+// End-of-route or end-of-day recount — reconciliation checkpoint, not a stock mutation itself
+model Recount {
+  id                 String   @id @default(uuid())
+  clientId           String   @unique
+  tripId             String
+  trip               Trip     @relation(fields: [tripId], references: [id])
+  countedChicken     Int
+  countedKilo        Decimal  @db.Decimal(10, 2)
+  expectedChicken    Int // computed at sync time: pickups - sales
+  expectedKilo       Decimal  @db.Decimal(10, 2)
+  discrepancyFlagged Boolean  @default(false)
+  createdAtClient    DateTime
+  syncedAt           DateTime @default(now())
+
+  @@map("recounts")
+}
+
+model Expense {
+  id              String   @id @default(uuid())
+  clientId        String   @unique
+  workerId        String
+  worker          User     @relation(fields: [workerId], references: [id])
+  description     String
+  amount          Decimal  @db.Decimal(10, 2)
+  createdAtClient DateTime
+  syncedAt        DateTime @default(now())
+
+  @@map("expenses")
+}
+
+// Generic audit trail / logbook — answers "what did the worker do, and when"
+model ActivityLog {
+  id              String     @id @default(uuid())
+  clientId        String     @unique
+  workerId        String
+  worker          User       @relation(fields: [workerId], references: [id])
+  tripId          String?
+  trip            Trip?      @relation(fields: [tripId], references: [id])
+  actionType      ActionType
+  payload         Json // flexible per action type
+  createdAtClient DateTime
+  syncedAt        DateTime   @default(now())
+
+  @@map("activity_logs")
+}
