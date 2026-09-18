@@ -2,6 +2,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateActivityLogDto } from './activity-logs.dto.js';
+import { Prisma } from '../generated/prisma/client.js';
 
 @Injectable()
 export class ActivityLogsService {
@@ -12,8 +13,9 @@ export class ActivityLogsService {
    * multiple times with the same clientId (e.g. retried sync from an
    * unreliable connection) without creating duplicates.
    */
-  async record(dto: CreateActivityLogDto) {
-    return this.prisma.activityLog.upsert({
+  async record(dto: CreateActivityLogDto, tx?: Prisma.TransactionClient) {
+    const client = tx ?? this.prisma;
+    return client.activityLog.upsert({
       where: { clientId: dto.clientId },
       create: {
         clientId: dto.clientId,

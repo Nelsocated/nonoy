@@ -28,7 +28,7 @@ export class AuthController {
   }
 }
 
-type AuthenticatedUser = {
+export type AuthenticatedUser = {
   id: string;
   role: string;
   name: string;
