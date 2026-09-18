@@ -12,6 +12,11 @@ import { ReportsModule } from './reports/reports.module.js';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './auth/guard/auth.guard.js';
 import { RolesGuard } from './auth/guard/roles.guard.js';
+import { PickupsModule } from './pickups/pickups.module.js';
+import { SalesModule } from './sales/sales.module.js';
+import { RecountsModule } from './recounts/recounts.module.js';
+import { ExpensesModule } from './expenses/expenses.module.js';
+import { ActivityLogsModule } from './activity-logs/activity-logs.module.js';
 
 @Module({
   imports: [
@@ -23,6 +28,11 @@ import { RolesGuard } from './auth/guard/roles.guard.js';
     TripsModule,
     SyncModule,
     ReportsModule,
+    PickupsModule,
+    SalesModule,
+    RecountsModule,
+    ExpensesModule,
+    ActivityLogsModule,
   ],
   controllers: [AppController],
   providers: [
