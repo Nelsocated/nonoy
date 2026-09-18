@@ -9,6 +9,9 @@ import { BuyersModule } from './buyers/buyers.module.js';
 import { TripsModule } from './trips/trips.module.js';
 import { SyncModule } from './sync/sync.module.js';
 import { ReportsModule } from './reports/reports.module.js';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard } from './auth/guard/auth.guard.js';
+import { RolesGuard } from './auth/guard/roles.guard.js';
 
 @Module({
   imports: [
@@ -22,6 +25,10 @@ import { ReportsModule } from './reports/reports.module.js';
     ReportsModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: RolesGuard },
+  ],
 })
 export class AppModule {}
