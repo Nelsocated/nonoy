@@ -1,9 +1,14 @@
 import { Module } from '@nestjs/common';
-import { SyncController } from './sync.controller.js';
 import { SyncService } from './sync.service.js';
+import { SyncController } from './sync.controller.js';
+import { TripsModule } from '../trips/trips.module.js';
+import { PickupsModule } from '../pickups/pickups.module.js';
+import { SalesModule } from '../sales/sales.module.js';
+import { RecountsModule } from '../recounts/recounts.module.js';
 
 @Module({
+  imports: [TripsModule, PickupsModule, SalesModule, RecountsModule],
   controllers: [SyncController],
-  providers: [SyncService]
+  providers: [SyncService],
 })
 export class SyncModule {}
