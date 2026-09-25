@@ -113,6 +113,19 @@ export type Sale = Synced & {
   syncStatus: SyncStatus;
   conflictReason: string | null;
 } & Checked;
+/** GET /sales/:clientId/receipt (OWNER/ADMIN) — buyerName null = walk-in */
+export type SaleReceipt = {
+  clientId: string;
+  tripId: string;
+  createdAtClient: IsoDate;
+  workerName: string;
+  buyerName: string | null;
+  chickenCount: number;
+  totalKilo: Decimal;
+  pricePerKilo: Decimal | null;
+  amount: Decimal;
+  paymentMethod: PaymentMethod;
+};
 export type Recount = Synced & {
   tripId: string;
   countedChicken: number;
