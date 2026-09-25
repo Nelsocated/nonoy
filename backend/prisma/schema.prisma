@@ -37,14 +37,14 @@ enum ActionType {
 }
 
 model User {
-  id               String   @id @default(uuid())
-  name             String
-  phone            String?  @unique
-  passwordHash     String
-  role             Role
-  isActive         Boolean  @default(true)
-  createdAt        DateTime @default(now())
-  refreshTokenHash String?
+  id                       String    @id @default(uuid())
+  name                     String
+  phone                    String?   @unique
+  passwordHash             String
+  role                     Role
+  isActive                 Boolean   @default(true)
+  createdAt                DateTime  @default(now())
+  refreshTokenHash         String?
   // the token just rotated out, still accepted for a few seconds so two
   // requests refreshing at once don't log the user out (see AuthService.refresh)
   previousRefreshTokenHash String?
@@ -53,6 +53,7 @@ model User {
   trips        Trip[]
   activityLogs ActivityLog[]
   expenses     Expense[]
+  prices       Price[]
 
   @@map("users")
 }
@@ -183,4 +184,17 @@ model ActivityLog {
   syncedAt        DateTime   @default(now())
 
   @@map("activity_logs")
+}
+
+// Owner's price per kilo. The newest row is the current price; older rows are
+// the history (who changed it and when).
+model Price {
+  id           String   @id @default(uuid())
+  pricePerKilo Decimal  @db.Decimal(10, 2)
+  setById      String
+  setBy        User     @relation(fields: [setById], references: [id])
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("prices")
 }

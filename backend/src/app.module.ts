@@ -17,6 +17,7 @@ import { SalesModule } from './sales/sales.module.js';
 import { RecountsModule } from './recounts/recounts.module.js';
 import { ExpensesModule } from './expenses/expenses.module.js';
 import { ActivityLogsModule } from './activity-logs/activity-logs.module.js';
+import { PricesModule } from './prices/prices.module.js';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { ActivityLogsModule } from './activity-logs/activity-logs.module.js';
     RecountsModule,
     ExpensesModule,
     ActivityLogsModule,
+    PricesModule,
   ],
   controllers: [AppController],
   providers: [
