@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { Decimal } from '@prisma/client/runtime/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ActivityLogsService } from '../activity-logs/activity-logs.service.js';
 import { ActionType, SyncStatus } from '../generated/prisma/enums.js';
@@ -14,6 +15,18 @@ export class SalesService {
   ) {}
 
   async create(dto: CreateSaleDto, workerId: string) {
+    // the phone computes amount = kilos × price (half-up to the centavo);
+    // anything else means a bug or tampering, so don't store it
+    if (
+      dto.pricePerKilo &&
+      !new Decimal(dto.totalKilo)
+        .times(dto.pricePerKilo)
+        .toDecimalPlaces(2, Decimal.ROUND_HALF_UP)
+        .equals(dto.amount)
+    ) {
+      throw new BadRequestException("amount doesn't match kilos × price");
+    }
+
     const trip = await this.tripAccessService.assertOwnership(
       dto.tripId,
       workerId,
@@ -43,6 +56,8 @@ export class SalesService {
           chickenCount: dto.chickenCount,
           totalKilo: dto.totalKilo,
           amount: dto.amount,
+          pricePerKilo: dto.pricePerKilo,
+          listPricePerKilo: dto.listPricePerKilo,
           paymentMethod: dto.paymentMethod,
           createdAtClient: new Date(dto.createdAtClient),
           syncStatus,

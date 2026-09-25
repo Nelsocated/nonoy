@@ -1,4 +1,11 @@
-import { Controller, Get, Param, ParseUUIDPipe, Query, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Query,
+  Req,
+} from '@nestjs/common';
 import type { Request } from 'express';
 import { ReportsService } from './reports.service.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';

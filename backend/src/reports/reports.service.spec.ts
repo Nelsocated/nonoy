@@ -7,8 +7,12 @@ import { TripAccessService } from '../trips/trips-access.service.js';
 describe('ReportsService', () => {
   let service: ReportsService;
   const prisma = {
-    $queryRaw: vi.fn(async () => [{ start: '2026-08-31 16:00:00', end: '2026-09-07 16:00:00' }]),
+    $queryRaw: vi.fn(async () => [
+      { start: '2026-08-31 16:00:00', end: '2026-09-07 16:00:00' },
+    ]),
     trip: { findUnique: vi.fn() },
+    recount: { findMany: vi.fn() },
+    sale: { findMany: vi.fn() },
   };
   const access = { assertOwnership: vi.fn() };
 
@@ -26,7 +30,10 @@ describe('ReportsService', () => {
 
   describe('resolveRange', () => {
     it('reads the DB-computed window as UTC', async () => {
-      const r = await service.resolveRange({ from: '2026-09-01', to: '2026-09-07' });
+      const r = await service.resolveRange({
+        from: '2026-09-01',
+        to: '2026-09-07',
+      });
       expect(r.start.toISOString()).toBe('2026-08-31T16:00:00.000Z');
       expect(r.end.toISOString()).toBe('2026-09-07T16:00:00.000Z');
       expect(r.timezone).toBe('Asia/Manila');
@@ -38,24 +45,61 @@ describe('ReportsService', () => {
     });
 
     it('rejects from after to, and ranges over a year', async () => {
-      await expect(service.resolveRange({ from: '2026-09-08', to: '2026-09-07' })).rejects.toThrow(BadRequestException);
-      await expect(service.resolveRange({ from: '2024-01-01', to: '2026-01-01' })).rejects.toThrow(BadRequestException);
+      await expect(
+        service.resolveRange({ from: '2026-09-08', to: '2026-09-07' }),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.resolveRange({ from: '2024-01-01', to: '2026-01-01' }),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('rejects impossible dates', async () => {
-      await expect(service.resolveRange({ from: '2026-13-45', to: '2026-09-07' })).rejects.toThrow(BadRequestException);
+      await expect(
+        service.resolveRange({ from: '2026-13-45', to: '2026-09-07' }),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
   describe('tripDetail', () => {
     it('workers must own the trip; owners skip the check', async () => {
       prisma.trip.findUnique.mockResolvedValue(null);
-      await expect(service.tripDetail('t1', { id: 'w1', role: 'WORKER' })).rejects.toThrow();
+      await expect(
+        service.tripDetail('t1', { id: 'w1', role: 'WORKER' }),
+      ).rejects.toThrow();
       expect(access.assertOwnership).toHaveBeenCalledWith('t1', 'w1');
 
       access.assertOwnership.mockClear();
-      await expect(service.tripDetail('t1', { id: 'o1', role: 'OWNER' })).rejects.toThrow('Trip not found');
+      await expect(
+        service.tripDetail('t1', { id: 'o1', role: 'OWNER' }),
+      ).rejects.toThrow('Trip not found');
       expect(access.assertOwnership).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('discrepancies', () => {
+    it('lists sales where the worker changed the owner price', async () => {
+      const { Decimal } = await import('@prisma/client/runtime/client');
+      const priced = (id: string, charged: string, list: string) => ({
+        id,
+        pricePerKilo: new Decimal(charged),
+        listPricePerKilo: new Decimal(list),
+      });
+      prisma.recount.findMany.mockResolvedValue([]);
+      prisma.sale.findMany.mockImplementation(async ({ where }: any) =>
+        where.syncStatus
+          ? []
+          : [
+              priced('same', '180.00', '180.00'),
+              priced('edited', '175.00', '180.00'),
+            ],
+      );
+      const r = await service.discrepancies({
+        from: '2026-09-01',
+        to: '2026-09-07',
+      });
+      expect(r.priceChangedSales.map((s: { id: string }) => s.id)).toEqual([
+        'edited',
+      ]);
     });
   });
 });

@@ -65,7 +65,9 @@ export class ReportsService {
     if (Number.isNaN(days)) throw new BadRequestException('Invalid date');
     if (days < 1) throw new BadRequestException('from must be on or before to');
     if (days > MAX_RANGE_DAYS) {
-      throw new BadRequestException(`Range can be at most ${MAX_RANGE_DAYS} days`);
+      throw new BadRequestException(
+        `Range can be at most ${MAX_RANGE_DAYS} days`,
+      );
     }
 
     // ::text + 'Z' so the pg driver can't reinterpret the timestamp in server-local time
@@ -134,9 +136,18 @@ export class ReportsService {
       d += 86_400_000
     ) {
       const day = new Date(d).toISOString().slice(0, 10);
-      const { day: _p, ...p } = pickups.find((r) => r.day === day) ?? { day, ...zeroSums() };
-      const { day: _s, ...s } = sales.find((r) => r.day === day) ?? { day, ...zeroSales() };
-      const { day: _e, ...e } = expenses.find((r) => r.day === day) ?? { day, ...zeroExpenses() };
+      const { day: _p, ...p } = pickups.find((r) => r.day === day) ?? {
+        day,
+        ...zeroSums(),
+      };
+      const { day: _s, ...s } = sales.find((r) => r.day === day) ?? {
+        day,
+        ...zeroSales(),
+      };
+      const { day: _e, ...e } = expenses.find((r) => r.day === day) ?? {
+        day,
+        ...zeroExpenses(),
+      };
       rows.push({
         day,
         pickups: p,
@@ -146,26 +157,31 @@ export class ReportsService {
       });
     }
 
-    return { ...this.rangeInfo(range), workerId: dto.workerId ?? null, days: rows };
+    return {
+      ...this.rangeInfo(range),
+      workerId: dto.workerId ?? null,
+      days: rows,
+    };
   }
 
   async byWorker(dto: ReportRangeDto) {
     const range = await this.resolveRange(dto);
     const { start, end } = range;
 
-    const [trips, pickups, sales, expenses, flagged, workers] = await Promise.all([
-      this.prisma.$queryRaw<{ workerId: string; count: number }[]>`
+    const [trips, pickups, sales, expenses, flagged, workers] =
+      await Promise.all([
+        this.prisma.$queryRaw<{ workerId: string; count: number }[]>`
         SELECT "workerId", COUNT(*)::int AS count FROM trips
         WHERE "startedAt" >= ${start} AND "startedAt" < ${end}
         GROUP BY 1`,
-      this.prisma.$queryRaw<(Sums & { workerId: string })[]>`
+        this.prisma.$queryRaw<(Sums & { workerId: string })[]>`
         SELECT t."workerId",
                COALESCE(SUM(p."chickenCount"), 0)::int AS chicken,
                COALESCE(SUM(p."totalKilo"), 0)::numeric(12,2)::text AS kilo
         FROM pickups p JOIN trips t ON t.id = p."tripId"
         WHERE p."createdAtClient" >= ${start} AND p."createdAtClient" < ${end}
         GROUP BY 1`,
-      this.prisma.$queryRaw<(SaleSums & { workerId: string })[]>`
+        this.prisma.$queryRaw<(SaleSums & { workerId: string })[]>`
         SELECT t."workerId",
                COUNT(*)::int AS count,
                COALESCE(SUM(s."chickenCount"), 0)::int AS chicken,
@@ -177,28 +193,31 @@ export class ReportsService {
         FROM sales s JOIN trips t ON t.id = s."tripId"
         WHERE s."createdAtClient" >= ${start} AND s."createdAtClient" < ${end}
         GROUP BY 1`,
-      this.prisma.$queryRaw<(ExpenseSums & { workerId: string })[]>`
+        this.prisma.$queryRaw<(ExpenseSums & { workerId: string })[]>`
         SELECT "workerId", COUNT(*)::int AS count, COALESCE(SUM(amount), 0)::numeric(12,2)::text AS amount
         FROM expenses
         WHERE "createdAtClient" >= ${start} AND "createdAtClient" < ${end}
         GROUP BY 1`,
-      this.prisma.$queryRaw<{ workerId: string; count: number }[]>`
+        this.prisma.$queryRaw<{ workerId: string; count: number }[]>`
         SELECT t."workerId", COUNT(*)::int AS count
         FROM recounts r JOIN trips t ON t.id = r."tripId"
         WHERE r."discrepancyFlagged" AND r."createdAtClient" >= ${start} AND r."createdAtClient" < ${end}
         GROUP BY 1`,
-      this.prisma.user.findMany({
-        where: { role: Role.WORKER },
-        select: { id: true, name: true, isActive: true },
-        orderBy: { name: 'asc' },
-      }),
-    ]);
+        this.prisma.user.findMany({
+          where: { role: Role.WORKER },
+          select: { id: true, name: true, isActive: true },
+          orderBy: { name: 'asc' },
+        }),
+      ]);
 
     // every worker is listed (zeros if idle); anyone else with activity is appended
     const ids = new Set(workers.map((w) => w.id));
-    for (const r of [...trips, ...pickups, ...sales, ...expenses]) ids.add(r.workerId);
+    for (const r of [...trips, ...pickups, ...sales, ...expenses])
+      ids.add(r.workerId);
     const extra = await this.prisma.user.findMany({
-      where: { id: { in: [...ids].filter((id) => !workers.some((w) => w.id === id)) } },
+      where: {
+        id: { in: [...ids].filter((id) => !workers.some((w) => w.id === id)) },
+      },
       select: { id: true, name: true, isActive: true },
     });
 
@@ -238,7 +257,7 @@ export class ReportsService {
       },
     };
 
-    const [recounts, conflictedSales] = await Promise.all([
+    const [recounts, conflictedSales, pricedSales] = await Promise.all([
       this.prisma.recount.findMany({
         where: { discrepancyFlagged: true, createdAtClient: when },
         include: { trip },
@@ -246,6 +265,15 @@ export class ReportsService {
       }),
       this.prisma.sale.findMany({
         where: { syncStatus: 'CONFLICT', createdAtClient: when },
+        include: { trip, buyer: { select: { id: true, name: true } } },
+        orderBy: { createdAtClient: 'desc' },
+      }),
+      this.prisma.sale.findMany({
+        where: {
+          createdAtClient: when,
+          pricePerKilo: { not: null },
+          listPricePerKilo: { not: null },
+        },
         include: { trip, buyer: { select: { id: true, name: true } } },
         orderBy: { createdAtClient: 'desc' },
       }),
@@ -260,6 +288,10 @@ export class ReportsService {
         kiloDifference: r.countedKilo.minus(r.expectedKilo).toFixed(2),
       })),
       conflictedSales,
+      // worker edited the owner's price on these (haggling, suki discount…)
+      priceChangedSales: pricedSales.filter(
+        (s) => !s.pricePerKilo!.equals(s.listPricePerKilo!),
+      ),
     };
   }
 
@@ -274,8 +306,14 @@ export class ReportsService {
       where: { id: tripId },
       include: {
         worker: { select: { id: true, name: true } },
-        pickups: { ...byTime, include: { plantation: { select: { id: true, name: true } } } },
-        sales: { ...byTime, include: { buyer: { select: { id: true, name: true } } } },
+        pickups: {
+          ...byTime,
+          include: { plantation: { select: { id: true, name: true } } },
+        },
+        sales: {
+          ...byTime,
+          include: { buyer: { select: { id: true, name: true } } },
+        },
         recounts: byTime,
         expenses: byTime,
       },
@@ -284,15 +322,24 @@ export class ReportsService {
 
     const sum = <T>(rows: T[], f: (r: T) => Decimal | number) =>
       rows.reduce((acc, r) => acc.plus(f(r)), new Decimal(0));
-    const picked = { chicken: sum(trip.pickups, (p) => p.chickenCount), kilo: sum(trip.pickups, (p) => p.totalKilo) };
-    const sold = { chicken: sum(trip.sales, (s) => s.chickenCount), kilo: sum(trip.sales, (s) => s.totalKilo) };
+    const picked = {
+      chicken: sum(trip.pickups, (p) => p.chickenCount),
+      kilo: sum(trip.pickups, (p) => p.totalKilo),
+    };
+    const sold = {
+      chicken: sum(trip.sales, (s) => s.chickenCount),
+      kilo: sum(trip.sales, (s) => s.totalKilo),
+    };
     const salesAmount = sum(trip.sales, (s) => s.amount);
     const expenses = sum(trip.expenses, (e) => e.amount);
 
     return {
       ...trip,
       totals: {
-        pickedUp: { chicken: picked.chicken.toNumber(), kilo: picked.kilo.toFixed(2) },
+        pickedUp: {
+          chicken: picked.chicken.toNumber(),
+          kilo: picked.kilo.toFixed(2),
+        },
         sold: { chicken: sold.chicken.toNumber(), kilo: sold.kilo.toFixed(2) },
         // what should still be on the truck right now
         remaining: {
@@ -301,8 +348,12 @@ export class ReportsService {
         },
         sales: {
           amount: salesAmount.toFixed(2),
-          cash: sum(trip.sales, (s) => (s.paymentMethod === 'CASH' ? s.amount : 0)).toFixed(2),
-          qr: sum(trip.sales, (s) => (s.paymentMethod === 'QR' ? s.amount : 0)).toFixed(2),
+          cash: sum(trip.sales, (s) =>
+            s.paymentMethod === 'CASH' ? s.amount : 0,
+          ).toFixed(2),
+          qr: sum(trip.sales, (s) =>
+            s.paymentMethod === 'QR' ? s.amount : 0,
+          ).toFixed(2),
         },
         expenses: expenses.toFixed(2),
         net: salesAmount.minus(expenses).toFixed(2),

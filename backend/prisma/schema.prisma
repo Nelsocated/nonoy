@@ -129,6 +129,11 @@ model Sale {
   totalKilo       Decimal       @db.Decimal(10, 2)
   amount          Decimal       @db.Decimal(10, 2)
   paymentMethod   PaymentMethod @default(CASH)
+  // price per kilo charged, and the owner's price the phone had at the time;
+  // different = the worker edited the price (shown to the owner). Null on
+  // sales from app versions before prices existed.
+  pricePerKilo     Decimal?      @db.Decimal(10, 2)
+  listPricePerKilo Decimal?      @db.Decimal(10, 2)
   createdAtClient DateTime
   syncedAt        DateTime      @default(now())
   syncStatus      SyncStatus    @default(SYNCED)

@@ -34,6 +34,16 @@ export class CreateSaleDto {
   @IsDecimalAmount()
   amount: string;
 
+  // price actually charged, and the owner's price the phone had; optional so
+  // older app versions keep syncing (amount is then taken as-is)
+  @IsOptional()
+  @IsDecimalAmount()
+  pricePerKilo?: string;
+
+  @IsOptional()
+  @IsDecimalAmount()
+  listPricePerKilo?: string;
+
   // optional so older app versions keep syncing; defaults to CASH
   @IsOptional()
   @IsEnum(PaymentMethod)
