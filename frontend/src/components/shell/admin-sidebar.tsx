@@ -15,7 +15,12 @@ export function AdminSidebar({ user }: { user: SessionUser }) {
       </div>
       <nav className="flex gap-1 md:flex-col">
         {NAV.map((item) => (
-          <NavLink key={item.href} {...item} exact={item.href === "/admin"} className="rounded-md px-3 py-2 text-sm font-medium transition-colors" />
+          <NavLink
+            key={item.href}
+            {...item}
+            exact={item.href === "/admin"}
+            className="rounded-md px-3 py-2 text-sm font-medium transition-colors"
+          />
         ))}
       </nav>
       <div className="md:mt-auto">

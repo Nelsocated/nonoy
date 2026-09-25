@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { isExpiring, tokenExpiry } from "./tokens";
 
-const jwt = (payload: object) => `h.${Buffer.from(JSON.stringify(payload)).toString("base64url")}.s`;
+const jwt = (payload: object) =>
+  `h.${Buffer.from(JSON.stringify(payload)).toString("base64url")}.s`;
 
 describe("tokens", () => {
   it("reads exp in ms", () => {

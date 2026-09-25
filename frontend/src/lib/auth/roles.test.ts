@@ -26,7 +26,8 @@ describe("roles", () => {
 });
 
 describe("guard", () => {
-  const g = (pathname: string, user: SessionUser | null, expired = false) => guard({ pathname, user, expired });
+  const g = (pathname: string, user: SessionUser | null, expired = false) =>
+    guard({ pathname, user, expired });
 
   it("sends signed-out users to /login", () => {
     expect(g("/admin", null)).toEqual({ action: "redirect", to: "/login" });
@@ -43,7 +44,10 @@ describe("guard", () => {
     expect(g("/login", owner, true)).toEqual({ action: "clear" });
   });
   it("sends users to their own area", () => {
-    expect(g("/admin/reports", worker)).toEqual({ action: "redirect", to: "/field" });
+    expect(g("/admin/reports", worker)).toEqual({
+      action: "redirect",
+      to: "/field",
+    });
     expect(g("/field", owner)).toEqual({ action: "redirect", to: "/admin" });
     expect(g("/", worker)).toEqual({ action: "redirect", to: "/field" });
     expect(g("/admin", owner)).toEqual({ action: "next" });

@@ -1,7 +1,12 @@
 // Server components, server actions and route handlers only (next/headers).
 import { cookies } from "next/headers";
 import type { SessionUser, Tokens } from "@/lib/api/types";
-import { COOKIE, clearSessionCookies, parseUser, writeSessionCookies } from "./cookies";
+import {
+  COOKIE,
+  clearSessionCookies,
+  parseUser,
+  writeSessionCookies,
+} from "./cookies";
 
 export async function getSession() {
   const jar = await cookies();

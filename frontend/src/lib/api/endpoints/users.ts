@@ -9,5 +9,6 @@ export const users = (http: Http) => ({
   /** OWNER/ADMIN — only the roles the caller may manage */
   list: () => http.get<User[]>("/users"),
   /** OWNER/ADMIN */
-  setActive: (id: string, isActive: boolean) => http.patch<User>(`/users/${id}/active`, { isActive }),
+  setActive: (id: string, isActive: boolean) =>
+    http.patch<User>(`/users/${id}/active`, { isActive }),
 });

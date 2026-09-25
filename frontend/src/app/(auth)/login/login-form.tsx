@@ -11,7 +11,10 @@ export function LoginForm() {
   const [phone, setPhone] = useState("");
 
   return (
-    <form action={action} className="space-y-4 rounded-xl bg-surface p-6 shadow-card">
+    <form
+      action={action}
+      className="space-y-4 rounded-xl bg-surface p-6 shadow-card"
+    >
       <label className="block space-y-1.5">
         <span className="text-sm font-medium">Phone number</span>
         <input
@@ -30,10 +33,19 @@ export function LoginForm() {
       </label>
       <label className="block space-y-1.5">
         <span className="text-sm font-medium">Password</span>
-        <input name="password" type="password" autoComplete="current-password" required className={input} />
+        <input
+          name="password"
+          type="password"
+          autoComplete="current-password"
+          required
+          className={input}
+        />
       </label>
       {state?.error && (
-        <p role="alert" className="rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">
+        <p
+          role="alert"
+          className="rounded-md bg-danger-soft px-3 py-2 text-sm text-danger"
+        >
           {state.error}
         </p>
       )}

@@ -1,5 +1,15 @@
-import { ApiError, type SyncBatch, type SyncResult, type SyncResults } from "@/lib/api";
-import { type OfflineDb, type OutboxItem, type OutboxKind, mirrorTable } from "./db";
+import {
+  ApiError,
+  type SyncBatch,
+  type SyncResult,
+  type SyncResults,
+} from "@/lib/api";
+import {
+  type OfflineDb,
+  type OutboxItem,
+  type OutboxKind,
+  mirrorTable,
+} from "./db";
 
 export const BACKOFF_MS = [30_000, 60_000, 120_000, 240_000, 300_000];
 
@@ -39,22 +49,38 @@ export function createSyncEngine({ db, userId, push, pull }: Deps) {
   async function apply(items: OutboxItem[], results: SyncResults) {
     let pushed = 0;
     let failed = 0;
-    await db.transaction("rw", [db.outbox, db.trips, db.pickups, db.sales, db.recounts, db.expenses], async () => {
-      for (const item of items) {
-        const result: SyncResult | undefined = results[KEY[item.kind]]?.find((r) => r.clientId === item.clientId);
-        if (!result) continue;
-        const table = mirrorTable(db, item.kind);
-        if (result.status === "ok") {
-          pushed++;
-          await db.outbox.delete(item.id!);
-          await table.update(item.clientId, { state: "synced", error: undefined });
-        } else {
-          failed++;
-          await db.outbox.update(item.id!, { status: "error", error: result.error, attempts: item.attempts + 1 });
-          await table.update(item.clientId, { state: "error", error: result.error });
+    await db.transaction(
+      "rw",
+      [db.outbox, db.trips, db.pickups, db.sales, db.recounts, db.expenses],
+      async () => {
+        for (const item of items) {
+          const result: SyncResult | undefined = results[KEY[item.kind]]?.find(
+            (r) => r.clientId === item.clientId,
+          );
+          if (!result) continue;
+          const table = mirrorTable(db, item.kind);
+          if (result.status === "ok") {
+            pushed++;
+            await db.outbox.delete(item.id!);
+            await table.update(item.clientId, {
+              state: "synced",
+              error: undefined,
+            });
+          } else {
+            failed++;
+            await db.outbox.update(item.id!, {
+              status: "error",
+              error: result.error,
+              attempts: item.attempts + 1,
+            });
+            await table.update(item.clientId, {
+              state: "error",
+              error: result.error,
+            });
+          }
         }
-      }
-    });
+      },
+    );
     return { pushed, failed };
   }
 
@@ -65,7 +91,8 @@ export function createSyncEngine({ db, userId, push, pull }: Deps) {
       try {
         counts = await apply(items, await push(toBatch(items)));
       } catch (e) {
-        if (e instanceof ApiError && e.status === 401) return { kind: "paused" };
+        if (e instanceof ApiError && e.status === 401)
+          return { kind: "paused" };
         const retryInMs = BACKOFF_MS[Math.min(failures, BACKOFF_MS.length - 1)];
         failures++;
         return { kind: "offline", retryInMs };

@@ -6,7 +6,8 @@ export const buyers = (http: Http) => ({
   get: (id: string) => http.get<Buyer>(`/buyers/${id}`),
   create: (input: BuyerInput) => http.post<Buyer>("/buyers", input),
   /** OWNER/ADMIN */
-  update: (id: string, input: Partial<BuyerInput>) => http.patch<Buyer>(`/buyers/${id}`, input),
+  update: (id: string, input: Partial<BuyerInput>) =>
+    http.patch<Buyer>(`/buyers/${id}`, input),
   /** OWNER/ADMIN */
   remove: (id: string) => http.delete<Buyer>(`/buyers/${id}`),
 });

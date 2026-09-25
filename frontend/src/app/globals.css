@@ -40,7 +40,9 @@
 
   /* ---- semantic tokens ---- */
   --color-background: var(--color-ink-50); /* page: a breath off pure white */
-  --color-foreground: var(--color-ink-900); /* body text: soft black, not #000 */
+  --color-foreground: var(
+    --color-ink-900
+  ); /* body text: soft black, not #000 */
 
   --color-surface: #ffffff; /* cards, sheets, inputs */
   --color-surface-foreground: var(--color-ink-900);
@@ -49,7 +51,9 @@
   --color-primary-hover: var(--color-brand-700);
   --color-primary-active: var(--color-brand-800);
   --color-primary-foreground: #ffffff;
-  --color-primary-soft: var(--color-brand-50); /* selected rows, active nav, badges */
+  --color-primary-soft: var(
+    --color-brand-50
+  ); /* selected rows, active nav, badges */
   --color-primary-soft-foreground: var(--color-brand-700);
 
   --color-muted: var(--color-ink-100);
@@ -77,9 +81,11 @@
   --radius-lg: 0.875rem;
   --radius-xl: 1.25rem;
 
-  --shadow-card: 0 1px 2px oklch(21.6% 0.006 45 / 0.04),
+  --shadow-card:
+    0 1px 2px oklch(21.6% 0.006 45 / 0.04),
     0 1px 3px oklch(21.6% 0.006 45 / 0.06);
-  --shadow-raised: 0 4px 16px -4px oklch(21.6% 0.006 45 / 0.1),
+  --shadow-raised:
+    0 4px 16px -4px oklch(21.6% 0.006 45 / 0.1),
     0 2px 4px oklch(21.6% 0.006 45 / 0.04);
   --shadow-primary: 0 4px 14px -4px oklch(57.7% 0.245 27.325 / 0.45);
 }

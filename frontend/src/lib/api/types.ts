@@ -19,7 +19,10 @@ type Ref = { id: string; name: string };
 export type SessionUser = { id: string; name: string; role: Role };
 export type Tokens = { accessToken: string; refreshToken: string };
 /** refreshToken is null inside the backend's grace window: keep the current one */
-export type RefreshedTokens = { accessToken: string; refreshToken: string | null };
+export type RefreshedTokens = {
+  accessToken: string;
+  refreshToken: string | null;
+};
 export type LoginResponse = Tokens & { user: SessionUser };
 export type LoginInput = { phone: string; password: string };
 
@@ -35,14 +38,30 @@ export type RegisterInput = { phone: string; password: string; name: string };
 export type CreateUserInput = RegisterInput & { role: Role };
 
 // ---- reference data ----
-export type Plantation = { id: string; name: string; address: string | null; createdAt: IsoDate };
+export type Plantation = {
+  id: string;
+  name: string;
+  address: string | null;
+  createdAt: IsoDate;
+};
 export type PlantationInput = { name: string; address?: string };
 
-export type Buyer = { id: string; name: string; location: string | null; notes: string | null; createdAt: IsoDate };
+export type Buyer = {
+  id: string;
+  name: string;
+  location: string | null;
+  notes: string | null;
+  createdAt: IsoDate;
+};
 export type BuyerInput = { name: string; location?: string; notes?: string };
 
 // ---- field records (all carry an offline-generated clientId) ----
-type Synced = { id: string; clientId: string; createdAtClient: IsoDate; syncedAt: IsoDate };
+type Synced = {
+  id: string;
+  clientId: string;
+  createdAtClient: IsoDate;
+  syncedAt: IsoDate;
+};
 
 export type Trip = {
   id: string;
@@ -53,7 +72,12 @@ export type Trip = {
   createdAtClient: IsoDate;
   syncedAt: IsoDate;
 };
-export type Pickup = Synced & { tripId: string; plantationId: string; chickenCount: number; totalKilo: Decimal };
+export type Pickup = Synced & {
+  tripId: string;
+  plantationId: string;
+  chickenCount: number;
+  totalKilo: Decimal;
+};
 export type Sale = Synced & {
   tripId: string;
   buyerId: string | null;
@@ -72,7 +96,12 @@ export type Recount = Synced & {
   expectedKilo: Decimal;
   discrepancyFlagged: boolean;
 };
-export type Expense = Synced & { workerId: string; tripId: string | null; description: string; amount: Decimal };
+export type Expense = Synced & {
+  workerId: string;
+  tripId: string | null;
+  description: string;
+  amount: Decimal;
+};
 export type ExpenseWithWorker = Expense & { worker: Ref };
 export type ActivityLog = Synced & {
   workerId: string;
@@ -87,7 +116,12 @@ type Logged = ClientStamp & { activityLogClientId: string };
 
 export type CreateTripInput = ClientStamp & { startedAt: IsoDate };
 export type EndTripInput = { endedAt: IsoDate };
-export type CreatePickupInput = Logged & { tripId: string; plantationId: string; chickenCount: number; totalKilo: Decimal };
+export type CreatePickupInput = Logged & {
+  tripId: string;
+  plantationId: string;
+  chickenCount: number;
+  totalKilo: Decimal;
+};
 export type CreateSaleInput = Logged & {
   tripId: string;
   buyerId?: string;
@@ -96,8 +130,16 @@ export type CreateSaleInput = Logged & {
   amount: Decimal;
   paymentMethod?: PaymentMethod;
 };
-export type CreateRecountInput = Logged & { tripId: string; countedChicken: number; countedKilo: Decimal };
-export type CreateExpenseInput = Logged & { tripId?: string; description: string; amount: Decimal };
+export type CreateRecountInput = Logged & {
+  tripId: string;
+  countedChicken: number;
+  countedKilo: Decimal;
+};
+export type CreateExpenseInput = Logged & {
+  tripId?: string;
+  description: string;
+  amount: Decimal;
+};
 export type CreateActivityLogInput = ClientStamp & {
   tripId?: string;
   actionType: ActionType;
@@ -125,12 +167,24 @@ export type DailyReportQuery = ReportRange & { workerId?: string };
 type RangeInfo = { from: string; to: string; timezone: string };
 
 export type StockSums = { chicken: number; kilo: Decimal };
-export type SaleSums = StockSums & { count: number; amount: Decimal; cash: Decimal; qr: Decimal; conflicts: number };
+export type SaleSums = StockSums & {
+  count: number;
+  amount: Decimal;
+  cash: Decimal;
+  qr: Decimal;
+  conflicts: number;
+};
 export type ExpenseSums = { count: number; amount: Decimal };
 
 export type DailyReport = RangeInfo & {
   workerId: string | null;
-  days: { day: string; pickups: StockSums; sales: SaleSums; expenses: ExpenseSums; net: Decimal }[];
+  days: {
+    day: string;
+    pickups: StockSums;
+    sales: SaleSums;
+    expenses: ExpenseSums;
+    net: Decimal;
+  }[];
 };
 export type WorkerReport = RangeInfo & {
   workers: {
@@ -146,7 +200,11 @@ export type WorkerReport = RangeInfo & {
 type TripRef = { id: string; startedAt: IsoDate; worker: Ref };
 export type DiscrepancyReport = RangeInfo & {
   /** positive difference = more on hand than expected, negative = missing */
-  recounts: (Recount & { trip: TripRef; chickenDifference: number; kiloDifference: Decimal })[];
+  recounts: (Recount & {
+    trip: TripRef;
+    chickenDifference: number;
+    kiloDifference: Decimal;
+  })[];
   conflictedSales: (Sale & { trip: TripRef; buyer: Ref | null })[];
 };
 export type TripDetail = Trip & {

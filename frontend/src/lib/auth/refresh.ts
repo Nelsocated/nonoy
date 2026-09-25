@@ -29,8 +29,14 @@ export function refreshTokens(
           body: JSON.stringify({ refreshToken }),
           cache: "no-store",
         });
-        if (res.ok) return { status: "ok", tokens: (await res.json()) as RefreshedTokens };
-        return res.status === 400 || res.status === 401 ? { status: "invalid" } : { status: "unavailable" };
+        if (res.ok)
+          return {
+            status: "ok",
+            tokens: (await res.json()) as RefreshedTokens,
+          };
+        return res.status === 400 || res.status === 401
+          ? { status: "invalid" }
+          : { status: "unavailable" };
       } catch {
         return { status: "unavailable" };
       } finally {

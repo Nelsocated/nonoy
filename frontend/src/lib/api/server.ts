@@ -19,7 +19,10 @@ export const serverApi = createApi(
     baseUrl: API_URL,
     headers: async (): Promise<HeadersInit> => {
       const token = (await cookies()).get(COOKIE.access)?.value;
-      return { ...(await forwardingHeaders()), ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+      return {
+        ...(await forwardingHeaders()),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      };
     },
     // deactivated user or revoked session — proxy clears cookies on this URL
     onUnauthorized: () => redirect("/login?expired=1"),
@@ -27,4 +30,6 @@ export const serverApi = createApi(
 );
 
 // unauthenticated calls (login)
-export const publicApi = createApi(createHttp({ baseUrl: API_URL, headers: forwardingHeaders }));
+export const publicApi = createApi(
+  createHttp({ baseUrl: API_URL, headers: forwardingHeaders }),
+);

@@ -28,7 +28,8 @@ type HttpOptions = {
 
 export function buildUrl(base: string, path: string, query?: Query) {
   const params = new URLSearchParams();
-  for (const [k, v] of Object.entries(query ?? {})) if (v !== undefined) params.set(k, String(v));
+  for (const [k, v] of Object.entries(query ?? {}))
+    if (v !== undefined) params.set(k, String(v));
   const qs = params.toString();
   return `${base.replace(/\/$/, "")}${path}${qs ? `?${qs}` : ""}`;
 }
@@ -50,8 +51,18 @@ function parseJson(text: string): unknown {
   }
 }
 
-export function createHttp({ baseUrl, headers, onUnauthorized, fetch: fetchImpl = fetch }: HttpOptions): Http {
-  async function request<T>(method: string, path: string, body?: unknown, query?: Query): Promise<T> {
+export function createHttp({
+  baseUrl,
+  headers,
+  onUnauthorized,
+  fetch: fetchImpl = fetch,
+}: HttpOptions): Http {
+  async function request<T>(
+    method: string,
+    path: string,
+    body?: unknown,
+    query?: Query,
+  ): Promise<T> {
     const h = new Headers(await headers?.());
     h.set("Accept", "application/json");
     if (body !== undefined) h.set("Content-Type", "application/json");

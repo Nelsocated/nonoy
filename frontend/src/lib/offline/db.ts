@@ -2,7 +2,8 @@ import Dexie, { type EntityTable } from "dexie";
 import type { Buyer, PaymentMethod, Plantation } from "@/lib/api/types";
 
 // Everything a worker records lives here first; the sync engine sends the outbox.
-export type OutboxKind = "trip" | "tripEnding" | "pickup" | "sale" | "recount" | "expense";
+export type OutboxKind =
+  "trip" | "tripEnding" | "pickup" | "sale" | "recount" | "expense";
 export type MirrorState = "pending" | "synced" | "error" | "conflict";
 
 export type OutboxItem = {
@@ -17,9 +18,20 @@ export type OutboxItem = {
   createdAt: string;
 };
 
-type Mirror = { clientId: string; userId: string; state: MirrorState; error?: string; createdAtClient: string };
+type Mirror = {
+  clientId: string;
+  userId: string;
+  state: MirrorState;
+  error?: string;
+  createdAtClient: string;
+};
 export type LocalTrip = Mirror & { startedAt: string; endedAt: string | null };
-export type LocalPickup = Mirror & { tripId: string; plantationId: string; chickenCount: number; totalKilo: string };
+export type LocalPickup = Mirror & {
+  tripId: string;
+  plantationId: string;
+  chickenCount: number;
+  totalKilo: string;
+};
 export type LocalSale = Mirror & {
   tripId: string;
   buyerId?: string | null;
@@ -28,8 +40,16 @@ export type LocalSale = Mirror & {
   amount: string;
   paymentMethod: PaymentMethod;
 };
-export type LocalRecount = Mirror & { tripId: string; countedChicken: number; countedKilo: string };
-export type LocalExpense = Mirror & { tripId?: string | null; description: string; amount: string };
+export type LocalRecount = Mirror & {
+  tripId: string;
+  countedChicken: number;
+  countedKilo: string;
+};
+export type LocalExpense = Mirror & {
+  tripId?: string | null;
+  description: string;
+  amount: string;
+};
 
 export class OfflineDb extends Dexie {
   outbox!: EntityTable<OutboxItem, "id">;

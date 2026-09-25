@@ -9,19 +9,27 @@ import { clearSession, getSession, setSession } from "@/lib/auth/session";
 
 export type LoginState = { error?: string } | undefined;
 
-export async function login(_prev: LoginState, form: FormData): Promise<LoginState> {
+export async function login(
+  _prev: LoginState,
+  form: FormData,
+): Promise<LoginState> {
   const phone = String(form.get("phone") ?? "").trim();
   const password = String(form.get("password") ?? "");
-  if (!phone || !password) return { error: "Enter your phone number and password." };
+  if (!phone || !password)
+    return { error: "Enter your phone number and password." };
 
   let res: LoginResponse;
   try {
     res = await publicApi.auth.login({ phone, password });
   } catch (e) {
-    if (e instanceof ApiError && e.status === 401) return { error: "Wrong phone number or password." };
-    if (e instanceof ApiError && e.status === 429) return { error: "Too many attempts. Wait a minute and try again." };
+    if (e instanceof ApiError && e.status === 401)
+      return { error: "Wrong phone number or password." };
+    if (e instanceof ApiError && e.status === 429)
+      return { error: "Too many attempts. Wait a minute and try again." };
     if (e instanceof ApiError && e.status === 400) return { error: e.message };
-    return { error: "Can't reach the server. Check your connection and try again." };
+    return {
+      error: "Can't reach the server. Check your connection and try again.",
+    };
   }
 
   await setSession(res, res.user);
@@ -34,7 +42,10 @@ export async function logout() {
   if (session?.accessToken) {
     await fetch(`${API_URL}/auth/logout`, {
       method: "POST",
-      headers: { ...(await forwardingHeaders()), Authorization: `Bearer ${session.accessToken}` },
+      headers: {
+        ...(await forwardingHeaders()),
+        Authorization: `Bearer ${session.accessToken}`,
+      },
       cache: "no-store",
     }).catch(() => {});
   }

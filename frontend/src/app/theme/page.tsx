@@ -2,7 +2,19 @@
 
 import { Logo } from "@/components/logo";
 
-const brand = ["50", "100", "200", "300", "400", "500", "600", "700", "800", "900", "950"];
+const brand = [
+  "50",
+  "100",
+  "200",
+  "300",
+  "400",
+  "500",
+  "600",
+  "700",
+  "800",
+  "900",
+  "950",
+];
 const ink = brand;
 
 const semantic = [
@@ -22,27 +34,44 @@ export default function ThemePage() {
       <header className="space-y-1">
         <Logo className="mb-4 size-10" />
         <h1 className="text-3xl font-semibold tracking-tight">Theme</h1>
-        <p className="text-muted-foreground">Minimal red &amp; white. Tokens live in globals.css.</p>
+        <p className="text-muted-foreground">
+          Minimal red &amp; white. Tokens live in globals.css.
+        </p>
       </header>
 
       <section className="space-y-3">
         <h2 className="text-sm font-medium text-muted-foreground">Brand red</h2>
         <div className="grid grid-cols-11 overflow-hidden rounded-lg">
           {brand.map((s) => (
-            <div key={s} className="h-14" style={{ background: `var(--color-brand-${s})` }} title={`brand-${s}`} />
+            <div
+              key={s}
+              className="h-14"
+              style={{ background: `var(--color-brand-${s})` }}
+              title={`brand-${s}`}
+            />
           ))}
         </div>
-        <h2 className="text-sm font-medium text-muted-foreground">Warm neutrals</h2>
+        <h2 className="text-sm font-medium text-muted-foreground">
+          Warm neutrals
+        </h2>
         <div className="grid grid-cols-11 overflow-hidden rounded-lg border">
           {ink.map((s) => (
-            <div key={s} className="h-14" style={{ background: `var(--color-ink-${s})` }} title={`ink-${s}`} />
+            <div
+              key={s}
+              className="h-14"
+              style={{ background: `var(--color-ink-${s})` }}
+              title={`ink-${s}`}
+            />
           ))}
         </div>
       </section>
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {semantic.map(([name, bg, fg]) => (
-          <div key={name} className={`${bg} ${fg} rounded-lg p-4 text-sm font-medium`}>
+          <div
+            key={name}
+            className={`${bg} ${fg} rounded-lg p-4 text-sm font-medium`}
+          >
             {name}
           </div>
         ))}
@@ -67,11 +96,21 @@ export default function ThemePage() {
             </button>
           </div>
           <div className="flex flex-wrap gap-2 text-xs font-medium">
-            <span className="rounded-full bg-success-soft px-2.5 py-1 text-success">Synced</span>
-            <span className="rounded-full bg-warning-soft px-2.5 py-1 text-warning">Offline · 3 pending</span>
-            <span className="rounded-full bg-danger-soft px-2.5 py-1 text-danger">⚠ Conflict</span>
-            <span className="rounded-full bg-muted px-2.5 py-1 text-muted-foreground">Ended</span>
-            <span className="rounded-full bg-primary px-2.5 py-1 text-primary-foreground">QR</span>
+            <span className="rounded-full bg-success-soft px-2.5 py-1 text-success">
+              Synced
+            </span>
+            <span className="rounded-full bg-warning-soft px-2.5 py-1 text-warning">
+              Offline · 3 pending
+            </span>
+            <span className="rounded-full bg-danger-soft px-2.5 py-1 text-danger">
+              ⚠ Conflict
+            </span>
+            <span className="rounded-full bg-muted px-2.5 py-1 text-muted-foreground">
+              Ended
+            </span>
+            <span className="rounded-full bg-primary px-2.5 py-1 text-primary-foreground">
+              QR
+            </span>
           </div>
         </section>
 
@@ -88,17 +127,29 @@ export default function ThemePage() {
           <div className="grid grid-cols-2 gap-3">
             <label className="block space-y-1.5">
               <span className="text-sm font-medium">Chickens</span>
-              <input inputMode="numeric" defaultValue="30" className="w-full rounded-md border border-input bg-surface px-3 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-3 focus:ring-brand-100" />
+              <input
+                inputMode="numeric"
+                defaultValue="30"
+                className="w-full rounded-md border border-input bg-surface px-3 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-3 focus:ring-brand-100"
+              />
             </label>
             <label className="block space-y-1.5">
               <span className="text-sm font-medium">Kilos</span>
-              <input inputMode="decimal" defaultValue="60.25" className="w-full rounded-md border border-danger bg-surface px-3 py-2.5 text-sm outline-none ring-3 ring-danger-soft" />
+              <input
+                inputMode="decimal"
+                defaultValue="60.25"
+                className="w-full rounded-md border border-danger bg-surface px-3 py-2.5 text-sm outline-none ring-3 ring-danger-soft"
+              />
               <span className="text-xs text-danger">⚠ Max 2 decimals</span>
             </label>
           </div>
           <div className="flex rounded-md bg-muted p-1 text-sm font-medium">
-            <button className="flex-1 rounded-sm bg-surface py-1.5 shadow-card">Cash</button>
-            <button className="flex-1 rounded-sm py-1.5 text-muted-foreground">QR</button>
+            <button className="flex-1 rounded-sm bg-surface py-1.5 shadow-card">
+              Cash
+            </button>
+            <button className="flex-1 rounded-sm py-1.5 text-muted-foreground">
+              QR
+            </button>
           </div>
         </section>
       </div>
@@ -113,7 +164,9 @@ export default function ThemePage() {
         <div className="rounded-xl bg-surface p-5 shadow-card">
           <p className="text-sm text-muted-foreground">On the truck</p>
           <p className="mt-1 text-3xl font-semibold tabular-nums">60</p>
-          <p className="mt-2 text-xs text-muted-foreground">120.25 kg remaining</p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            120.25 kg remaining
+          </p>
         </div>
         <div className="rounded-xl bg-surface p-5 shadow-card">
           <p className="text-sm text-muted-foreground">Expenses</p>
