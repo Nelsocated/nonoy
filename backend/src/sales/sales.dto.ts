@@ -4,9 +4,9 @@ import {
   IsOptional,
   IsInt,
   IsPositive,
-  IsNumberString,
   IsDateString,
 } from 'class-validator';
+import { IsDecimalAmount } from '../common/is-decimal-amount.decorator.js';
 
 export class CreateSaleDto {
   @IsUUID()
@@ -26,10 +26,10 @@ export class CreateSaleDto {
   @IsPositive()
   chickenCount: number;
 
-  @IsNumberString()
+  @IsDecimalAmount()
   totalKilo: string;
 
-  @IsNumberString()
+  @IsDecimalAmount()
   amount: string;
 
   @IsDateString()

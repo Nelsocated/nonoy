@@ -3,9 +3,9 @@ import {
   IsUUID,
   IsInt,
   IsPositive,
-  IsNumberString,
   IsDateString,
 } from 'class-validator';
+import { IsDecimalAmount } from '../common/is-decimal-amount.decorator.js';
 
 export class CreatePickupDto {
   @IsUUID()
@@ -24,7 +24,7 @@ export class CreatePickupDto {
   @IsPositive()
   chickenCount: number;
 
-  @IsNumberString()
+  @IsDecimalAmount()
   totalKilo: string; // Decimal fields come over the wire as strings — Prisma parses them
 
   @IsDateString()

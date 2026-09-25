@@ -2,9 +2,9 @@ import {
   IsUUID,
   IsInt,
   Min,
-  IsNumberString,
   IsDateString,
 } from 'class-validator';
+import { IsDecimalAmount } from '../common/is-decimal-amount.decorator.js';
 
 export class CreateRecountDto {
   @IsUUID()
@@ -20,7 +20,7 @@ export class CreateRecountDto {
   @Min(0) // 0 is valid — everything was sold
   countedChicken: number;
 
-  @IsNumberString()
+  @IsDecimalAmount()
   countedKilo: string;
 
   @IsDateString()
