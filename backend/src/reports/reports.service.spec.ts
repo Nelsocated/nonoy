@@ -12,7 +12,10 @@ describe('ReportsService', () => {
     ]),
     trip: { findUnique: vi.fn() },
     recount: { findMany: vi.fn() },
-    sale: { findMany: vi.fn() },
+    sale: {
+      findMany: vi.fn(),
+      fields: { listPricePerKilo: 'ref:listPricePerKilo' },
+    },
   };
   const access = { assertOwnership: vi.fn() };
 
@@ -77,29 +80,25 @@ describe('ReportsService', () => {
   });
 
   describe('discrepancies', () => {
-    it('lists sales where the worker changed the owner price', async () => {
-      const { Decimal } = await import('@prisma/client/runtime/client');
-      const priced = (id: string, charged: string, list: string) => ({
-        id,
-        pricePerKilo: new Decimal(charged),
-        listPricePerKilo: new Decimal(list),
-      });
+    it('asks the database for sales where the worker changed the owner price', async () => {
       prisma.recount.findMany.mockResolvedValue([]);
       prisma.sale.findMany.mockImplementation(async ({ where }: any) =>
-        where.syncStatus
-          ? []
-          : [
-              priced('same', '180.00', '180.00'),
-              priced('edited', '175.00', '180.00'),
-            ],
+        where.syncStatus ? [] : [{ id: 'edited' }],
       );
       const r = await service.discrepancies({
         from: '2026-09-01',
         to: '2026-09-07',
       });
-      expect(r.priceChangedSales.map((s: { id: string }) => s.id)).toEqual([
-        'edited',
-      ]);
+      expect(r.priceChangedSales).toEqual([{ id: 'edited' }]);
+      // compared in SQL (column vs column), not by loading every priced sale
+      const priced = prisma.sale.findMany.mock.calls
+        .map(([args]: any) => args.where)
+        .find((w: any) => !w.syncStatus);
+      expect(priced).toMatchObject({
+        pricePerKilo: { not: null },
+        listPricePerKilo: { not: null },
+        NOT: { pricePerKilo: { equals: 'ref:listPricePerKilo' } },
+      });
     });
   });
 });

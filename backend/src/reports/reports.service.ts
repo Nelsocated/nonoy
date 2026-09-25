@@ -257,7 +257,7 @@ export class ReportsService {
       },
     };
 
-    const [recounts, conflictedSales, pricedSales] = await Promise.all([
+    const [recounts, conflictedSales, priceChangedSales] = await Promise.all([
       this.prisma.recount.findMany({
         where: { discrepancyFlagged: true, createdAtClient: when },
         include: { trip },
@@ -269,10 +269,15 @@ export class ReportsService {
         orderBy: { createdAtClient: 'desc' },
       }),
       this.prisma.sale.findMany({
+        // worker edited the owner's price on these (haggling, suki discount…);
+        // compared column to column in SQL
         where: {
           createdAtClient: when,
           pricePerKilo: { not: null },
           listPricePerKilo: { not: null },
+          NOT: {
+            pricePerKilo: { equals: this.prisma.sale.fields.listPricePerKilo },
+          },
         },
         include: { trip, buyer: { select: { id: true, name: true } } },
         orderBy: { createdAtClient: 'desc' },
@@ -288,10 +293,7 @@ export class ReportsService {
         kiloDifference: r.countedKilo.minus(r.expectedKilo).toFixed(2),
       })),
       conflictedSales,
-      // worker edited the owner's price on these (haggling, suki discount…)
-      priceChangedSales: pricedSales.filter(
-        (s) => !s.pricePerKilo!.equals(s.listPricePerKilo!),
-      ),
+      priceChangedSales,
     };
   }
 
