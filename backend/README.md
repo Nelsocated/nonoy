@@ -1,114 +1,65 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Mang Frito — backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+NestJS API for Mang Frito, a live-chicken trading business. Workers record trips on their phones (offline first); the owner and admins manage prices, buyers, plantations and users, and watch the dashboard.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Live: the API runs privately on Railway (project `keen-contentment`, Singapore) and is only reached through the frontend's `/api/*` forwarder. Pushing to `main` deploys.
 
-## Description
+## Stack
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- NestJS 11, TypeScript, class-validator DTOs (global `ValidationPipe`, whitelist)
+- Prisma 7 with the `@prisma/adapter-pg` driver adapter, PostgreSQL. The client is generated into `src/generated/prisma` (not committed)
+- JWT auth (access + refresh in httpOnly cookies set by the frontend), roles `WORKER`, `OWNER`, `ADMIN`
+- Vitest for tests, oxlint, Prettier
 
-## Project setup
+## Setup
 
 ```bash
-$ npm install
+npm install
+cp .env.example .env         # fill it in (see below)
+npx prisma generate --config prisma7.config.ts
+npm run start:dev            # http://localhost:4000
 ```
 
-## Compile and run the project
+> **One database for everything.** Local development points at the same Postgres as production, so anything you create locally is real data. Apply migrations with `npx prisma migrate deploy --config prisma7.config.ts`. Never use `migrate dev` or `migrate reset`: they can wipe the shared database.
 
-```bash
-# development
-$ npm run start
+### Environment
 
-# watch mode
-$ npm run start:dev
+| Variable                                                     | What it is                                                                                                 |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                                               | Postgres connection string                                                                                 |
+| `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`                    | signing secrets                                                                                            |
+| `JWT_ACCESS_EXPIRY`, `JWT_REFRESH_EXPIRY`                    | e.g. `15m`, `30d`                                                                                          |
+| `INTERNAL_PROXY_SECRET`                                      | shared with the frontend; lets the API trust `X-Forwarded-For` from the Next server (per-user rate limits) |
+| `PORT`                                                       | default `4000`                                                                                             |
+| `FRONTEND_URL`                                               | CORS origin                                                                                                |
+| `REPORT_TIMEZONE`                                            | calendar days for reports, default `Asia/Manila`                                                           |
+| `SEED_ADMIN_PHONE`, `SEED_ADMIN_PASSWORD`, `SEED_ADMIN_NAME` | first admin, created by `npm run seed` (after `npm run build`)                                             |
 
-# production mode
-$ npm run start:prod
-```
+## Scripts
 
-## Run tests
+| Command                                |                                                           |
+| -------------------------------------- | --------------------------------------------------------- |
+| `npm run start:dev`                    | watch mode                                                |
+| `npm run build` / `npm run start:prod` | production build / run                                    |
+| `npm test`                             | unit tests (`npx vitest run src/<module>` for one module) |
+| `npm run test:e2e`                     | boots the whole app (needs `.env`)                        |
+| `npm run lint` / `npm run format`      | oxlint / Prettier                                         |
 
-```bash
-# unit tests
-$ npm run test
+## Modules (`src/`)
 
-# e2e tests
-$ npm run test:e2e
+| Module                                              | Endpoints (roles)                                                                                                                                                                                                                                  |
+| --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `auth`                                              | login, refresh (10 s grace window), logout                                                                                                                                                                                                         |
+| `users`                                             | `POST /users/register` (public, worker), `POST /users`, `GET /users`, `PATCH /users/:id`, `PATCH /users/:id/password` (logs them out), `PATCH /users/:id/active` — owner and admin have the same powers; nobody can deactivate or reset themselves |
+| `buyers`, `plantations`                             | list (active only; `?include=archived` for the admin screen), create, update, `DELETE` = delete if unused / archive if it has sales or pickups, `PATCH /:id/restore`                                                                               |
+| `prices`                                            | `GET /prices/current` (any role), history and set (owner/admin)                                                                                                                                                                                    |
+| `trips`, `pickups`, `sales`, `recounts`, `expenses` | field records; each has an offline `clientId` for idempotent retries                                                                                                                                                                               |
+| `sync`                                              | `POST /sync` — a phone's queued records in one batch: trips (and endings) first, then pickups/sales/expenses, recounts, last trip endings. One bad item doesn't block the rest; database outages fail the whole request (5xx) so the phone retries |
+| `reports`                                           | `daily`, `workers`, `discrepancies`, `trips/:id`, and for the owner dashboard `open-trips`, `problems?page=` (15 per page) and `PATCH problems/:kind/:id/check`                                                                                    |
+| `activity-logs`                                     | an append-only log of worker actions                                                                                                                                                                                                               |
 
-# test coverage
-$ npm run test:cov
-```
+## Rules worth knowing
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Observability
-
-In production applications, observability is essential for understanding how your system behaves, detecting issues early, and maintaining reliable performance.
-
-[NestJS Observe](https://observe.nestjs.com) automatically instruments your NestJS application, giving you deep visibility into your system with minimal setup:
-
-- **Distributed tracing:** Follow requests across services and understand how they flow through your system.
-- **Waterfall analysis:** Visualize request execution and identify slow operations, bottlenecks, and unexpected delays.
-- **Performance analysis:** Analyze application performance in real time and quickly pinpoint areas that need optimization.
-- **Metrics:** Track key application and infrastructure metrics to understand system health and performance trends.
-- **Logging:** Centralize and correlate logs with traces and other telemetry to make debugging easier.
-- **Error tracking:** Detect errors quickly and investigate their root causes with the surrounding context.
-- **SLA monitoring:** Track service-level objectives and identify when your application is approaching or exceeding defined thresholds.
-- **Alarms and alerts:** Set up alerts for critical errors, performance degradation, SLA violations, and other anomalies so your team can react quickly.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Auto-instrument your application with [NestJS Observer](https://observer.nestjs.com). Distributed tracing, metrics, and logging made easy. Error tracking and performance monitoring for your NestJS applications.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+- **Amounts**: `Decimal(10, 2)`; sale amount = kilos × price, rounded half-up to the centavo, checked against what the phone sent.
+- **Recounts are blind** for workers: the server computes expected stock from pickups and sales recorded up to the recount and flags a mismatch.
+- **Problems** (dashboard): flagged recounts, conflicted sales (made after their trip ended), and sales where the worker changed the owner's price. Owner/admin mark them as checked, with an optional note.
