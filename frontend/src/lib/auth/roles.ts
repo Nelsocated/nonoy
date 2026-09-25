@@ -9,7 +9,7 @@ const AREAS: { prefix: string; roles: Role[] }[] = [
   { prefix: "/admin", roles: ["OWNER", "ADMIN"] },
   { prefix: "/field", roles: ["WORKER"] },
 ];
-const PUBLIC = ["/login", "/theme"];
+const PUBLIC = ["/login", "/theme", "/~offline"];
 
 const within = (pathname: string, prefix: string) =>
   pathname === prefix || pathname.startsWith(`${prefix}/`);

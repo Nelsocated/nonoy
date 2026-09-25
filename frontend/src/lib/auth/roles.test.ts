@@ -21,6 +21,7 @@ describe("roles", () => {
   it("knows public pages", () => {
     expect(isPublic("/login")).toBe(true);
     expect(isPublic("/theme")).toBe(true);
+    expect(isPublic("/~offline")).toBe(true);
     expect(isPublic("/admin")).toBe(false);
   });
 });
