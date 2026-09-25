@@ -1,0 +1,17 @@
+# AI tooling and AI-generated working files — kept on this machine, never pushed
+.claude/
+.superpowers/
+.cursor/
+.agents/
+.codex/
+.gemini/
+.windsurf/
+.continue/
+.aider*
+CLAUDE.md
+AGENTS.md
+GEMINI.md
+.github/copilot-instructions.md
+docs/superpowers/
+design-system/
+skills-lock.json
