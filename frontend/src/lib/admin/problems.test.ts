@@ -28,6 +28,14 @@ describe("problemSentence", () => {
       "Recount short 1 chicken",
     );
   });
+  it("says each direction when chickens and kilos disagree", () => {
+    expect(problemSentence(recount(2, "-0.50"))).toBe(
+      "Recount over 2 chickens, short 0.50 kg",
+    );
+    expect(problemSentence(recount(-1, "3.00"))).toBe(
+      "Recount short 1 chicken, over 3.00 kg",
+    );
+  });
   it("names the conflict first, even when the price also changed", () => {
     expect(
       problemSentence(

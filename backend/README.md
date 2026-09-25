@@ -30,7 +30,7 @@ npm run start:dev            # http://localhost:4000
 | `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`                    | signing secrets                                                                                            |
 | `JWT_ACCESS_EXPIRY`, `JWT_REFRESH_EXPIRY`                    | e.g. `15m`, `30d`                                                                                          |
 | `INTERNAL_PROXY_SECRET`                                      | shared with the frontend; lets the API trust `X-Forwarded-For` from the Next server (per-user rate limits) |
-| `PORT`                                                       | default `4000`                                                                                             |
+| `PORT`                                                       | `4000` in `.env.example` (the frontend's `API_URL` expects it); 3000 if unset                              |
 | `FRONTEND_URL`                                               | CORS origin                                                                                                |
 | `REPORT_TIMEZONE`                                            | calendar days for reports, default `Asia/Manila`                                                           |
 | `SEED_ADMIN_PHONE`, `SEED_ADMIN_PASSWORD`, `SEED_ADMIN_NAME` | first admin, created by `npm run seed` (after `npm run build`)                                             |

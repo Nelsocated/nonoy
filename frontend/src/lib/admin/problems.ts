@@ -6,13 +6,16 @@ const chickens = (n: number) => `${n} chicken${n === 1 ? "" : "s"}`;
 // One plain sentence per problem for the dashboard and trip timeline.
 export function problemSentence(p: Problem): string {
   if (p.kind === "recount") {
+    const kiloShort = p.kiloDifference.startsWith("-");
     const kilo = p.kiloDifference.replace("-", "");
-    const short = p.chickenDifference < 0 || p.kiloDifference.startsWith("-");
-    const parts = [
-      p.chickenDifference !== 0 && chickens(Math.abs(p.chickenDifference)),
-      kilo !== "0.00" && `${kilo} kg`,
-    ].filter(Boolean);
-    return `Recount ${short ? "short" : "over"} ${parts.join(" / ")}`;
+    const chickenPart =
+      p.chickenDifference !== 0 && chickens(Math.abs(p.chickenDifference));
+    const kiloPart = kilo !== "0.00" && `${kilo} kg`;
+    // same direction: "short 3 chickens / 4.50 kg"; mixed: say each one
+    if (chickenPart && kiloPart && p.chickenDifference < 0 !== kiloShort)
+      return `Recount ${p.chickenDifference < 0 ? "short" : "over"} ${chickenPart}, ${kiloShort ? "short" : "over"} ${kiloPart}`;
+    const short = p.chickenDifference < 0 || kiloShort;
+    return `Recount ${short ? "short" : "over"} ${[chickenPart, kiloPart].filter(Boolean).join(" / ")}`;
   }
   // a conflict is the bigger problem, so it wins over a price change
   if (p.syncStatus === "CONFLICT")

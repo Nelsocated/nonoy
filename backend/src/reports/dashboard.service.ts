@@ -145,17 +145,17 @@ export class DashboardService {
       checkedById: userId,
       checkNote: note || null,
     };
-    if (kind === 'recount') {
-      const row = await this.prisma.recount.findUnique({ where: { id } });
-      if (!row) throw new NotFoundException('Problem not found');
-      return row.checkedAt
-        ? row
-        : this.prisma.recount.update({ where: { id }, data });
-    }
-    const row = await this.prisma.sale.findUnique({ where: { id } });
+    // only an unchecked row is written, so two owners checking at once
+    // can't overwrite each other; then return whatever is stored
+    const where = { id, checkedAt: null };
+    if (kind === 'recount')
+      await this.prisma.recount.updateMany({ where, data });
+    else await this.prisma.sale.updateMany({ where, data });
+    const row =
+      kind === 'recount'
+        ? await this.prisma.recount.findUnique({ where: { id } })
+        : await this.prisma.sale.findUnique({ where: { id } });
     if (!row) throw new NotFoundException('Problem not found');
-    return row.checkedAt
-      ? row
-      : this.prisma.sale.update({ where: { id }, data });
+    return row;
   }
 }
