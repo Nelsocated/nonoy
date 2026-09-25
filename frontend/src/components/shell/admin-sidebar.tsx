@@ -4,7 +4,10 @@ import { NavLink, type NavItem } from "./nav-link";
 import { UserMenu } from "./user-menu";
 
 // add entries here as admin pages are built
-const NAV: NavItem[] = [{ href: "/admin", label: "Dashboard" }];
+const NAV: NavItem[] = [
+  { href: "/admin", label: "Dashboard" },
+  { href: "/admin/price", label: "Price" },
+];
 
 export function AdminSidebar({ user }: { user: SessionUser }) {
   return (
