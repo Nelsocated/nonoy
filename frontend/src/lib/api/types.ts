@@ -70,6 +70,13 @@ export type BuyerInput = { name: string; location?: string; notes?: string };
 /** DELETE on a buyer/plantation: deleted when unused, archived when it has history */
 export type RemoveResult = { result: "deleted" | "archived"; uses: number };
 
+/** owner/admin marked this problem as checked on the dashboard */
+type Checked = {
+  checkedAt: IsoDate | null;
+  checkedById: string | null;
+  checkNote: string | null;
+};
+
 // ---- field records (all carry an offline-generated clientId) ----
 type Synced = {
   id: string;
@@ -105,7 +112,7 @@ export type Sale = Synced & {
   listPricePerKilo: Decimal | null;
   syncStatus: SyncStatus;
   conflictReason: string | null;
-};
+} & Checked;
 export type Recount = Synced & {
   tripId: string;
   countedChicken: number;
@@ -113,7 +120,7 @@ export type Recount = Synced & {
   expectedChicken: number;
   expectedKilo: Decimal;
   discrepancyFlagged: boolean;
-};
+} & Checked;
 export type Expense = Synced & {
   workerId: string;
   tripId: string | null;
@@ -243,4 +250,35 @@ export type TripDetail = Trip & {
     expenses: Decimal;
     net: Decimal;
   };
+};
+
+// ---- owner dashboard ----
+export type OpenTrip = {
+  id: string;
+  startedAt: IsoDate;
+  worker: Ref;
+  /** picked up − sold; can be negative when over-sold */
+  remaining: StockSums;
+  sales: { amount: Decimal; cash: Decimal; qr: Decimal };
+  /** last time anything from this trip reached the server */
+  lastSyncedAt: IsoDate | null;
+};
+export type RecountProblem = Recount & {
+  kind: "recount";
+  worker: Ref;
+  chickenDifference: number;
+  kiloDifference: Decimal;
+};
+export type SaleProblem = Sale & {
+  kind: "sale";
+  worker: Ref;
+  buyer: Ref | null;
+};
+export type Problem = RecountProblem | SaleProblem;
+export type ProblemKind = Problem["kind"];
+export type ProblemsPage = {
+  items: Problem[];
+  total: number;
+  page: number;
+  pageSize: number;
 };

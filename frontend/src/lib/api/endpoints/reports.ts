@@ -3,6 +3,9 @@ import type {
   DailyReport,
   DailyReportQuery,
   DiscrepancyReport,
+  OpenTrip,
+  ProblemKind,
+  ProblemsPage,
   ReportRange,
   TripDetail,
   WorkerReport,
@@ -18,6 +21,13 @@ export const reports = (http: Http) => ({
   /** OWNER/ADMIN */
   discrepancies: (q: ReportRange = {}) =>
     http.get<DiscrepancyReport>("/reports/discrepancies", q),
+  /** OWNER/ADMIN — trips not ended yet */
+  openTrips: () => http.get<OpenTrip[]>("/reports/open-trips"),
+  /** OWNER/ADMIN — unchecked problems, 15 per page, newest first */
+  problems: (page = 1) => http.get<ProblemsPage>("/reports/problems", { page }),
+  /** OWNER/ADMIN — mark a problem as looked at (optional note) */
+  check: (kind: ProblemKind, id: string, note?: string) =>
+    http.patch(`/reports/problems/${kind}/${id}/check`, { note }),
   /** any role — workers only their own trips */
   trip: (id: string) => http.get<TripDetail>(`/reports/trips/${id}`),
 });

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { Http } from "../http";
 import { buyers } from "./buyers";
 import { plantations } from "./plantations";
+import { reports } from "./reports";
 import { users } from "./users";
 
 const fakeHttp = () => ({
@@ -40,5 +41,20 @@ describe("users endpoints", () => {
     expect(http.patch).toHaveBeenLastCalledWith("/users/u1/password", {
       password: "secret1",
     });
+  });
+});
+
+describe("dashboard endpoints", () => {
+  it("pages problems and checks them", async () => {
+    const http = fakeHttp();
+    await reports(asHttp(http)).problems(2);
+    expect(http.get).toHaveBeenLastCalledWith("/reports/problems", { page: 2 });
+    await reports(asHttp(http)).check("sale", "s1", "ok");
+    expect(http.patch).toHaveBeenLastCalledWith(
+      "/reports/problems/sale/s1/check",
+      { note: "ok" },
+    );
+    await reports(asHttp(http)).openTrips();
+    expect(http.get).toHaveBeenLastCalledWith("/reports/open-trips");
   });
 });
