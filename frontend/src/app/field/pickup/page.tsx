@@ -13,7 +13,7 @@ import {
 import { useTrip } from "@/components/trip/use-trip";
 import { getDb } from "@/lib/offline/db";
 import { InvalidRecordError } from "@/lib/offline/validate";
-import { decimal, digits } from "@/lib/trip/input";
+import { digits, typedAmount } from "@/lib/trip/input";
 import { toCenti } from "@/lib/trip/money";
 
 const TWO_DP = /^\d{1,8}(\.\d{1,2})?$/;
@@ -133,7 +133,7 @@ export default function PickupPage() {
               inputMode="decimal"
               autoComplete="off"
               value={kilo}
-              onChange={(e) => setKilo(decimal(e.target.value))}
+              onChange={(e) => setKilo(typedAmount(e.target.value))}
               placeholder="0.00"
               className={inputClass}
             />

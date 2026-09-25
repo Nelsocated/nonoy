@@ -11,7 +11,7 @@ import {
 } from "@/components/trip/form";
 import { useTrip } from "@/components/trip/use-trip";
 import { InvalidRecordError } from "@/lib/offline/validate";
-import { decimal } from "@/lib/trip/input";
+import { typedAmount } from "@/lib/trip/input";
 import { peso, toCenti } from "@/lib/trip/money";
 
 const QUICK = ["Gas", "Food", "Toll", "Parking"];
@@ -106,7 +106,7 @@ export default function ExpensePage() {
             inputMode="decimal"
             autoComplete="off"
             value={amount}
-            onChange={(e) => setAmount(decimal(e.target.value))}
+            onChange={(e) => setAmount(typedAmount(e.target.value))}
             placeholder="0.00"
             className={inputClass}
           />

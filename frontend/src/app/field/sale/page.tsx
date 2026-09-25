@@ -16,7 +16,7 @@ import type { PaymentMethod } from "@/lib/api/types";
 import { getDb } from "@/lib/offline/db";
 import { getPrice } from "@/lib/offline/price";
 import { InvalidRecordError } from "@/lib/offline/validate";
-import { decimal, digits } from "@/lib/trip/input";
+import { digits, typedAmount } from "@/lib/trip/input";
 import { peso, saleAmount, toCenti } from "@/lib/trip/money";
 import { overSell } from "@/lib/trip/stock";
 
@@ -164,7 +164,7 @@ export default function SalePage() {
               inputMode="decimal"
               autoComplete="off"
               value={kilo}
-              onChange={(e) => setKilo(decimal(e.target.value))}
+              onChange={(e) => setKilo(typedAmount(e.target.value))}
               placeholder="0.00"
               className={inputClass}
             />
@@ -194,7 +194,7 @@ export default function SalePage() {
             inputMode="decimal"
             autoComplete="off"
             value={pricePerKilo}
-            onChange={(e) => setPrice(decimal(e.target.value))}
+            onChange={(e) => setPrice(typedAmount(e.target.value))}
             placeholder="180.00"
             className={inputClass}
           />

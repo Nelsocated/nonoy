@@ -7,6 +7,7 @@ import { useOnline } from "@/components/offline/use-sync-data";
 import { ApiError } from "@/lib/api";
 import { api } from "@/lib/api/browser";
 import { asOf } from "@/lib/offline/admin-cache";
+import { typedAmount } from "@/lib/trip/input";
 import { peso } from "@/lib/trip/money";
 import { amount, InvalidRecordError } from "@/lib/offline/validate";
 
@@ -115,7 +116,7 @@ export default function PricePage() {
                 inputMode="decimal"
                 autoComplete="off"
                 value={value}
-                onChange={(e) => setValue(e.target.value)}
+                onChange={(e) => setValue(typedAmount(e.target.value))}
                 placeholder={price?.pricePerKilo ?? "180.00"}
                 aria-invalid={!!error}
                 aria-describedby={error ? "price-error" : undefined}
