@@ -9,6 +9,7 @@ import { TripAccessService } from './trips-access.service.js';
   imports: [PrismaModule, ActivityLogsModule],
   controllers: [TripsController],
   providers: [TripsService, TripAccessService],
-  exports: [TripAccessService], // this is what Pickups/Recounts/Sales import
+  // TripAccessService for Pickups/Recounts/Sales; TripsService for Sync
+  exports: [TripsService, TripAccessService],
 })
 export class TripsModule {}

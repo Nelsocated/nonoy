@@ -1,3 +1,5 @@
+// must be the first import — JwtStrategy and PrismaService read env vars at construction
+import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
 import { ValidationPipe } from '@nestjs/common';

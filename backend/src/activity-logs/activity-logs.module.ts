@@ -4,6 +4,7 @@ import { ActivityLogsService } from './activity-logs.service.js';
 
 @Module({
   controllers: [ActivityLogsController],
-  providers: [ActivityLogsService]
+  providers: [ActivityLogsService],
+  exports: [ActivityLogsService], // Trips/Pickups/Sales/Recounts write logs inside their transactions
 })
 export class ActivityLogsModule {}
