@@ -1,5 +1,4 @@
 import { IsString, MinLength } from 'class-validator';
-import { Role } from '../generated/prisma/enums.js';
 
 export class CreateUserDto {
   @IsString()
@@ -12,6 +11,6 @@ export class CreateUserDto {
 
   @IsString()
   name: string;
-
-  role?: Role;
+  // no `role` here: an undecorated field makes forbidNonWhitelisted reject
+  // every request, and public sign-up must never pick its own role anyway
 }

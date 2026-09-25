@@ -2,6 +2,7 @@ import { Injectable, ConflictException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateUserDto } from './users.dto.js';
+import { Role } from '../generated/prisma/enums.js';
 
 @Injectable()
 export class UsersService {
@@ -15,7 +16,7 @@ export class UsersService {
     return this.prisma.user.findUnique({ where: { id } });
   }
 
-  async create(dto: CreateUserDto) {
+  async create(dto: CreateUserDto, role: Role = Role.WORKER) {
     const existing = await this.findByPhone(dto.phone);
     if (existing) {
       throw new ConflictException('Phone number already registered');
@@ -28,7 +29,7 @@ export class UsersService {
         phone: dto.phone,
         passwordHash,
         name: dto.name,
-        role: dto.role ?? 'WORKER', // adjust default to whatever your schema uses
+        role,
       },
     });
 
