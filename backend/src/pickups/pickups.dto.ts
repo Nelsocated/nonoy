@@ -1,6 +1,5 @@
 // pickups/dto/create-pickup.dto.ts
 import {
-  IsString,
   IsUUID,
   IsInt,
   IsPositive,
