@@ -64,6 +64,9 @@ model Plantation {
   address   String?
   createdAt DateTime @default(now())
 
+  // set instead of deleting when it has pickups; hidden from phones
+  archivedAt DateTime?
+
   pickups Pickup[]
 
   @@map("plantations")
@@ -75,6 +78,9 @@ model Buyer {
   location  String?
   notes     String?
   createdAt DateTime @default(now())
+
+  // set instead of deleting when it has sales; hidden from phones
+  archivedAt DateTime?
 
   sales Sale[]
 
@@ -119,25 +125,25 @@ model Pickup {
 
 // The core ledger event — every sale decrements stock
 model Sale {
-  id              String        @id @default(uuid())
-  clientId        String        @unique
-  tripId          String
-  trip            Trip          @relation(fields: [tripId], references: [id])
-  buyerId         String?
-  buyer           Buyer?        @relation(fields: [buyerId], references: [id])
-  chickenCount    Int
-  totalKilo       Decimal       @db.Decimal(10, 2)
-  amount          Decimal       @db.Decimal(10, 2)
-  paymentMethod   PaymentMethod @default(CASH)
+  id               String        @id @default(uuid())
+  clientId         String        @unique
+  tripId           String
+  trip             Trip          @relation(fields: [tripId], references: [id])
+  buyerId          String?
+  buyer            Buyer?        @relation(fields: [buyerId], references: [id])
+  chickenCount     Int
+  totalKilo        Decimal       @db.Decimal(10, 2)
+  amount           Decimal       @db.Decimal(10, 2)
+  paymentMethod    PaymentMethod @default(CASH)
   // price per kilo charged, and the owner's price the phone had at the time;
   // different = the worker edited the price (shown to the owner). Null on
   // sales from app versions before prices existed.
   pricePerKilo     Decimal?      @db.Decimal(10, 2)
   listPricePerKilo Decimal?      @db.Decimal(10, 2)
-  createdAtClient DateTime
-  syncedAt        DateTime      @default(now())
-  syncStatus      SyncStatus    @default(SYNCED)
-  conflictReason  String?
+  createdAtClient  DateTime
+  syncedAt         DateTime      @default(now())
+  syncStatus       SyncStatus    @default(SYNCED)
+  conflictReason   String?
 
   @@map("sales")
 }
