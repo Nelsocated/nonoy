@@ -5,6 +5,7 @@ import { CreateTripDto, EndTripDto } from '../trips/trips.dto.js';
 import { CreatePickupDto } from '../pickups/pickups.dto.js';
 import { CreateSaleDto } from '../sales/sales.dto.js';
 import { CreateRecountDto } from '../recounts/recounts.dto.js';
+import { CreateExpenseDto } from '../expenses/expenses.dto.js';
 
 class EndTripSyncDto extends EndTripDto {
   @IsUUID()
@@ -41,4 +42,10 @@ export class SyncBatchDto {
   @ValidateNested({ each: true })
   @Type(() => CreateRecountDto)
   recounts?: CreateRecountDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateExpenseDto)
+  expenses?: CreateExpenseDto[];
 }

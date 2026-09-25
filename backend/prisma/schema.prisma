@@ -90,6 +90,7 @@ model Trip {
   pickups      Pickup[]
   sales        Sale[]
   recounts     Recount[]
+  expenses     Expense[]
   activityLogs ActivityLog[]
 
   @@map("trips")
@@ -147,11 +148,14 @@ model Recount {
   @@map("recounts")
 }
 
+// Worker spending (gas, food, tolls...) — optional trip, since some happen between trips
 model Expense {
   id              String   @id @default(uuid())
   clientId        String   @unique
   workerId        String
   worker          User     @relation(fields: [workerId], references: [id])
+  tripId          String?
+  trip            Trip?    @relation(fields: [tripId], references: [id])
   description     String
   amount          Decimal  @db.Decimal(10, 2)
   createdAtClient DateTime

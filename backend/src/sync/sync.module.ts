@@ -5,9 +5,16 @@ import { TripsModule } from '../trips/trips.module.js';
 import { PickupsModule } from '../pickups/pickups.module.js';
 import { SalesModule } from '../sales/sales.module.js';
 import { RecountsModule } from '../recounts/recounts.module.js';
+import { ExpensesModule } from '../expenses/expenses.module.js';
 
 @Module({
-  imports: [TripsModule, PickupsModule, SalesModule, RecountsModule],
+  imports: [
+    TripsModule,
+    PickupsModule,
+    SalesModule,
+    RecountsModule,
+    ExpensesModule,
+  ],
   controllers: [SyncController],
   providers: [SyncService],
 })

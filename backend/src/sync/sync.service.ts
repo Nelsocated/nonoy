@@ -3,6 +3,7 @@ import { TripsService } from '../trips/trips.service.js';
 import { PickupsService } from '../pickups/pickups.service.js';
 import { SalesService } from '../sales/sales.service.js';
 import { RecountsService } from '../recounts/recounts.service.js';
+import { ExpensesService } from '../expenses/expenses.service.js';
 import { SyncBatchDto } from './sync.dto.js';
 
 type SyncResult = {
@@ -21,6 +22,7 @@ export class SyncService {
     private pickupsService: PickupsService,
     private salesService: SalesService,
     private recountsService: RecountsService,
+    private expensesService: ExpensesService,
   ) {}
 
   async processBatch(dto: SyncBatchDto, workerId: string) {
@@ -30,6 +32,7 @@ export class SyncService {
       pickups: [] as SyncResult[],
       sales: [] as SyncResult[],
       recounts: [] as SyncResult[],
+      expenses: [] as SyncResult[],
     };
 
     // Trips MUST go first — pickups/sales/recounts all reference a tripId,
@@ -61,6 +64,15 @@ export class SyncService {
       (dto.sales ?? []).map((item) =>
         this.safely(item.clientId, () =>
           this.salesService.create(item, workerId),
+        ),
+      ),
+    );
+
+    // Expenses only need their (optional) trip to exist
+    results.expenses = await Promise.all(
+      (dto.expenses ?? []).map((item) =>
+        this.safely(item.clientId, () =>
+          this.expensesService.create(item, workerId),
         ),
       ),
     );
