@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArchiveRestore,
+  ChevronRight,
   CircleAlert,
   CircleCheck,
   CloudOff,
@@ -52,6 +53,22 @@ const primary = `${button} bg-primary text-primary-foreground shadow-primary hov
 const quiet = `${button} text-muted-foreground hover:bg-muted`;
 const dialog =
   "m-auto w-[min(26rem,calc(100%-2rem))] rounded-xl bg-surface p-6 text-foreground shadow-card backdrop:bg-ink-950/50";
+
+// long lists scroll inside their card; clear dividers between rows
+export const scrollList =
+  "max-h-[min(28rem,60dvh)] divide-y divide-border overflow-y-auto overscroll-contain";
+
+// round first-letter badge so rows are easy to scan
+function Initial({ name }: { name: string }) {
+  return (
+    <span
+      aria-hidden
+      className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary-soft text-base font-semibold text-primary-soft-foreground"
+    >
+      {name.trim().charAt(0).toUpperCase() || "?"}
+    </span>
+  );
+}
 
 const message = (e: unknown, fallback: string) =>
   e instanceof ApiError ? e.message : fallback;
@@ -222,31 +239,47 @@ export function ReferencePage<T extends RefItem>({
         />
       </label>
 
-      <section className="rounded-xl bg-surface shadow-card">
+      <section className="overflow-hidden rounded-xl border bg-surface shadow-card">
+        <h2 className="flex items-center justify-between border-b bg-muted/60 px-5 py-2.5 text-sm font-medium">
+          {title}
+          <span className="rounded-full bg-surface px-2 py-0.5 text-xs text-muted-foreground tabular-nums">
+            {active.length}
+          </span>
+        </h2>
         {list.isPending ? (
           <p className="px-5 py-4 text-sm text-muted-foreground">Loading…</p>
         ) : active.length ? (
-          <ul className="divide-y">
+          // scrolls inside the card so the page (and Add button) stay put
+          <ul className={scrollList}>
             {active.map((item) => (
               <li key={item.id}>
                 <button
                   type="button"
                   onClick={() => open(item)}
                   disabled={!online}
-                  className="flex min-h-14 w-full flex-col items-start justify-center px-5 py-3 text-left transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none disabled:hover:bg-transparent"
+                  className="group flex min-h-16 w-full items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-primary-soft/50 focus-visible:bg-primary-soft/50 focus-visible:outline-none disabled:hover:bg-transparent"
                 >
-                  <span className="font-medium">{item.name}</span>
-                  {subtitle(item) && (
-                    <span className="text-sm text-muted-foreground">
-                      {subtitle(item)}
+                  <Initial name={item.name} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-medium">
+                      {item.name}
                     </span>
-                  )}
+                    {subtitle(item) && (
+                      <span className="block truncate text-sm text-muted-foreground">
+                        {subtitle(item)}
+                      </span>
+                    )}
+                  </span>
+                  <ChevronRight
+                    aria-hidden
+                    className="size-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+                  />
                 </button>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="px-5 py-4 text-sm text-muted-foreground">
+          <p className="px-5 py-6 text-center text-sm text-muted-foreground">
             {query
               ? `No ${singular}s match “${query.trim()}”.`
               : `No ${singular}s yet.`}
@@ -265,8 +298,8 @@ export function ReferencePage<T extends RefItem>({
       </label>
 
       {showArchived && archived.length > 0 && (
-        <section className="rounded-xl bg-surface shadow-card">
-          <ul className="divide-y">
+        <section className="overflow-hidden rounded-xl border bg-surface shadow-card">
+          <ul className={scrollList}>
             {archived.map((item) => (
               <li
                 key={item.id}

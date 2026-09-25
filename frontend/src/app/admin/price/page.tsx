@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CloudOff, Tag } from "lucide-react";
 import { useRef, useState } from "react";
+import { scrollList } from "@/components/admin/reference-page";
 import { useOnline } from "@/components/offline/use-sync-data";
 import { ApiError } from "@/lib/api";
 import { api } from "@/lib/api/browser";
@@ -144,26 +145,43 @@ export default function PricePage() {
         )}
       </section>
 
-      <section className="rounded-xl bg-surface shadow-card">
-        <h2 className="px-6 pt-5 pb-3 font-semibold">History</h2>
+      <section className="overflow-hidden rounded-xl border bg-surface shadow-card">
+        <h2 className="flex items-center justify-between border-b bg-muted/60 px-5 py-2.5 text-sm font-medium">
+          History
+          <span className="rounded-full bg-surface px-2 py-0.5 text-xs text-muted-foreground tabular-nums">
+            {history.data?.length ?? 0}
+          </span>
+        </h2>
         {history.data?.length ? (
-          <ul className="divide-y">
-            {history.data.map((p) => (
+          <ul className={scrollList}>
+            {history.data.map((p, i) => (
               <li
                 key={p.id}
-                className="flex items-center justify-between gap-3 px-6 py-3 text-sm"
+                className="flex min-h-14 items-center justify-between gap-3 px-5 py-3"
               >
-                <span className="font-medium tabular-nums">
-                  {peso(p.pricePerKilo)} / kg
+                <span className="flex items-center gap-2">
+                  <span className="font-semibold tabular-nums">
+                    {peso(p.pricePerKilo)}
+                    <span className="font-normal text-muted-foreground">
+                      {" "}
+                      / kg
+                    </span>
+                  </span>
+                  {i === 0 && (
+                    <span className="rounded-full bg-success-soft px-2 py-0.5 text-xs font-medium text-success">
+                      Current
+                    </span>
+                  )}
                 </span>
-                <span className="text-muted-foreground">
-                  {p.setBy.name} · {when(p.createdAt)}
+                <span className="text-right text-sm text-muted-foreground">
+                  {p.setBy.name}
+                  <span className="block text-xs">{when(p.createdAt)}</span>
                 </span>
               </li>
             ))}
           </ul>
         ) : (
-          <p className="px-6 pb-5 text-sm text-muted-foreground">
+          <p className="px-5 py-6 text-center text-sm text-muted-foreground">
             No price changes yet.
           </p>
         )}
