@@ -12,7 +12,7 @@ export class AuthController {
   @UseGuards(LocalAuthGuard)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('login')
-  login(@Req() req: Request & { user: AuthenticatedUser }) {
+  login(@Req() req: Request & { user: AuthenticatedUser & { name: string } }) {
     return this.authService.login(req.user);
   }
 
@@ -28,8 +28,8 @@ export class AuthController {
   }
 }
 
+// what JwtStrategy.validate puts on req.user
 export type AuthenticatedUser = {
   id: string;
   role: string;
-  name: string;
 };

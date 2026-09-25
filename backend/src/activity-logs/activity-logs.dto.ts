@@ -14,9 +14,6 @@ export class CreateActivityLogDto {
   @IsUUID()
   clientId: string;
 
-  @IsString()
-  workerId: string;
-
   @IsOptional()
   @IsString()
   tripId?: string;
@@ -30,3 +27,7 @@ export class CreateActivityLogDto {
   @IsDateString()
   createdAtClient: string;
 }
+
+// What the service records: workerId always comes from the authenticated
+// user (or the calling service), never from the request body
+export type RecordActivityLogInput = CreateActivityLogDto & { workerId: string };
