@@ -7,7 +7,9 @@ describe('ActivityLogsController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ActivityLogsController],
-    }).compile();
+    })
+      .useMocker(() => ({})) // auto-mock every dependency
+      .compile();
 
     controller = module.get<ActivityLogsController>(ActivityLogsController);
   });

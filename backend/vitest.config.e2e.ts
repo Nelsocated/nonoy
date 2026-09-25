@@ -7,5 +7,7 @@ export default defineConfig({
     globals: true,
     root: './',
     include: ['**/*.e2e-spec.ts'],
+    // e2e boots the real AppModule, which reads JWT secrets + DATABASE_URL
+    setupFiles: ['dotenv/config'],
   },
 });

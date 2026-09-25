@@ -7,7 +7,9 @@ describe('SalesController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [SalesController],
-    }).compile();
+    })
+      .useMocker(() => ({})) // auto-mock every dependency
+      .compile();
 
     controller = module.get<SalesController>(SalesController);
   });

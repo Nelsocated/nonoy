@@ -7,7 +7,9 @@ describe('TripsService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [TripsService],
-    }).compile();
+    })
+      .useMocker(() => ({})) // auto-mock every dependency
+      .compile();
 
     service = module.get<TripsService>(TripsService);
   });
