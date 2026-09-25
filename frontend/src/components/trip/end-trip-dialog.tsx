@@ -48,10 +48,6 @@ export const EndTripDialog = forwardRef<
         <dd className="text-right tabular-nums">
           {peso(total(data.expenses))}
         </dd>
-        <dt className="text-muted-foreground">Left on truck</dt>
-        <dd className="text-right tabular-nums">
-          {data.stock.chicken} · {data.stock.kilo} kg
-        </dd>
       </dl>
       {data.recounts.length === 0 && (
         <p className="mt-4 rounded-md bg-warning-soft px-3 py-2 text-sm text-warning">

@@ -120,10 +120,7 @@ export default function SalePage() {
 
   return (
     <form onSubmit={submit} noValidate className="space-y-5 pb-4">
-      <FormHeader
-        title="Sale"
-        hint={`On the truck: ${data.stock.chicken} chickens · ${data.stock.kilo} kg`}
-      />
+      <FormHeader title="Sale" />
 
       <Field label="Buyer">
         {(a) => (

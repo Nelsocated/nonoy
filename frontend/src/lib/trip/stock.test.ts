@@ -21,8 +21,12 @@ describe("stockOnTruck", () => {
 describe("overSell", () => {
   const stock = { chicken: 2, kilo: "4.00" };
   it("warns when a sale is more than what's on the truck", () => {
-    expect(overSell(stock, 3, "4.00")).toMatch(/2 chickens/);
-    expect(overSell(stock, 2, "4.50")).toMatch(/4\.00 kg/);
+    expect(overSell(stock, 3, "4.00")).toMatch(/more chickens/);
+    expect(overSell(stock, 2, "4.50")).toMatch(/more kilos/);
+    expect(overSell(stock, 3, "4.50")).toMatch(/more chickens and kilos/);
+  });
+  it("never shows what's on the truck (the recount is blind)", () => {
+    expect(overSell(stock, 3, "4.50")).not.toMatch(/\d/);
   });
   it("says nothing when it fits", () => {
     expect(overSell(stock, 2, "4.00")).toBeNull();

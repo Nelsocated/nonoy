@@ -74,7 +74,7 @@ export default function FieldHome() {
     router.replace("/field?saved=Trip ended");
   }
 
-  const { trip, stock, today } = data;
+  const { trip, today } = data;
 
   return (
     <div className="space-y-5">
@@ -85,17 +85,12 @@ export default function FieldHome() {
       {trip ? (
         <>
           <section className="rounded-xl bg-primary p-5 text-primary-foreground shadow-primary">
+            {/* no stock numbers here: the recount is blind */}
             <p className="flex items-center gap-2 text-sm opacity-90">
-              <Truck aria-hidden className="size-4" /> On the truck · trip since{" "}
-              {day(trip.startedAt)}
+              <Truck aria-hidden className="size-4" /> Trip open
             </p>
-            <p className="mt-2 text-4xl font-semibold tabular-nums">
-              {stock.chicken}
-              <span className="text-lg font-medium opacity-90"> chickens</span>
-            </p>
-            <p className="text-2xl font-semibold tabular-nums">
-              {stock.kilo}
-              <span className="text-base font-medium opacity-90"> kg</span>
+            <p className="mt-2 text-2xl font-semibold">
+              Since {day(trip.startedAt)}
             </p>
           </section>
 
