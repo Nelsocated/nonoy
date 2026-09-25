@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { ReportsService } from './reports.service.js';
+import { DashboardService } from './dashboard.service.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { Role } from '../generated/prisma/enums.js';
 import type { AuthenticatedUser } from '../auth/auth.controller.js';
@@ -15,7 +16,17 @@ import { DailyReportDto, ReportRangeDto } from './reports.dto.js';
 
 @Controller('reports')
 export class ReportsController {
-  constructor(private reportsService: ReportsService) {}
+  constructor(
+    private reportsService: ReportsService,
+    private dashboardService: DashboardService,
+  ) {}
+
+  // owner dashboard: trips that haven't ended yet
+  @Roles(Role.OWNER, Role.ADMIN)
+  @Get('open-trips')
+  openTrips() {
+    return this.dashboardService.openTrips();
+  }
 
   // GET /reports/daily?from=2026-09-01&to=2026-09-07[&workerId=...]
   @Roles(Role.OWNER, Role.ADMIN)
