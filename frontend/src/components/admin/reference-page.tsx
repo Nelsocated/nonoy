@@ -15,7 +15,9 @@ import { useId, useRef, useState } from "react";
 import { useOnline } from "@/components/offline/use-sync-data";
 import { ApiError } from "@/lib/api";
 import type { RemoveResult } from "@/lib/api/types";
+import { pagedList, pageOf } from "@/lib/admin/paging";
 import { matchesSearch, removedMessage } from "@/lib/admin/search";
+import { Pager } from "./pager";
 import { asOf } from "@/lib/offline/admin-cache";
 
 export type RefField = {
@@ -54,10 +56,6 @@ const quiet = `${button} text-muted-foreground hover:bg-muted`;
 const dialog =
   "m-auto w-[min(26rem,calc(100%-2rem))] rounded-xl bg-surface p-6 text-foreground shadow-card backdrop:bg-ink-950/50";
 
-// long lists scroll inside their card; clear dividers between rows
-export const scrollList =
-  "max-h-[min(28rem,60dvh)] divide-y divide-border overflow-y-auto overscroll-contain";
-
 // round first-letter badge so rows are easy to scan
 function Initial({ name }: { name: string }) {
   return (
@@ -95,6 +93,8 @@ export function ReferencePage<T extends RefItem>({
 
   const [query, setQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);
+  const [page, setPage] = useState(1);
+  const [archivedPage, setArchivedPage] = useState(1);
   const [status, setStatus] = useState<{ text: string; ok: boolean } | null>(
     null,
   );
@@ -180,6 +180,8 @@ export function ReferencePage<T extends RefItem>({
   const active = items.filter((i) => !i.archivedAt);
   const archived = items.filter((i) => i.archivedAt);
   const current = editing && editing !== "new" ? editing : null;
+  const shown = pageOf(active, page);
+  const shownArchived = pageOf(archived, archivedPage);
 
   return (
     <div className="mx-auto max-w-2xl space-y-5">
@@ -233,7 +235,11 @@ export function ReferencePage<T extends RefItem>({
         <input
           type="search"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setPage(1);
+            setArchivedPage(1);
+          }}
           placeholder={`Search ${title.toLowerCase()}`}
           className={`${input} pl-10`}
         />
@@ -249,35 +255,42 @@ export function ReferencePage<T extends RefItem>({
         {list.isPending ? (
           <p className="px-5 py-4 text-sm text-muted-foreground">Loading…</p>
         ) : active.length ? (
-          // scrolls inside the card so the page (and Add button) stay put
-          <ul className={scrollList}>
-            {active.map((item) => (
-              <li key={item.id}>
-                <button
-                  type="button"
-                  onClick={() => open(item)}
-                  disabled={!online}
-                  className="group flex min-h-16 w-full items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-primary-soft/50 focus-visible:bg-primary-soft/50 focus-visible:outline-none disabled:hover:bg-transparent"
-                >
-                  <Initial name={item.name} />
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-medium">
-                      {item.name}
-                    </span>
-                    {subtitle(item) && (
-                      <span className="block truncate text-sm text-muted-foreground">
-                        {subtitle(item)}
+          <>
+            <ul className={pagedList(shown.pages)}>
+              {shown.rows.map((item) => (
+                <li key={item.id}>
+                  <button
+                    type="button"
+                    onClick={() => open(item)}
+                    disabled={!online}
+                    className="group flex h-16 w-full items-center gap-3 px-5 py-3 text-left transition-colors hover:bg-primary-soft/50 focus-visible:bg-primary-soft/50 focus-visible:outline-none disabled:hover:bg-transparent"
+                  >
+                    <Initial name={item.name} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-medium">
+                        {item.name}
                       </span>
-                    )}
-                  </span>
-                  <ChevronRight
-                    aria-hidden
-                    className="size-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5"
-                  />
-                </button>
-              </li>
-            ))}
-          </ul>
+                      {subtitle(item) && (
+                        <span className="block truncate text-sm text-muted-foreground">
+                          {subtitle(item)}
+                        </span>
+                      )}
+                    </span>
+                    <ChevronRight
+                      aria-hidden
+                      className="size-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5"
+                    />
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <Pager
+              page={shown.page}
+              pages={shown.pages}
+              onPage={setPage}
+              label={title.toLowerCase()}
+            />
+          </>
         ) : (
           <p className="px-5 py-6 text-center text-sm text-muted-foreground">
             {query
@@ -291,7 +304,10 @@ export function ReferencePage<T extends RefItem>({
         <input
           type="checkbox"
           checked={showArchived}
-          onChange={(e) => setShowArchived(e.target.checked)}
+          onChange={(e) => {
+            setShowArchived(e.target.checked);
+            setArchivedPage(1);
+          }}
           className="size-5 accent-primary"
         />
         Show archived ({archived.length})
@@ -299,11 +315,11 @@ export function ReferencePage<T extends RefItem>({
 
       {showArchived && archived.length > 0 && (
         <section className="overflow-hidden rounded-xl border bg-surface shadow-card">
-          <ul className={scrollList}>
-            {archived.map((item) => (
+          <ul className={pagedList(shownArchived.pages)}>
+            {shownArchived.rows.map((item) => (
               <li
                 key={item.id}
-                className="flex items-center justify-between gap-3 px-5 py-3"
+                className="flex h-16 items-center justify-between gap-3 px-5"
               >
                 <span className="min-w-0">
                   <span className="block truncate font-medium text-muted-foreground">
@@ -324,6 +340,12 @@ export function ReferencePage<T extends RefItem>({
               </li>
             ))}
           </ul>
+          <Pager
+            page={shownArchived.page}
+            pages={shownArchived.pages}
+            onPage={setArchivedPage}
+            label="archived"
+          />
         </section>
       )}
 

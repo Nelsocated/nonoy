@@ -3,10 +3,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CloudOff, Tag } from "lucide-react";
 import { useRef, useState } from "react";
-import { scrollList } from "@/components/admin/reference-page";
+import { Pager } from "@/components/admin/pager";
 import { useOnline } from "@/components/offline/use-sync-data";
 import { ApiError } from "@/lib/api";
 import { api } from "@/lib/api/browser";
+import { pagedList, pageOf } from "@/lib/admin/paging";
 import { asOf } from "@/lib/offline/admin-cache";
 import { typedAmount } from "@/lib/trip/input";
 import { peso } from "@/lib/trip/money";
@@ -41,6 +42,7 @@ export default function PricePage() {
 
   const [value, setValue] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
   const confirm = useRef<HTMLDialogElement>(null);
 
   const setPrice = useMutation({
@@ -67,6 +69,7 @@ export default function PricePage() {
   }
 
   const price = current.data;
+  const shown = pageOf(history.data ?? [], page);
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -153,33 +156,41 @@ export default function PricePage() {
           </span>
         </h2>
         {history.data?.length ? (
-          <ul className={scrollList}>
-            {history.data.map((p, i) => (
-              <li
-                key={p.id}
-                className="flex min-h-14 items-center justify-between gap-3 px-5 py-3"
-              >
-                <span className="flex items-center gap-2">
-                  <span className="font-semibold tabular-nums">
-                    {peso(p.pricePerKilo)}
-                    <span className="font-normal text-muted-foreground">
-                      {" "}
-                      / kg
+          <>
+            <ul className={pagedList(shown.pages)}>
+              {shown.rows.map((p, i) => (
+                <li
+                  key={p.id}
+                  className="flex h-16 items-center justify-between gap-3 px-5"
+                >
+                  <span className="flex items-center gap-2">
+                    <span className="font-semibold tabular-nums">
+                      {peso(p.pricePerKilo)}
+                      <span className="font-normal text-muted-foreground">
+                        {" "}
+                        / kg
+                      </span>
                     </span>
+                    {shown.page === 1 && i === 0 && (
+                      <span className="rounded-full bg-success-soft px-2 py-0.5 text-xs font-medium text-success">
+                        Current
+                      </span>
+                    )}
                   </span>
-                  {i === 0 && (
-                    <span className="rounded-full bg-success-soft px-2 py-0.5 text-xs font-medium text-success">
-                      Current
-                    </span>
-                  )}
-                </span>
-                <span className="text-right text-sm text-muted-foreground">
-                  {p.setBy.name}
-                  <span className="block text-xs">{when(p.createdAt)}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
+                  <span className="text-right text-sm text-muted-foreground">
+                    {p.setBy.name}
+                    <span className="block text-xs">{when(p.createdAt)}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <Pager
+              page={shown.page}
+              pages={shown.pages}
+              onPage={setPage}
+              label="price history"
+            />
+          </>
         ) : (
           <p className="px-5 py-6 text-center text-sm text-muted-foreground">
             No price changes yet.

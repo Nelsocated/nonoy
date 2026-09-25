@@ -11,7 +11,9 @@ import {
 } from "lucide-react";
 import { useId, useRef, useState } from "react";
 import { useOnline } from "@/components/offline/use-sync-data";
+import { pagedList, pageOf } from "@/lib/admin/paging";
 import { groupByRole } from "@/lib/admin/users";
+import { Pager } from "./pager";
 import { ApiError } from "@/lib/api";
 import { api } from "@/lib/api/browser";
 import type { Role, User } from "@/lib/api/types";
@@ -54,6 +56,8 @@ export function UsersScreen({ meId }: { meId: string }) {
   });
 
   const [status, setStatus] = useState<string | null>(null);
+  // one page number per role group
+  const [pages, setPages] = useState<Partial<Record<Role, number>>>({});
   const [mode, setMode] = useState<Mode>("add");
   const [target, setTarget] = useState<User | null>(null);
   const [values, setValues] = useState<Values>(empty);
@@ -210,49 +214,64 @@ export function UsersScreen({ meId }: { meId: string }) {
       {users.isPending ? (
         <p className="text-sm text-muted-foreground">Loading…</p>
       ) : (
-        groupByRole(users.data ?? []).map((g) => (
-          <section key={g.role} className="space-y-2">
-            <h2 className="text-sm font-medium text-muted-foreground">
-              {g.label}
-            </h2>
-            <ul className="divide-y rounded-xl bg-surface shadow-card">
-              {g.users.map((u) => (
-                <li key={u.id}>
-                  <button
-                    type="button"
-                    onClick={() => open("menu", u)}
-                    disabled={!online}
-                    className="flex min-h-14 w-full items-center justify-between gap-3 px-5 py-3 text-left transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none disabled:hover:bg-transparent"
-                  >
-                    <span className="min-w-0">
-                      <span className="block truncate font-medium">
-                        {u.name}
-                        {u.id === meId && (
-                          <span className="font-normal text-muted-foreground">
-                            {" "}
-                            (you)
-                          </span>
-                        )}
-                      </span>
-                      <span className="text-sm text-muted-foreground tabular-nums">
-                        {u.phone ?? "No phone"}
-                      </span>
-                    </span>
-                    <span
-                      className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                        u.isActive
-                          ? "bg-success-soft text-success"
-                          : "bg-muted text-muted-foreground"
-                      }`}
+        groupByRole(users.data ?? []).map((g) => {
+          const shown = pageOf(g.users, pages[g.role] ?? 1);
+          return (
+            <section
+              key={g.role}
+              className="overflow-hidden rounded-xl border bg-surface shadow-card"
+            >
+              <h2 className="flex items-center justify-between border-b bg-muted/60 px-5 py-2.5 text-sm font-medium">
+                {g.label}
+                <span className="rounded-full bg-surface px-2 py-0.5 text-xs text-muted-foreground tabular-nums">
+                  {g.users.length}
+                </span>
+              </h2>
+              <ul className={pagedList(shown.pages)}>
+                {shown.rows.map((u) => (
+                  <li key={u.id}>
+                    <button
+                      type="button"
+                      onClick={() => open("menu", u)}
+                      disabled={!online}
+                      className="flex h-16 w-full items-center justify-between gap-3 px-5 py-3 text-left transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:outline-none disabled:hover:bg-transparent"
                     >
-                      {u.isActive ? "Active" : "Inactive"}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))
+                      <span className="min-w-0">
+                        <span className="block truncate font-medium">
+                          {u.name}
+                          {u.id === meId && (
+                            <span className="font-normal text-muted-foreground">
+                              {" "}
+                              (you)
+                            </span>
+                          )}
+                        </span>
+                        <span className="text-sm text-muted-foreground tabular-nums">
+                          {u.phone ?? "No phone"}
+                        </span>
+                      </span>
+                      <span
+                        className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                          u.isActive
+                            ? "bg-success-soft text-success"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {u.isActive ? "Active" : "Inactive"}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <Pager
+                page={shown.page}
+                pages={shown.pages}
+                onPage={(n) => setPages((p) => ({ ...p, [g.role]: n }))}
+                label={g.label.toLowerCase()}
+              />
+            </section>
+          );
+        })
       )}
 
       <dialog
