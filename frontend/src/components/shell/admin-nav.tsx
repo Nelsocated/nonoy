@@ -2,12 +2,20 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Tag, type LucideIcon } from "lucide-react";
+import {
+  LayoutDashboard,
+  Store,
+  Tag,
+  Warehouse,
+  type LucideIcon,
+} from "lucide-react";
 
 // add entries here as admin pages are built
 const NAV: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/price", label: "Price", icon: Tag },
+  { href: "/admin/buyers", label: "Buyers", icon: Store },
+  { href: "/admin/plantations", label: "Plantations", icon: Warehouse },
 ];
 
 // Shared by the desktop sidebar and the phone menu.
