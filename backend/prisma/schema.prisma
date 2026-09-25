@@ -45,6 +45,10 @@ model User {
   isActive         Boolean  @default(true)
   createdAt        DateTime @default(now())
   refreshTokenHash String?
+  // the token just rotated out, still accepted for a few seconds so two
+  // requests refreshing at once don't log the user out (see AuthService.refresh)
+  previousRefreshTokenHash String?
+  refreshRotatedAt         DateTime?
 
   trips        Trip[]
   activityLogs ActivityLog[]

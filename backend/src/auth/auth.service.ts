@@ -13,6 +13,16 @@ import { UsersService } from '../users/users.service.js';
 const hashToken = (token: string) =>
   createHash('sha256').update(token).digest('hex');
 
+const sameHash = (a: string, b: string | null) => {
+  if (!b) return false;
+  const x = Buffer.from(a, 'hex');
+  const y = Buffer.from(b, 'hex');
+  return x.length === y.length && timingSafeEqual(x, y);
+};
+
+// how long the refresh token just rotated out still works (racing requests)
+const REFRESH_GRACE_MS = 10_000;
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -27,7 +37,13 @@ export class AuthService {
     const isMatch = await bcrypt.compare(dto.password, user.passwordHash);
     if (!isMatch) return null;
 
-    const { passwordHash: _pw, refreshTokenHash: _rt, ...result } = user;
+    const {
+      passwordHash: _pw,
+      refreshTokenHash: _rt,
+      previousRefreshTokenHash: _prt,
+      refreshRotatedAt: _ra,
+      ...result
+    } = user;
     return result;
   }
 
@@ -54,18 +70,27 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    const presented = Buffer.from(hashToken(refreshToken), 'hex');
-    const stored = Buffer.from(user.refreshTokenHash, 'hex');
-    if (
-      presented.length !== stored.length ||
-      !timingSafeEqual(presented, stored)
-    ) {
-      throw new UnauthorizedException('Invalid refresh token');
-    }
+    const presented = hashToken(refreshToken);
 
     // rotate: the refresh token just used is replaced, so it can't be replayed.
     // Role comes from the DB, not the old token, so role changes take effect.
-    return this.issueTokens(user);
+    if (sameHash(presented, user.refreshTokenHash)) {
+      return this.issueTokens(user, user.refreshTokenHash);
+    }
+
+    // Grace window: two requests that refresh with the same cookie at once — the
+    // second presents the token the first just rotated out. It gets an access
+    // token only (refreshToken: null) so it can't rotate again and invalidate
+    // the token the first request handed back.
+    const rotatedAt = user.refreshRotatedAt?.getTime() ?? 0;
+    if (
+      sameHash(presented, user.previousRefreshTokenHash) &&
+      Date.now() - rotatedAt < REFRESH_GRACE_MS
+    ) {
+      return { accessToken: this.signAccess(user), refreshToken: null };
+    }
+
+    throw new UnauthorizedException('Invalid refresh token');
   }
 
   async logout(userId: string) {
@@ -73,13 +98,24 @@ export class AuthService {
     return { message: 'Logged out' };
   }
 
-  private async issueTokens(user: { id: string; role: string }) {
+  private signAccess(user: { id: string; role: string }) {
+    return this.jwtService.sign(
+      { sub: user.id, role: user.role },
+      {
+        secret: process.env.JWT_ACCESS_SECRET,
+        expiresIn: process.env.JWT_ACCESS_EXPIRY as StringValue,
+      },
+    );
+  }
+
+  // `rotatedFrom` = hash of the refresh token being replaced (refresh only)
+  private async issueTokens(
+    user: { id: string; role: string },
+    rotatedFrom: string | null = null,
+  ) {
     const payload = { sub: user.id, role: user.role };
 
-    const accessToken = this.jwtService.sign(payload, {
-      secret: process.env.JWT_ACCESS_SECRET,
-      expiresIn: process.env.JWT_ACCESS_EXPIRY as StringValue,
-    });
+    const accessToken = this.signAccess(user);
     // jwtid makes every refresh token unique, even two issued in the same second
     const refreshToken = this.jwtService.sign(payload, {
       secret: process.env.JWT_REFRESH_SECRET,
@@ -90,6 +126,7 @@ export class AuthService {
     await this.usersService.updateRefreshTokenHash(
       user.id,
       hashToken(refreshToken),
+      rotatedFrom,
     );
 
     return { accessToken, refreshToken };

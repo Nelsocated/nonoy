@@ -41,10 +41,19 @@ export class UsersService {
     return result;
   }
 
-  async updateRefreshTokenHash(id: string, refreshTokenHash: string | null) {
+  // `previous` is set only when rotating on refresh; login/logout clear it
+  async updateRefreshTokenHash(
+    id: string,
+    refreshTokenHash: string | null,
+    previous: string | null = null,
+  ) {
     return this.prisma.user.update({
       where: { id },
-      data: { refreshTokenHash },
+      data: {
+        refreshTokenHash,
+        previousRefreshTokenHash: previous,
+        refreshRotatedAt: previous ? new Date() : null,
+      },
     });
   }
 

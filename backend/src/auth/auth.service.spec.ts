@@ -12,8 +12,10 @@ describe('AuthService', () => {
   const users = {
     findByPhone: vi.fn(async (phone: string) => Object.values(db).find((u) => u.phone === phone) ?? null),
     findById: vi.fn(async (id: string) => db[id] ?? null),
-    updateRefreshTokenHash: vi.fn(async (id: string, h: string | null) => {
+    updateRefreshTokenHash: vi.fn(async (id: string, h: string | null, previous: string | null = null) => {
       db[id].refreshTokenHash = h;
+      db[id].previousRefreshTokenHash = previous;
+      db[id].refreshRotatedAt = previous ? new Date() : null;
     }),
   };
 
@@ -29,6 +31,7 @@ describe('AuthService', () => {
       u1: {
         id: 'u1', name: 'Ana', phone: '09170000001', role: 'WORKER', isActive: true,
         passwordHash: await bcrypt.hash('secret1', 4), refreshTokenHash: null,
+        previousRefreshTokenHash: null, refreshRotatedAt: null,
       },
     };
     const module: TestingModule = await Test.createTestingModule({
@@ -56,13 +59,43 @@ describe('AuthService', () => {
   });
 
   describe('refresh', () => {
-    it('rotates: new token works, the old one is rejected', async () => {
+    afterEach(() => vi.useRealTimers());
+
+    it('rotates: the new token works and keeps working', async () => {
       const { refreshToken: first } = await service.login(db.u1);
       const { refreshToken: second } = await service.refresh(first);
 
       expect(second).not.toBe(first);
+      await expect(service.refresh(second!)).resolves.toHaveProperty('accessToken');
+    });
+
+    // Two requests racing to refresh with the same cookie: the loser presents the
+    // just-rotated token. It gets an access token but no new refresh token, so it
+    // can't rotate again and knock out the winner's token.
+    it('accepts the just-rotated token for a short grace window, without rotating', async () => {
+      const { refreshToken: first } = await service.login(db.u1);
+      const { refreshToken: second } = await service.refresh(first);
+
+      const late = await service.refresh(first);
+      expect(late.accessToken).toEqual(expect.any(String));
+      expect(late.refreshToken).toBeNull();
+      await expect(service.refresh(second!)).resolves.toHaveProperty('accessToken');
+    });
+
+    it('rejects the old token once the grace window has passed', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      const { refreshToken: first } = await service.login(db.u1);
+      await service.refresh(first);
+
+      vi.setSystemTime(Date.now() + 11_000);
       await expect(service.refresh(first)).rejects.toThrow(UnauthorizedException);
-      await expect(service.refresh(second)).resolves.toHaveProperty('accessToken');
+    });
+
+    it('gives no grace after logout', async () => {
+      const { refreshToken: first } = await service.login(db.u1);
+      await service.refresh(first);
+      await service.logout('u1');
+      await expect(service.refresh(first)).rejects.toThrow(UnauthorizedException);
     });
 
     it('two tokens issued back-to-back are distinct (bcrypt 72-byte trap)', async () => {
