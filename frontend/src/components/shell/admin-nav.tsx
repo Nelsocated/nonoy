@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   Store,
   Tag,
+  Users,
   Warehouse,
   type LucideIcon,
 } from "lucide-react";
@@ -16,6 +17,7 @@ const NAV: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin/price", label: "Price", icon: Tag },
   { href: "/admin/buyers", label: "Buyers", icon: Store },
   { href: "/admin/plantations", label: "Plantations", icon: Warehouse },
+  { href: "/admin/users", label: "Users", icon: Users },
 ];
 
 // Shared by the desktop sidebar and the phone menu.
