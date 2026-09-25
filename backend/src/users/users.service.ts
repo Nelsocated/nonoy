@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateUserDto } from './users.dto.js';
 import { Role } from '../generated/prisma/enums.js';
@@ -28,14 +29,16 @@ export class UsersService {
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
 
-    const user = await this.prisma.user.create({
-      data: {
-        phone: dto.phone,
-        passwordHash,
-        name: dto.name,
-        role,
-      },
-    });
+    const user = await this.prisma.user
+      .create({
+        data: {
+          phone: dto.phone,
+          passwordHash,
+          name: dto.name,
+          role,
+        },
+      })
+      .catch(phoneTaken);
 
     const { passwordHash: _, ...result } = user;
     return result;
@@ -91,11 +94,9 @@ export class UsersService {
       if (owner && owner.id !== id)
         throw new ConflictException('That phone number is already used');
     }
-    return this.prisma.user.update({
-      where: { id },
-      data: dto,
-      select: UsersService.publicFields,
-    });
+    return this.prisma.user
+      .update({ where: { id }, data: dto, select: UsersService.publicFields })
+      .catch(phoneTaken);
   }
 
   // clears every refresh token: they're logged out on all devices
@@ -122,4 +123,11 @@ export class UsersService {
       select: UsersService.publicFields,
     });
   }
+}
+
+// the phone check above can race another save; the unique index still wins
+function phoneTaken(err: unknown): never {
+  if (err instanceof PrismaClientKnownRequestError && err.code === 'P2002')
+    throw new ConflictException('That phone number is already used');
+  throw err;
 }

@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConflictException, NotFoundException } from '@nestjs/common';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
 import { UsersService } from './users.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -9,6 +10,7 @@ describe('UsersService', () => {
 
   beforeEach(async () => {
     vi.resetAllMocks();
+    prisma.user.update.mockResolvedValue({}); // Prisma returns a promise
     const module: TestingModule = await Test.createTestingModule({
       providers: [UsersService, { provide: PrismaService, useValue: prisma }],
     }).compile();
@@ -33,6 +35,24 @@ describe('UsersService', () => {
       new ConflictException('That phone number is already used'),
     );
     expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+
+  // two edits racing for the same number: the loser gets the friendly 409
+  it('turns a unique-phone race into a 409, not a 500', async () => {
+    prisma.user.findUnique.mockImplementation(async ({ where }) =>
+      where.id ? { id: 'u1' } : null,
+    );
+    prisma.user.update.mockRejectedValue(
+      new PrismaClientKnownRequestError('Unique constraint failed', {
+        code: 'P2002',
+        clientVersion: 'test',
+      }),
+    );
+    await expect(
+      service.update('u1', { phone: '09170000002' }),
+    ).rejects.toThrow(
+      new ConflictException('That phone number is already used'),
+    );
   });
 
   it('404s for an unknown user', async () => {

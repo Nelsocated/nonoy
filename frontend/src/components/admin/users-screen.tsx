@@ -305,7 +305,12 @@ export function UsersScreen({ meId }: { meId: string }) {
           <form onSubmit={submit} noValidate className="mt-4 space-y-4">
             {(mode === "add" || mode === "edit") && (
               <>
-                {field("name", "Name", { autoComplete: "off" })}
+                {field("name", "Name", {
+                  // the dialog is already open when switching steps, so
+                  // move focus into the new step ourselves
+                  autoFocus: true,
+                  autoComplete: "off",
+                })}
                 {field("phone", "Phone", {
                   inputMode: "tel",
                   autoComplete: "off",
@@ -346,6 +351,7 @@ export function UsersScreen({ meId }: { meId: string }) {
                   password.
                 </p>
                 {field("password", "New password", {
+                  autoFocus: true,
                   type: "password",
                   autoComplete: "new-password",
                 })}

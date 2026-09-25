@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArchiveRestore,
+  CircleAlert,
   CircleCheck,
   CloudOff,
   Plus,
@@ -77,7 +78,9 @@ export function ReferencePage<T extends RefItem>({
 
   const [query, setQuery] = useState("");
   const [showArchived, setShowArchived] = useState(false);
-  const [status, setStatus] = useState<string | null>(null);
+  const [status, setStatus] = useState<{ text: string; ok: boolean } | null>(
+    null,
+  );
   const [editing, setEditing] = useState<T | "new" | null>(null);
   const [values, setValues] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -85,7 +88,7 @@ export function ReferencePage<T extends RefItem>({
   const confirm = useRef<HTMLDialogElement>(null);
 
   const done = (text: string) => {
-    setStatus(text);
+    setStatus({ text, ok: true });
     void queryClient.invalidateQueries({ queryKey: [queryKey] });
   };
 
@@ -116,7 +119,11 @@ export function ReferencePage<T extends RefItem>({
   const restore = useMutation({
     mutationFn: (id: string) => api.restore(id),
     onSuccess: () => done("Restored."),
-    onError: (e) => setStatus(message(e, `Couldn't restore the ${singular}.`)),
+    onError: (e) =>
+      setStatus({
+        text: message(e, `Couldn't restore the ${singular}.`),
+        ok: false,
+      }),
   });
 
   function open(item: T | "new") {
@@ -176,8 +183,19 @@ export function ReferencePage<T extends RefItem>({
 
       <p role="status" className="empty:hidden">
         {status && (
-          <span className="flex items-center gap-2 rounded-xl bg-success-soft px-4 py-3 text-sm font-medium text-success">
-            <CircleCheck aria-hidden className="size-5 shrink-0" /> {status}
+          <span
+            className={`flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-medium ${
+              status.ok
+                ? "bg-success-soft text-success"
+                : "bg-danger-soft text-danger"
+            }`}
+          >
+            {status.ok ? (
+              <CircleCheck aria-hidden className="size-5 shrink-0" />
+            ) : (
+              <CircleAlert aria-hidden className="size-5 shrink-0" />
+            )}{" "}
+            {status.text}
           </span>
         )}
       </p>
