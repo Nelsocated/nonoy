@@ -1,4 +1,6 @@
+import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { Decimal } from '@prisma/client/runtime/client';
 import { SalesService } from './sales.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ActivityLogsService } from '../activity-logs/activity-logs.service.js';
@@ -9,6 +11,7 @@ describe('SalesService', () => {
   const tx = { sale: { findUnique: vi.fn(), create: vi.fn() } };
   const prisma = {
     $transaction: vi.fn((fn: (t: typeof tx) => unknown) => fn(tx)),
+    sale: { findUnique: vi.fn() },
   };
   const logs = { record: vi.fn() };
   const access = { assertOwnership: vi.fn() };
@@ -150,6 +153,66 @@ describe('SalesService', () => {
     it('still accepts sales from older app versions that send no price', async () => {
       await service.create(sale('2026-01-01T10:00:00Z'), 'w1');
       expect(tx.sale.create.mock.calls[0][0].data.pricePerKilo).toBeUndefined();
+    });
+  });
+
+  describe('receipt', () => {
+    const row = (over = {}) => ({
+      clientId: 'c1',
+      tripId: 't1',
+      createdAtClient: new Date('2026-09-26T06:41:00Z'),
+      chickenCount: 12,
+      totalKilo: new Decimal('10.5'),
+      pricePerKilo: new Decimal('180'),
+      amount: new Decimal('1890'),
+      paymentMethod: 'CASH',
+      buyer: { name: 'Aling Nena' },
+      trip: { worker: { name: 'Juan' } },
+      ...over,
+    });
+
+    it('returns the receipt with buyer and worker names, 2-decimal numbers', async () => {
+      prisma.sale.findUnique.mockResolvedValue(row());
+      expect(await service.receipt('c1')).toEqual({
+        clientId: 'c1',
+        tripId: 't1',
+        createdAtClient: new Date('2026-09-26T06:41:00Z'),
+        workerName: 'Juan',
+        buyerName: 'Aling Nena',
+        chickenCount: 12,
+        totalKilo: '10.50',
+        pricePerKilo: '180.00',
+        amount: '1890.00',
+        paymentMethod: 'CASH',
+      });
+      expect(prisma.sale.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { clientId: 'c1' } }),
+      );
+    });
+
+    it('walk-in and pre-price sales → nulls', async () => {
+      prisma.sale.findUnique.mockResolvedValue(
+        row({ buyer: null, pricePerKilo: null }),
+      );
+      const r = await service.receipt('c1');
+      expect(r.buyerName).toBeNull();
+      expect(r.pricePerKilo).toBeNull();
+    });
+
+    it('archived buyer still named (no archived filter)', async () => {
+      prisma.sale.findUnique.mockResolvedValue(
+        row({ buyer: { name: 'Old Buyer' } }),
+      );
+      expect((await service.receipt('c1')).buyerName).toBe('Old Buyer');
+      const args = prisma.sale.findUnique.mock.calls[0][0];
+      expect(JSON.stringify(args)).not.toContain('archivedAt');
+    });
+
+    it('unknown sale → 404', async () => {
+      prisma.sale.findUnique.mockResolvedValue(null);
+      await expect(service.receipt('nope')).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
   });
 });

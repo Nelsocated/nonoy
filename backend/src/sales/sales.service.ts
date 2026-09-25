@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Decimal } from '@prisma/client/runtime/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ActivityLogsService } from '../activity-logs/activity-logs.service.js';
@@ -98,5 +102,30 @@ export class SalesService {
       where: { syncStatus: SyncStatus.CONFLICT },
       orderBy: { createdAtClient: 'desc' },
     });
+  }
+
+  // one sale for the owner's receipt screen; archived buyers keep their name
+  async receipt(clientId: string) {
+    const sale = await this.prisma.sale.findUnique({
+      where: { clientId },
+      include: {
+        buyer: { select: { name: true } },
+        trip: { select: { worker: { select: { name: true } } } },
+      },
+    });
+    if (!sale) throw new NotFoundException('Sale not found');
+
+    return {
+      clientId: sale.clientId,
+      tripId: sale.tripId,
+      createdAtClient: sale.createdAtClient,
+      workerName: sale.trip.worker.name,
+      buyerName: sale.buyer?.name ?? null,
+      chickenCount: sale.chickenCount,
+      totalKilo: sale.totalKilo.toFixed(2),
+      pricePerKilo: sale.pricePerKilo?.toFixed(2) ?? null,
+      amount: sale.amount.toFixed(2),
+      paymentMethod: sale.paymentMethod,
+    };
   }
 }

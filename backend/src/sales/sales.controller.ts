@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Query, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  ParseUUIDPipe,
+  Query,
+  Req,
+} from '@nestjs/common';
 import { SalesService } from './sales.service.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { Role } from '../generated/prisma/enums.js';
@@ -23,5 +32,11 @@ export class SalesController {
   findAll(@Query('conflicted') conflicted?: string) {
     if (conflicted === 'true') return this.salesService.findConflicted();
     return this.salesService.getAll();
+  }
+
+  @Roles(Role.OWNER, Role.ADMIN)
+  @Get(':clientId/receipt')
+  receipt(@Param('clientId', ParseUUIDPipe) clientId: string) {
+    return this.salesService.receipt(clientId);
   }
 }
