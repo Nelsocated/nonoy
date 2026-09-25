@@ -12,7 +12,9 @@ describe('RecountsService', () => {
     pickup: { aggregate: vi.fn() },
     sale: { aggregate: vi.fn() },
   };
-  const prisma = { $transaction: vi.fn((fn: (t: typeof tx) => unknown) => fn(tx)) };
+  const prisma = {
+    $transaction: vi.fn((fn: (t: typeof tx) => unknown) => fn(tx)),
+  };
   const logs = { record: vi.fn() };
   const access = { assertOwnership: vi.fn() };
 
@@ -26,13 +28,19 @@ describe('RecountsService', () => {
   };
 
   const sums = (chicken: number | null, kilo: string | null) => ({
-    _sum: { chickenCount: chicken, totalKilo: kilo === null ? null : new Decimal(kilo) },
+    _sum: {
+      chickenCount: chicken,
+      totalKilo: kilo === null ? null : new Decimal(kilo),
+    },
   });
 
   beforeEach(async () => {
     vi.clearAllMocks();
     tx.recount.findUnique.mockResolvedValue(null);
-    tx.recount.create.mockImplementation(async ({ data }) => ({ id: 'rc1', ...data }));
+    tx.recount.create.mockImplementation(async ({ data }) => ({
+      id: 'rc1',
+      ...data,
+    }));
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -65,11 +73,33 @@ describe('RecountsService', () => {
     expect(rc.discrepancyFlagged).toBe(true);
   });
 
+  it('only counts pickups and sales recorded up to the recount', async () => {
+    tx.pickup.aggregate.mockResolvedValue(sums(100, '200.50'));
+    tx.sale.aggregate.mockResolvedValue(sums(30, '60.25'));
+
+    await service.create(dto, 'w1');
+
+    // a sale made after the count (synced in the same batch) must not shrink "expected"
+    const where = {
+      tripId: 't1',
+      createdAtClient: { lte: new Date('2026-01-01T10:00:00Z') },
+    };
+    expect(tx.pickup.aggregate).toHaveBeenCalledWith(
+      expect.objectContaining({ where }),
+    );
+    expect(tx.sale.aggregate).toHaveBeenCalledWith(
+      expect.objectContaining({ where }),
+    );
+  });
+
   it('treats a trip with no sales yet as zero sold', async () => {
     tx.pickup.aggregate.mockResolvedValue(sums(50, '100'));
     tx.sale.aggregate.mockResolvedValue(sums(null, null));
 
-    const rc = await service.create({ ...dto, countedChicken: 50, countedKilo: '100' }, 'w1');
+    const rc = await service.create(
+      { ...dto, countedChicken: 50, countedKilo: '100' },
+      'w1',
+    );
     expect(rc.expectedChicken).toBe(50);
     expect(rc.discrepancyFlagged).toBe(false);
   });

@@ -25,15 +25,20 @@ export class RecountsService {
       });
       if (existing) return existing;
 
-      // Sum everything picked up and sold on this trip so far — this is
-      // the "expected" baseline the worker's physical count gets checked against
+      // Sum everything picked up and sold on this trip up to the moment of the
+      // count — the "expected" baseline the worker's physical count gets checked
+      // against. Records made after it (often synced in the same batch) don't count.
+      const where = {
+        tripId: dto.tripId,
+        createdAtClient: { lte: new Date(dto.createdAtClient) },
+      };
       const [pickups, sales] = await Promise.all([
         tx.pickup.aggregate({
-          where: { tripId: dto.tripId },
+          where,
           _sum: { chickenCount: true, totalKilo: true },
         }),
         tx.sale.aggregate({
-          where: { tripId: dto.tripId },
+          where,
           _sum: { chickenCount: true, totalKilo: true },
         }),
       ]);
