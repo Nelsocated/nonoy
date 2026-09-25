@@ -1,5 +1,5 @@
-import { logout } from "@/app/(auth)/login/actions";
 import type { SessionUser } from "@/lib/api/types";
+import { LogoutButton } from "./logout-button";
 
 const ROLE_LABEL = {
   OWNER: "Owner",
@@ -14,14 +14,7 @@ export function UserMenu({ user }: { user: SessionUser }) {
         <p className="truncate text-sm font-medium">{user.name}</p>
         <p className="text-xs text-muted-foreground">{ROLE_LABEL[user.role]}</p>
       </div>
-      <form action={logout}>
-        <button
-          type="submit"
-          className="rounded-md px-3 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-        >
-          Log out
-        </button>
-      </form>
+      <LogoutButton userId={user.id} />
     </div>
   );
 }

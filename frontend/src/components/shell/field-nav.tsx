@@ -1,7 +1,10 @@
 import { NavLink, type NavItem } from "./nav-link";
 
 // add entries here as field pages are built
-const NAV: NavItem[] = [{ href: "/field", label: "Home" }];
+const NAV: NavItem[] = [
+  { href: "/field", label: "Home" },
+  { href: "/field/sync", label: "Sync" },
+];
 
 export function FieldNav() {
   return (

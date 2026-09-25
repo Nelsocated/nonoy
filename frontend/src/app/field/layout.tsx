@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Logo } from "@/components/logo";
 import { OfflineProvider } from "@/components/offline/offline-provider";
+import { SyncBar } from "@/components/offline/sync-bar";
 import { FieldNav } from "@/components/shell/field-nav";
 import { UserMenu } from "@/components/shell/user-menu";
 import { getSession } from "@/lib/auth/session";
@@ -17,6 +18,7 @@ export default async function FieldLayout({ children }: LayoutProps<"/field">) {
             <UserMenu user={session.user} />
           </div>
         </header>
+        <SyncBar />
         <main className="mx-auto w-full max-w-md flex-1 px-4 py-6">
           {children}
         </main>
