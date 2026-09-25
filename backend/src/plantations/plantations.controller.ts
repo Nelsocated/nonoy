@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
 } from '@nestjs/common';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { Role } from '../generated/prisma/enums.js';
@@ -17,9 +18,10 @@ export class PlantationsController {
   constructor(private plantationsService: PlantationsService) {}
 
   // Workers need this list to pick a plantation when recording a pickup
+  // ?include=archived is for the owner/admin screen; phones get active only
   @Get()
-  findAll() {
-    return this.plantationsService.findAll();
+  findAll(@Query('include') include?: string) {
+    return this.plantationsService.findAll(include === 'archived');
   }
 
   @Get(':id')
@@ -46,5 +48,11 @@ export class PlantationsController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.plantationsService.remove(id);
+  }
+
+  @Roles(Role.OWNER, Role.ADMIN)
+  @Patch(':id/restore')
+  restore(@Param('id') id: string) {
+    return this.plantationsService.restore(id);
   }
 }

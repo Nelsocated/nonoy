@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
 } from '@nestjs/common';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { BuyersService } from './buyers.service.js';
@@ -18,9 +19,10 @@ export class BuyersController {
 
   // Any authenticated user (worker included) can look up/create buyers —
   // needed for recording sales on the road
+  // ?include=archived is for the owner/admin screen; phones get active only
   @Get()
-  findAll() {
-    return this.buyersService.findAll();
+  findAll(@Query('include') include?: string) {
+    return this.buyersService.findAll(include === 'archived');
   }
 
   @Get(':id')
@@ -43,5 +45,11 @@ export class BuyersController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.buyersService.remove(id);
+  }
+
+  @Roles(Role.OWNER, Role.ADMIN)
+  @Patch(':id/restore')
+  restore(@Param('id') id: string) {
+    return this.buyersService.restore(id);
   }
 }

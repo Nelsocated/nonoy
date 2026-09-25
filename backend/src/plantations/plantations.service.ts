@@ -10,8 +10,12 @@ export class PlantationsService {
     return this.prisma.plantation.create({ data: dto });
   }
 
-  async findAll() {
-    return this.prisma.plantation.findMany({ orderBy: { name: 'asc' } });
+  // phones pull the default list, so archived plantations drop off their pick lists
+  async findAll(includeArchived = false) {
+    return this.prisma.plantation.findMany({
+      where: includeArchived ? {} : { archivedAt: null },
+      orderBy: { name: 'asc' },
+    });
   }
 
   async findOne(id: string) {
@@ -27,8 +31,30 @@ export class PlantationsService {
     return this.prisma.plantation.update({ where: { id }, data: dto });
   }
 
+  // no pickups → gone for good; with pickups → archived so history keeps the name
   async remove(id: string) {
+    return this.prisma.$transaction(async (tx) => {
+      const row = await tx.plantation.findUnique({ where: { id } });
+      if (!row) throw new NotFoundException('Plantation not found');
+      const uses = await tx.pickup.count({ where: { plantationId: id } });
+      if (uses === 0) {
+        await tx.plantation.delete({ where: { id } });
+        return { result: 'deleted' as const, uses };
+      }
+      if (!row.archivedAt)
+        await tx.plantation.update({
+          where: { id },
+          data: { archivedAt: new Date() },
+        });
+      return { result: 'archived' as const, uses };
+    });
+  }
+
+  async restore(id: string) {
     await this.findOne(id);
-    return this.prisma.plantation.delete({ where: { id } });
+    return this.prisma.plantation.update({
+      where: { id },
+      data: { archivedAt: null },
+    });
   }
 }

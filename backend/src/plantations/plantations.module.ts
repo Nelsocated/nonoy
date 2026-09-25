@@ -4,6 +4,6 @@ import { PlantationsController } from './plantations.controller.js';
 
 @Module({
   providers: [PlantationsService],
-  controllers: [PlantationsController]
+  controllers: [PlantationsController],
 })
 export class PlantationsModule {}

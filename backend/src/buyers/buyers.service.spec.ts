@@ -1,20 +1,96 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { NotFoundException } from '@nestjs/common';
 import { BuyersService } from './buyers.service.js';
+import { PrismaService } from '../prisma/prisma.service.js';
 
 describe('BuyersService', () => {
   let service: BuyersService;
+  const tx = {
+    buyer: { findUnique: vi.fn(), delete: vi.fn(), update: vi.fn() },
+    sale: { count: vi.fn() },
+  };
+  const prisma = {
+    buyer: { findMany: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
+    $transaction: vi.fn(),
+  };
 
   beforeEach(async () => {
+    vi.resetAllMocks();
+    prisma.$transaction.mockImplementation((fn: (t: typeof tx) => unknown) =>
+      fn(tx),
+    );
     const module: TestingModule = await Test.createTestingModule({
-      providers: [BuyersService],
-    })
-      .useMocker(() => ({})) // auto-mock every dependency
-      .compile();
-
-    service = module.get<BuyersService>(BuyersService);
+      providers: [BuyersService, { provide: PrismaService, useValue: prisma }],
+    }).compile();
+    service = module.get(BuyersService);
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
+  it('lists only active buyers by default (what phones pull)', async () => {
+    await service.findAll();
+    expect(prisma.buyer.findMany).toHaveBeenCalledWith({
+      where: { archivedAt: null },
+      orderBy: { name: 'asc' },
+    });
+  });
+
+  it('lists archived ones too when asked', async () => {
+    await service.findAll(true);
+    expect(prisma.buyer.findMany).toHaveBeenCalledWith({
+      where: {},
+      orderBy: { name: 'asc' },
+    });
+  });
+
+  it('deletes a buyer with no sales', async () => {
+    tx.buyer.findUnique.mockResolvedValue({ id: 'b1', archivedAt: null });
+    tx.sale.count.mockResolvedValue(0);
+    await expect(service.remove('b1')).resolves.toEqual({
+      result: 'deleted',
+      uses: 0,
+    });
+    expect(tx.buyer.delete).toHaveBeenCalledWith({ where: { id: 'b1' } });
+  });
+
+  it('archives a buyer that has sales, keeping history', async () => {
+    tx.buyer.findUnique.mockResolvedValue({ id: 'b1', archivedAt: null });
+    tx.sale.count.mockResolvedValue(12);
+    await expect(service.remove('b1')).resolves.toEqual({
+      result: 'archived',
+      uses: 12,
+    });
+    expect(tx.buyer.delete).not.toHaveBeenCalled();
+    expect(tx.buyer.update).toHaveBeenCalledWith({
+      where: { id: 'b1' },
+      data: { archivedAt: expect.any(Date) },
+    });
+  });
+
+  it('removing an already archived buyer leaves it archived', async () => {
+    tx.buyer.findUnique.mockResolvedValue({
+      id: 'b1',
+      archivedAt: new Date('2026-09-01'),
+    });
+    tx.sale.count.mockResolvedValue(3);
+    await expect(service.remove('b1')).resolves.toEqual({
+      result: 'archived',
+      uses: 3,
+    });
+    expect(tx.buyer.update).not.toHaveBeenCalled();
+  });
+
+  it('404s for an unknown buyer on remove and restore', async () => {
+    tx.buyer.findUnique.mockResolvedValue(null);
+    prisma.buyer.findUnique.mockResolvedValue(null);
+    await expect(service.remove('x')).rejects.toThrow(NotFoundException);
+    await expect(service.restore('x')).rejects.toThrow(NotFoundException);
+  });
+
+  it('restore clears archivedAt', async () => {
+    prisma.buyer.findUnique.mockResolvedValue({ id: 'b1' });
+    await service.restore('b1');
+    expect(prisma.buyer.update).toHaveBeenCalledWith({
+      where: { id: 'b1' },
+      data: { archivedAt: null },
+    });
   });
 });
