@@ -1,4 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
+import {
+  PrismaClientInitializationError,
+  PrismaClientKnownRequestError,
+  PrismaClientRustPanicError,
+} from '@prisma/client/runtime/client';
 import { TripsService } from '../trips/trips.service.js';
 import { PickupsService } from '../pickups/pickups.service.js';
 import { SalesService } from '../sales/sales.service.js';
@@ -139,6 +144,9 @@ export class SyncService {
    * Runs one sync item in isolation — a failure here (bad data, ownership
    * violation, whatever) must NOT abort the rest of the batch. One bad
    * item shouldn't block 50 good ones from syncing.
+   * Except when the database itself is failing: that's re-thrown so the
+   * request fails (5xx) and the phone retries later, instead of marking
+   * perfectly good records as bad.
    */
   private async safely(
     clientId: string,
@@ -148,6 +156,7 @@ export class SyncService {
       const record = await fn();
       return { clientId, status: 'ok', serverId: record.id };
     } catch (err) {
+      if (isInfrastructureError(err)) throw err;
       this.logger.warn(
         `Sync item ${clientId} failed: ${(err as Error).message}`,
       );
@@ -161,4 +170,29 @@ function partition<T>(items: T[], test: (item: T) => boolean): [T[], T[]] {
   const no: T[] = [];
   for (const item of items) (test(item) ? yes : no).push(item);
   return [yes, no];
+}
+
+// Prisma codes for "the database isn't working" rather than "this record is bad":
+// P1xxx connection/auth/timeout, P2024 pool timeout, P2028 transaction timeout,
+// P2034 write conflict/deadlock, P2037 too many connections
+const INFRA_CODES = new Set(['P2024', 'P2028', 'P2034', 'P2037']);
+const NETWORK_CODES = new Set([
+  'ECONNREFUSED',
+  'ECONNRESET',
+  'ETIMEDOUT',
+  'EPIPE',
+  'ENOTFOUND',
+  'EAI_AGAIN',
+]);
+
+function isInfrastructureError(err: unknown): boolean {
+  if (
+    err instanceof PrismaClientInitializationError ||
+    err instanceof PrismaClientRustPanicError
+  )
+    return true;
+  if (err instanceof PrismaClientKnownRequestError)
+    return err.code.startsWith('P1') || INFRA_CODES.has(err.code);
+  const code = (err as { code?: unknown } | null)?.code;
+  return typeof code === 'string' && NETWORK_CODES.has(code);
 }

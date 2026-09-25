@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
 import { SyncService } from './sync.service.js';
 import { TripsService } from '../trips/trips.service.js';
 import { PickupsService } from '../pickups/pickups.service.js';
@@ -140,6 +141,43 @@ describe('SyncService', () => {
       { clientId: 'good', status: 'ok', serverId: 'srv-good' },
     ]);
     expect(res.recounts[0].status).toBe('ok');
+  });
+
+  // A database outage isn't the record's fault: failing the whole request (5xx)
+  // makes the phone retry later instead of marking good records as bad.
+  it('fails the whole batch when the database is down', async () => {
+    sales.create.mockRejectedValueOnce(
+      new PrismaClientKnownRequestError("Can't reach database server", {
+        code: 'P1001',
+        clientVersion: 'test',
+      }),
+    );
+    await expect(
+      service.processBatch({ sales: [{ clientId: 's1' }] } as any, 'w1'),
+    ).rejects.toThrow(/reach database/);
+
+    trips.create.mockRejectedValueOnce(
+      Object.assign(new Error('connect ECONNREFUSED'), {
+        code: 'ECONNREFUSED',
+      }),
+    );
+    await expect(
+      service.processBatch({ trips: [{ clientId: 't1' }] } as any, 'w1'),
+    ).rejects.toThrow(/ECONNREFUSED/);
+  });
+
+  it('still isolates data errors to their own item', async () => {
+    sales.create.mockRejectedValueOnce(
+      new PrismaClientKnownRequestError('Foreign key constraint violated', {
+        code: 'P2003',
+        clientVersion: 'test',
+      }),
+    );
+    const res = await service.processBatch(
+      { sales: [{ clientId: 'bad' }, { clientId: 'good' }] } as any,
+      'w1',
+    );
+    expect(res.sales.map((s) => s.status)).toEqual(['error', 'ok']);
   });
 
   it('creates trips one at a time, not concurrently', async () => {
