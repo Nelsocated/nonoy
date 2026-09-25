@@ -188,7 +188,6 @@ export default function PricePage() {
         <div className="mt-6 flex flex-col gap-2">
           <button
             type="button"
-            autoFocus
             onClick={() => {
               confirm.current?.close();
               setPrice.mutate(value.trim());
@@ -197,8 +196,10 @@ export default function PricePage() {
           >
             Set price
           </button>
+          {/* focus the safe choice: Enter shouldn't change every worker's price */}
           <button
             type="button"
+            autoFocus
             onClick={() => confirm.current?.close()}
             className={`${button} text-muted-foreground hover:bg-muted`}
           >
