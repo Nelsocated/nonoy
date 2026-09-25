@@ -9,5 +9,8 @@ export default defineConfig({
     globals: true,
     root: './',
     include: ['**/*.spec.ts'],
+    // Nest TestingModule setup in beforeEach can pass the 10s default when
+    // the laptop is busy
+    hookTimeout: 30_000,
   },
 });
