@@ -112,6 +112,36 @@ describe("pullInto", () => {
     });
   });
 
+  it("keeps the price each sale was made at", async () => {
+    const db = testDb();
+    const sale = {
+      id: "s1",
+      clientId: "c1",
+      tripId: "t1",
+      buyerId: null,
+      chickenCount: 1,
+      totalKilo: "2.00",
+      amount: "360.00",
+      pricePerKilo: "180.00",
+      listPricePerKilo: "190.00",
+      paymentMethod: "CASH",
+      syncStatus: "SYNCED",
+      conflictReason: null,
+      createdAtClient: "2026-09-25T01:00:00Z",
+      syncedAt: "",
+      buyer: null,
+    };
+    await pullInto(
+      db,
+      "w1",
+      fakeApi({ trips: [trip("t1", "2026-09-25T01:00:00Z")], sales: [sale] }),
+    );
+    expect(await db.sales.get("c1")).toMatchObject({
+      pricePerKilo: "180.00",
+      listPricePerKilo: "190.00",
+    });
+  });
+
   it("fetches full details for the 5 most recent trips only", async () => {
     const db = testDb();
     const trips = Array.from({ length: 7 }, (_, i) =>
@@ -156,6 +186,21 @@ describe("pullInto — owner price", () => {
       current: async () => null,
     };
     await pullInto(db, "w1", api);
+    expect((await db.meta.get("price"))?.value).toMatchObject({
+      pricePerKilo: "170.00",
+    });
+  });
+  it("still refreshes everything else when the price can't be fetched", async () => {
+    const db = testDb();
+    await db.meta.put({ key: "price", value: { pricePerKilo: "170.00" } });
+    const api = fakeApi();
+    (api as unknown as { prices: unknown }).prices = {
+      current: async () => {
+        throw new Error("prices down");
+      },
+    };
+    await pullInto(db, "w1", api);
+    expect(await db.buyers.count()).toBe(1);
     expect((await db.meta.get("price"))?.value).toMatchObject({
       pricePerKilo: "170.00",
     });

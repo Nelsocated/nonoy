@@ -18,7 +18,8 @@ export async function pullInto(
     api.plantations.list(),
     api.trips.mine(),
     api.expenses.mine(),
-    api.prices.current(),
+    // optional extra: a failed price fetch keeps the saved price, not the old data
+    api.prices.current().catch(() => null),
   ]);
   const details = await Promise.all(
     trips.slice(0, RECENT_TRIPS).map((t) => api.reports.trip(t.id)),
@@ -100,6 +101,8 @@ export async function pullInto(
             chickenCount: s.chickenCount,
             totalKilo: s.totalKilo,
             amount: s.amount,
+            pricePerKilo: s.pricePerKilo,
+            listPricePerKilo: s.listPricePerKilo,
             paymentMethod: s.paymentMethod,
             createdAtClient: s.createdAtClient,
             userId,
