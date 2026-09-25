@@ -37,6 +37,14 @@ export type User = {
 export type RegisterInput = { phone: string; password: string; name: string };
 export type CreateUserInput = RegisterInput & { role: Role };
 
+// ---- price ----
+export type Price = {
+  id: string;
+  pricePerKilo: Decimal;
+  createdAt: IsoDate;
+  setBy: Ref;
+};
+
 // ---- reference data ----
 export type Plantation = {
   id: string;
@@ -85,6 +93,9 @@ export type Sale = Synced & {
   totalKilo: Decimal;
   amount: Decimal;
   paymentMethod: PaymentMethod;
+  /** charged / owner's price the phone had; null on sales from older app versions */
+  pricePerKilo: Decimal | null;
+  listPricePerKilo: Decimal | null;
   syncStatus: SyncStatus;
   conflictReason: string | null;
 };
@@ -128,6 +139,8 @@ export type CreateSaleInput = Logged & {
   chickenCount: number;
   totalKilo: Decimal;
   amount: Decimal;
+  pricePerKilo?: Decimal;
+  listPricePerKilo?: Decimal;
   paymentMethod?: PaymentMethod;
 };
 export type CreateRecountInput = Logged & {
@@ -206,6 +219,8 @@ export type DiscrepancyReport = RangeInfo & {
     kiloDifference: Decimal;
   })[];
   conflictedSales: (Sale & { trip: TripRef; buyer: Ref | null })[];
+  /** worker edited the owner's price */
+  priceChangedSales: (Sale & { trip: TripRef; buyer: Ref | null })[];
 };
 export type TripDetail = Trip & {
   worker: Ref;

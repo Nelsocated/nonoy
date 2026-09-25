@@ -5,6 +5,7 @@ import { buyers } from "./endpoints/buyers";
 import { expenses } from "./endpoints/expenses";
 import { pickups } from "./endpoints/pickups";
 import { plantations } from "./endpoints/plantations";
+import { prices } from "./endpoints/prices";
 import { recounts } from "./endpoints/recounts";
 import { reports } from "./endpoints/reports";
 import { sales } from "./endpoints/sales";
@@ -18,6 +19,7 @@ export function createApi(http: Http) {
     users: users(http),
     buyers: buyers(http),
     plantations: plantations(http),
+    prices: prices(http),
     trips: trips(http),
     pickups: pickups(http),
     sales: sales(http),

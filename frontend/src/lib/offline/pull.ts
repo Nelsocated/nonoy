@@ -8,13 +8,17 @@ const RECENT_TRIPS = 5;
 export async function pullInto(
   db: OfflineDb,
   userId: string,
-  api: Pick<Api, "buyers" | "plantations" | "trips" | "expenses" | "reports">,
+  api: Pick<
+    Api,
+    "buyers" | "plantations" | "trips" | "expenses" | "reports" | "prices"
+  >,
 ) {
-  const [buyers, plantations, trips, expenses] = await Promise.all([
+  const [buyers, plantations, trips, expenses, price] = await Promise.all([
     api.buyers.list(),
     api.plantations.list(),
     api.trips.mine(),
     api.expenses.mine(),
+    api.prices.current(),
   ]);
   const details = await Promise.all(
     trips.slice(0, RECENT_TRIPS).map((t) => api.reports.trip(t.id)),
@@ -106,6 +110,17 @@ export async function pullInto(
             error: s.conflictReason ?? undefined,
           })),
         );
+      }
+      // owner's price for offline sales; keep the last one if none is set
+      if (price) {
+        await db.meta.put({
+          key: "price",
+          value: {
+            pricePerKilo: price.pricePerKilo,
+            setAt: price.createdAt,
+            fetchedAt: new Date().toISOString(),
+          },
+        });
       }
       await db.meta.put({
         key: `lastPullAt:${userId}`,

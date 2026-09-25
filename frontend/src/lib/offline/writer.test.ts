@@ -38,7 +38,8 @@ describe("writer", () => {
       tripId,
       chickenCount: 3,
       totalKilo: "4.50",
-      amount: "900.00",
+      pricePerKilo: "200.00",
+      listPricePerKilo: "210.00",
       paymentMethod: "QR",
     });
     const item = (await db.outbox.toArray()).find((o) => o.kind === "sale")!;
@@ -47,7 +48,9 @@ describe("writer", () => {
       tripId,
       chickenCount: 3,
       totalKilo: "4.50",
-      amount: "900.00",
+      amount: "900.00", // computed: 4.50 kg × ₱200.00
+      pricePerKilo: "200.00",
+      listPricePerKilo: "210.00",
       paymentMethod: "QR",
     });
     expect(item.payload.activityLogClientId).toEqual(expect.any(String));
@@ -110,7 +113,7 @@ describe("writer validation (same rules as the backend DTOs)", () => {
         tripId: trip,
         chickenCount: 0,
         totalKilo: "1.00",
-        amount: "10.00",
+        pricePerKilo: "10.00",
       }),
     ).rejects.toThrow(/chicken/i);
     await expect(
@@ -118,7 +121,7 @@ describe("writer validation (same rules as the backend DTOs)", () => {
         tripId: trip,
         chickenCount: 1,
         totalKilo: "1.234",
-        amount: "10.00",
+        pricePerKilo: "10.00",
       }),
     ).rejects.toThrow(/kilo/i);
     await expect(
@@ -153,7 +156,7 @@ describe("writer validation (same rules as the backend DTOs)", () => {
       buyerId: "",
       chickenCount: 1,
       totalKilo: "1",
-      amount: "10",
+      pricePerKilo: "10",
     });
     const sale = (await db.outbox.toArray()).find((o) => o.clientId === id)!;
     expect(sale.payload).not.toHaveProperty("buyerId");

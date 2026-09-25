@@ -1,13 +1,17 @@
 import type { PaymentMethod } from "@/lib/api/types";
 import { type OfflineDb, type OutboxKind, mirrorTable } from "./db";
 import * as check from "./validate";
+import { saleAmount } from "@/lib/trip/money";
 
 type SaleInput = {
   tripId: string;
   buyerId?: string;
   chickenCount: number;
   totalKilo: string;
-  amount: string;
+  /** price charged; the amount is computed from it (kilos × price) */
+  pricePerKilo: string;
+  /** the owner's price the phone had — differs when the worker edited it */
+  listPricePerKilo?: string;
   paymentMethod?: PaymentMethod;
 };
 type PickupInput = {
@@ -117,9 +121,16 @@ export function createWriter(
       if (buyerId) check.uuid(buyerId, "buyer");
       check.chickens(rest.chickenCount);
       check.amount(rest.totalKilo, "Total kilo");
-      check.amount(rest.amount, "Amount");
+      check.amount(rest.pricePerKilo, "Price per kilo");
+      if (rest.listPricePerKilo)
+        check.amount(rest.listPricePerKilo, "Owner price");
       // an empty buyer field means a walk-in customer, not an invalid id
-      const input = buyerId ? { ...rest, buyerId } : rest;
+      const base = buyerId ? { ...rest, buyerId } : rest;
+      // computed here exactly like the backend checks it (half-up to the centavo)
+      const input = {
+        ...base,
+        amount: saleAmount(base.totalKilo, base.pricePerKilo),
+      };
       const paymentMethod = input.paymentMethod ?? "CASH";
       const s = stamp();
       return save(

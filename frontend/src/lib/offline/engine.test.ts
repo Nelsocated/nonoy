@@ -40,7 +40,7 @@ describe("toBatch", () => {
       tripId,
       chickenCount: 1,
       totalKilo: "1.00",
-      amount: "100.00",
+      pricePerKilo: "100.00",
     });
     await w.endTrip(tripId);
     const b = toBatch(await db.outbox.toArray());
@@ -59,7 +59,7 @@ describe("syncOnce", () => {
       tripId,
       chickenCount: 1,
       totalKilo: "1.00",
-      amount: "100.00",
+      pricePerKilo: "100.00",
     });
     const pull = vi.fn(async () => {});
     const out = await createSyncEngine({

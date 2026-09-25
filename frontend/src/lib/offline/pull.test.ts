@@ -35,6 +35,7 @@ function fakeApi(over: Partial<Record<string, unknown>> = {}) {
     },
     trips: { mine: async () => trips },
     expenses: { mine: async () => [] },
+    prices: { current: async () => null },
     reports: {
       trip: async (id: string) => ({
         ...trips.find((t) => t.id === id)!,
@@ -46,7 +47,7 @@ function fakeApi(over: Partial<Record<string, unknown>> = {}) {
     },
   } as unknown as Pick<
     Api,
-    "buyers" | "plantations" | "trips" | "expenses" | "reports"
+    "buyers" | "plantations" | "trips" | "expenses" | "reports" | "prices"
   >;
 }
 
@@ -125,5 +126,38 @@ describe("pullInto", () => {
     );
     await pullInto(db, "w1", api);
     expect(seen).toEqual(["t6", "t5", "t4", "t3", "t2"]);
+  });
+});
+
+describe("pullInto — owner price", () => {
+  it("keeps the owner's current price on the phone for offline sales", async () => {
+    const db = testDb();
+    const api = fakeApi();
+    (api as unknown as { prices: unknown }).prices = {
+      current: async () => ({
+        id: "p1",
+        pricePerKilo: "180.00",
+        createdAt: "2026-09-25T06:00:00Z",
+        setBy: { id: "o", name: "Owner" },
+      }),
+    };
+    await pullInto(db, "w1", api);
+    expect((await db.meta.get("price"))?.value).toMatchObject({
+      pricePerKilo: "180.00",
+      setAt: "2026-09-25T06:00:00Z",
+      fetchedAt: expect.any(String),
+    });
+  });
+  it("leaves the saved price alone when none is set on the server", async () => {
+    const db = testDb();
+    await db.meta.put({ key: "price", value: { pricePerKilo: "170.00" } });
+    const api = fakeApi();
+    (api as unknown as { prices: unknown }).prices = {
+      current: async () => null,
+    };
+    await pullInto(db, "w1", api);
+    expect((await db.meta.get("price"))?.value).toMatchObject({
+      pricePerKilo: "170.00",
+    });
   });
 });

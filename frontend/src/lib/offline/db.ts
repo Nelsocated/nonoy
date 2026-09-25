@@ -39,6 +39,8 @@ export type LocalSale = Mirror & {
   totalKilo: string;
   amount: string;
   paymentMethod: PaymentMethod;
+  pricePerKilo?: string | null;
+  listPricePerKilo?: string | null;
 };
 export type LocalRecount = Mirror & {
   tripId: string;
