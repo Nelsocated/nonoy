@@ -2,7 +2,12 @@
 /// <reference lib="webworker" />
 import { defaultCache } from "@serwist/turbopack/worker";
 import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
-import { NetworkOnly, Serwist } from "serwist";
+import { ExpirationPlugin, NetworkFirst, NetworkOnly, Serwist } from "serwist";
+import {
+  PAGES_CACHE,
+  PAGES_MAX_AGE_SECONDS,
+  isAppNavigation,
+} from "@/lib/offline/sw-routes";
 
 declare global {
   interface WorkerGlobalScope extends SerwistGlobalConfig {
@@ -22,6 +27,22 @@ const serwist = new Serwist({
       matcher: ({ sameOrigin, url }) =>
         sameOrigin && url.pathname.startsWith("/api/"),
       handler: new NetworkOnly(),
+    },
+    // app pages: fresh when online (5s max on weak signal), otherwise the last
+    // copy — kept 30 days since last use so the app still opens offline
+    {
+      matcher: isAppNavigation,
+      handler: new NetworkFirst({
+        cacheName: PAGES_CACHE,
+        networkTimeoutSeconds: 5,
+        plugins: [
+          new ExpirationPlugin({
+            maxEntries: 50,
+            maxAgeSeconds: PAGES_MAX_AGE_SECONDS,
+            maxAgeFrom: "last-used",
+          }),
+        ],
+      }),
     },
     ...defaultCache,
   ],
