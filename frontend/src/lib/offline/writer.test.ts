@@ -77,7 +77,7 @@ describe("writer", () => {
     const tripId = await w.startTrip();
     await w.recordPickup({
       tripId,
-      plantationId: "p1",
+      plantationId: "22222222-2222-4222-8222-222222222222",
       chickenCount: 10,
       totalKilo: "20.00",
     });
@@ -97,5 +97,65 @@ describe("writer", () => {
     await createWriter(db, "w2").startTrip();
     expect(await db.outbox.where("userId").equals("w1").count()).toBe(1);
     expect(await db.trips.where("userId").equals("w2").count()).toBe(1);
+  });
+});
+
+describe("writer validation (same rules as the backend DTOs)", () => {
+  const trip = "11111111-1111-4111-8111-111111111111";
+  it("rejects bad input and saves nothing", async () => {
+    const db = testDb();
+    const w = createWriter(db, "w1");
+    await expect(
+      w.recordSale({
+        tripId: trip,
+        chickenCount: 0,
+        totalKilo: "1.00",
+        amount: "10.00",
+      }),
+    ).rejects.toThrow(/chicken/i);
+    await expect(
+      w.recordSale({
+        tripId: trip,
+        chickenCount: 1,
+        totalKilo: "1.234",
+        amount: "10.00",
+      }),
+    ).rejects.toThrow(/kilo/i);
+    await expect(
+      w.recordExpense({ description: "  ", amount: "5.00" }),
+    ).rejects.toThrow(/description/i);
+    await expect(
+      w.recordExpense({ description: "x".repeat(201), amount: "5.00" }),
+    ).rejects.toThrow(/description/i);
+    await expect(
+      w.recordPickup({
+        tripId: "not-a-trip",
+        plantationId: trip,
+        chickenCount: 1,
+        totalKilo: "1",
+      }),
+    ).rejects.toThrow(/trip/i);
+    await expect(
+      w.recordRecount({ tripId: trip, countedChicken: -1, countedKilo: "0" }),
+    ).rejects.toThrow(/chicken/i);
+    expect(await db.outbox.count()).toBe(0);
+  });
+  it("accepts a zero recount and treats an empty buyer as none", async () => {
+    const db = testDb();
+    const w = createWriter(db, "w1");
+    await w.recordRecount({
+      tripId: trip,
+      countedChicken: 0,
+      countedKilo: "0",
+    });
+    const id = await w.recordSale({
+      tripId: trip,
+      buyerId: "",
+      chickenCount: 1,
+      totalKilo: "1",
+      amount: "10",
+    });
+    const sale = (await db.outbox.toArray()).find((o) => o.clientId === id)!;
+    expect(sale.payload).not.toHaveProperty("buyerId");
   });
 });

@@ -17,7 +17,7 @@ export function createRuntime({
   engine,
   schedule = defaultSchedule,
 }: {
-  engine: { syncOnce(): Promise<SyncOutcome> };
+  engine: { syncOnce(opts: { manual: boolean }): Promise<SyncOutcome> };
   schedule?: Schedule;
 }) {
   let phase: SyncPhase = "idle";
@@ -26,6 +26,7 @@ export function createRuntime({
   let stopped = false;
   let running: Promise<void> | null = null;
   let again = false;
+  let manualNext = false; // a "Sync now" tap waiting for the next pass
   let cancelRetry = () => {};
   const listeners = new Set<() => void>();
 
@@ -34,9 +35,9 @@ export function createRuntime({
     listeners.forEach((l) => l());
   };
 
-  async function pass() {
+  async function pass(manual: boolean) {
     set("syncing");
-    const run = () => engine.syncOnce();
+    const run = () => engine.syncOnce({ manual });
     const outcome: SyncOutcome =
       typeof navigator !== "undefined" && navigator.locks
         ? await navigator.locks.request(LOCK, run)
@@ -51,8 +52,9 @@ export function createRuntime({
     }
   }
 
-  function requestSync(): Promise<void> {
+  function requestSync({ manual = false } = {}): Promise<void> {
     if (stopped) return Promise.resolve();
+    manualNext ||= manual;
     if (running) {
       again = true;
       return running;
@@ -61,7 +63,9 @@ export function createRuntime({
       try {
         do {
           again = false;
-          await pass();
+          const m = manualNext;
+          manualNext = false;
+          await pass(m);
         } while (again && phase !== "paused");
       } finally {
         running = null;

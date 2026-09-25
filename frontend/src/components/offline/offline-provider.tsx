@@ -63,7 +63,12 @@ export function OfflineProvider({
   );
 
   const value = useMemo(
-    () => ({ userId, writer, phase, syncNow: runtime.requestSync }),
+    () => ({
+      userId,
+      writer,
+      phase,
+      syncNow: () => runtime.requestSync({ manual: true }),
+    }),
     [userId, writer, phase, runtime],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

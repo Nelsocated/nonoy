@@ -197,3 +197,89 @@ describe("syncOnce", () => {
     expect(pull).toHaveBeenCalledOnce();
   });
 });
+
+describe("rejected batches, chunks and slow retries", () => {
+  const add = (
+    db: ReturnType<typeof testDb>,
+    clientId: string,
+    extra: Partial<{ status: "pending" | "error"; attempts: number }> = {},
+  ) =>
+    db.outbox.add({
+      userId: "w1",
+      kind: "expense",
+      clientId,
+      payload: { clientId },
+      status: "pending",
+      attempts: 0,
+      createdAt: "",
+      ...extra,
+    });
+  const okAll = async (b: SyncBatch): Promise<SyncResults> => ({
+    ...empty(),
+    expenses: (b.expenses ?? []).map((e) => ({
+      clientId: e.clientId,
+      status: "ok",
+      serverId: e.clientId,
+    })),
+  });
+
+  it("splits a batch the server rejects until the bad item is isolated", async () => {
+    const db = testDb();
+    for (const id of ["a", "bad", "c"]) await add(db, id);
+    const push = vi.fn(async (b: SyncBatch) => {
+      if (b.expenses?.some((e) => e.clientId === "bad"))
+        throw new ApiError(
+          400,
+          "amount must be a non-negative number with up to 2 decimals",
+        );
+      return okAll(b);
+    });
+    const out = await createSyncEngine({
+      db,
+      userId: "w1",
+      push,
+      pull: async () => {},
+    }).syncOnce();
+    expect(out).toEqual({ kind: "synced", pushed: 2, failed: 1 });
+    const [left] = await db.outbox.toArray();
+    expect(left).toMatchObject({
+      clientId: "bad",
+      status: "error",
+      attempts: 1,
+      error: expect.stringMatching(/2 decimals/),
+    });
+  });
+
+  it("sends large queues in chunks of 50", async () => {
+    const db = testDb();
+    for (let i = 0; i < 120; i++) await add(db, `e${i}`);
+    const push = vi.fn(okAll);
+    await createSyncEngine({
+      db,
+      userId: "w1",
+      push,
+      pull: async () => {},
+    }).syncOnce();
+    expect(push.mock.calls.map((c) => c[0].expenses!.length)).toEqual([
+      50, 50, 20,
+    ]);
+    expect(await db.outbox.count()).toBe(0);
+  });
+
+  it("items that failed 3 times are only retried when the worker taps Sync now", async () => {
+    const db = testDb();
+    await add(db, "tired", { status: "error", attempts: 3 });
+    const push = vi.fn(okAll);
+    const engine = createSyncEngine({
+      db,
+      userId: "w1",
+      push,
+      pull: async () => {},
+    });
+    await engine.syncOnce();
+    expect(push).not.toHaveBeenCalled();
+    await engine.syncOnce({ manual: true });
+    expect(push).toHaveBeenCalledOnce();
+    expect(await db.outbox.count()).toBe(0);
+  });
+});

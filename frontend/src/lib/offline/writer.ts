@@ -1,5 +1,6 @@
 import type { PaymentMethod } from "@/lib/api/types";
 import { type OfflineDb, type OutboxKind, mirrorTable } from "./db";
+import * as check from "./validate";
 
 type SaleInput = {
   tripId: string;
@@ -97,7 +98,11 @@ export function createWriter(
       return tripId;
     },
 
-    recordPickup(input: PickupInput) {
+    async recordPickup(input: PickupInput) {
+      check.uuid(input.tripId, "trip");
+      check.uuid(input.plantationId, "plantation");
+      check.chickens(input.chickenCount);
+      check.amount(input.totalKilo, "Total kilo");
       const s = stamp();
       return save(
         "pickup",
@@ -107,9 +112,16 @@ export function createWriter(
       );
     },
 
-    recordSale(input: SaleInput) {
-      const s = stamp();
+    async recordSale({ buyerId, ...rest }: SaleInput) {
+      check.uuid(rest.tripId, "trip");
+      if (buyerId) check.uuid(buyerId, "buyer");
+      check.chickens(rest.chickenCount);
+      check.amount(rest.totalKilo, "Total kilo");
+      check.amount(rest.amount, "Amount");
+      // an empty buyer field means a walk-in customer, not an invalid id
+      const input = buyerId ? { ...rest, buyerId } : rest;
       const paymentMethod = input.paymentMethod ?? "CASH";
+      const s = stamp();
       return save(
         "sale",
         s.clientId,
@@ -118,7 +130,10 @@ export function createWriter(
       );
     },
 
-    recordRecount(input: RecountInput) {
+    async recordRecount(input: RecountInput) {
+      check.uuid(input.tripId, "trip");
+      check.chickens(input.countedChicken, { allowZero: true });
+      check.amount(input.countedKilo, "Counted kilo");
       const s = stamp();
       return save(
         "recount",
@@ -128,13 +143,17 @@ export function createWriter(
       );
     },
 
-    recordExpense(input: ExpenseInput) {
+    async recordExpense(input: ExpenseInput) {
+      if (input.tripId) check.uuid(input.tripId, "trip");
+      check.description(input.description);
+      check.amount(input.amount, "Amount");
       const s = stamp();
+      const clean = { ...input, description: input.description.trim() };
       return save(
         "expense",
         s.clientId,
-        { ...s, ...input },
-        { ...input, createdAtClient: s.createdAtClient },
+        { ...s, ...clean },
+        { ...clean, createdAtClient: s.createdAtClient },
       );
     },
   };

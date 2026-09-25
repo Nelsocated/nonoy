@@ -75,3 +75,23 @@ describe("runtime after stop", () => {
     expect(syncOnce).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("manual sync", () => {
+  it("passes manual: true to the engine when the worker taps Sync now", async () => {
+    const syncOnce = vi.fn(async () => ({
+      kind: "synced" as const,
+      pushed: 0,
+      failed: 0,
+    }));
+    const rt = createRuntime({
+      engine: { syncOnce },
+      schedule: () => () => {},
+    });
+    await rt.requestSync({ manual: true });
+    await rt.requestSync();
+    expect(syncOnce.mock.calls).toEqual([
+      [{ manual: true }],
+      [{ manual: false }],
+    ]);
+  });
+});
