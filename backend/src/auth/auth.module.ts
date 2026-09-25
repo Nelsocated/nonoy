@@ -7,7 +7,8 @@ import { AuthService } from './auth.service.js';
 import { LocalStrategy } from './strategy/local.strategy.js';
 import { JwtStrategy } from './strategy/jwt.strategy.js';
 import { UsersModule } from '../users/users.module.js';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { ClientThrottlerGuard } from './guard/client-throttler.guard.js';
 
 @Module({
   imports: [
@@ -16,8 +17,9 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
     UsersModule,
     ThrottlerModule.forRoot([
       {
+        // per browser IP (see ClientThrottlerGuard); login has its own 5/min
         ttl: 60000,
-        limit: 10,
+        limit: 120,
       },
     ]),
   ],
@@ -27,7 +29,7 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
     LocalStrategy,
     JwtStrategy,
     // JwtAuthGuard + RolesGuard are registered globally in AppModule
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_GUARD, useClass: ClientThrottlerGuard },
   ],
   exports: [AuthService],
 })
