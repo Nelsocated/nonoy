@@ -1,17 +1,22 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ActivityLogsService } from '../activity-logs/activity-logs.service.js';
 import { ActionType } from '../generated/prisma/enums.js';
 import { CreatePickupDto } from './pickups.dto.js';
+import { TripAccessService } from '../trips/trips-access.service.js';
 
 @Injectable()
 export class PickupsService {
   constructor(
     private prisma: PrismaService,
     private activityLogsService: ActivityLogsService,
+    private tripAccessService: TripAccessService,
   ) {}
 
   async create(dto: CreatePickupDto, workerId: string) {
+    // confirms tripId exists AND belongs to this worker before anything else runs
+    await this.tripAccessService.assertOwnership(dto.tripId, workerId);
+
     return this.prisma.$transaction(async (tx) => {
       // idempotent on clientId — safe if the worker's device retries this
       // after a dropped connection mid-sync

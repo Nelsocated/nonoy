@@ -1,7 +1,7 @@
 import {
   IsUUID,
   IsInt,
-  IsPositive,
+  Min,
   IsNumberString,
   IsDateString,
 } from 'class-validator';
@@ -17,7 +17,7 @@ export class CreateRecountDto {
   tripId: string;
 
   @IsInt()
-  @IsPositive()
+  @Min(0) // 0 is valid — everything was sold
   countedChicken: number;
 
   @IsNumberString()

@@ -25,14 +25,14 @@ export class SalesService {
       });
       if (existing) return existing;
 
-      // a sale can't be recorded on a trip that's already been closed out —
-      // catches a worker's device syncing a stale queued sale after ending the trip
+      // a sale can't happen on a trip that's already been closed out — flag it
+      // for owner review rather than rejecting, so no field data is lost
       let syncStatus: SyncStatus = SyncStatus.SYNCED;
       let conflictReason: string | null = null;
 
-      if (trip.endedAt) {
+      if (trip.endedAt && new Date(dto.createdAtClient) > trip.endedAt) {
         syncStatus = SyncStatus.CONFLICT;
-        conflictReason = 'Trip was already ended before this sale was synced';
+        conflictReason = 'Sale was recorded after its trip had ended';
       }
 
       const sale = await tx.sale.create({

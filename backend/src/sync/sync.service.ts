@@ -35,13 +35,15 @@ export class SyncService {
     // Trips MUST go first — pickups/sales/recounts all reference a tripId,
     // and if the trip itself hasn't synced yet, everything downstream fails
     // its ownership/existence check.
-    results.trips = await Promise.all(
-      (dto.trips ?? []).map((item) =>
-        this.safely(item.clientId, () =>
+    // Sequential, not Promise.all — two trips in one batch would otherwise
+    // race the "one open trip per worker" check
+    for (const item of dto.trips ?? []) {
+      results.trips.push(
+        await this.safely(item.clientId, () =>
           this.tripsService.create(item, workerId),
         ),
-      ),
-    );
+      );
+    }
 
     // Pickups and sales don't depend on each other, but both need their
     // trip to exist first — safe to run after trips, order between them

@@ -1,4 +1,8 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ActivityLogsService } from '../activity-logs/activity-logs.service.js';
 import { ActionType } from '../generated/prisma/enums.js';
@@ -19,7 +23,12 @@ export class TripsService {
     const existing = await this.prisma.trip.findUnique({
       where: { clientId: dto.clientId },
     });
-    if (existing) return existing;
+    if (existing) {
+      if (existing.workerId !== workerId) {
+        throw new ForbiddenException('You do not have access to this trip');
+      }
+      return existing;
+    }
 
     // a worker shouldn't have two open trips at once
     const openTrip = await this.prisma.trip.findFirst({
@@ -33,6 +42,9 @@ export class TripsService {
 
     return this.prisma.trip.create({
       data: {
+        // the offline-generated UUID doubles as the server id, so pickups/sales
+        // recorded offline can reference the trip before it has ever synced
+        id: dto.clientId,
         clientId: dto.clientId,
         workerId,
         startedAt: new Date(dto.startedAt),
