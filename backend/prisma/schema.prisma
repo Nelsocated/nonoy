@@ -50,10 +50,12 @@ model User {
   previousRefreshTokenHash String?
   refreshRotatedAt         DateTime?
 
-  trips        Trip[]
-  activityLogs ActivityLog[]
-  expenses     Expense[]
-  prices       Price[]
+  trips           Trip[]
+  activityLogs    ActivityLog[]
+  expenses        Expense[]
+  prices          Price[]
+  checkedRecounts Recount[]     @relation("RecountChecks")
+  checkedSales    Sale[]        @relation("SaleChecks")
 
   @@map("users")
 }
@@ -145,6 +147,12 @@ model Sale {
   syncStatus       SyncStatus    @default(SYNCED)
   conflictReason   String?
 
+  // owner/admin reviewed this problem on the dashboard ("Checked")
+  checkedAt   DateTime?
+  checkedById String?
+  checkedBy   User?     @relation("SaleChecks", fields: [checkedById], references: [id], onDelete: SetNull)
+  checkNote   String?
+
   @@map("sales")
 }
 
@@ -161,6 +169,12 @@ model Recount {
   discrepancyFlagged Boolean  @default(false)
   createdAtClient    DateTime
   syncedAt           DateTime @default(now())
+
+  // owner/admin reviewed this problem on the dashboard ("Checked")
+  checkedAt   DateTime?
+  checkedById String?
+  checkedBy   User?     @relation("RecountChecks", fields: [checkedById], references: [id], onDelete: SetNull)
+  checkNote   String?
 
   @@map("recounts")
 }
