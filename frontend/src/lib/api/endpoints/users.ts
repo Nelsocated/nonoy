@@ -1,5 +1,10 @@
 import type { Http } from "../http";
-import type { CreateUserInput, RegisterInput, User } from "../types";
+import type {
+  CreateUserInput,
+  RegisterInput,
+  UpdateUserInput,
+  User,
+} from "../types";
 
 export const users = (http: Http) => ({
   register: (input: RegisterInput) => http.post<User>("/users/register", input),
@@ -11,4 +16,10 @@ export const users = (http: Http) => ({
   /** OWNER/ADMIN */
   setActive: (id: string, isActive: boolean) =>
     http.patch<User>(`/users/${id}/active`, { isActive }),
+  /** OWNER/ADMIN — name and/or login phone */
+  update: (id: string, input: UpdateUserInput) =>
+    http.patch<User>(`/users/${id}`, input),
+  /** OWNER/ADMIN — not your own; logs them out everywhere */
+  resetPassword: (id: string, password: string) =>
+    http.patch<User>(`/users/${id}/password`, { password }),
 });

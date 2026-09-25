@@ -1,13 +1,20 @@
 import type { Http } from "../http";
-import type { Buyer, BuyerInput } from "../types";
+import type { Buyer, BuyerInput, RemoveResult } from "../types";
 
 export const buyers = (http: Http) => ({
-  list: () => http.get<Buyer[]>("/buyers"),
+  /** active only (what phones pull); archived: true = OWNER/ADMIN screen */
+  list: ({ archived = false } = {}) =>
+    http.get<Buyer[]>(
+      "/buyers",
+      archived ? { include: "archived" } : undefined,
+    ),
   get: (id: string) => http.get<Buyer>(`/buyers/${id}`),
   create: (input: BuyerInput) => http.post<Buyer>("/buyers", input),
   /** OWNER/ADMIN */
   update: (id: string, input: Partial<BuyerInput>) =>
     http.patch<Buyer>(`/buyers/${id}`, input),
+  /** OWNER/ADMIN — deleted if it has no sales, archived if it has */
+  remove: (id: string) => http.delete<RemoveResult>(`/buyers/${id}`),
   /** OWNER/ADMIN */
-  remove: (id: string) => http.delete<Buyer>(`/buyers/${id}`),
+  restore: (id: string) => http.patch<Buyer>(`/buyers/${id}/restore`),
 });

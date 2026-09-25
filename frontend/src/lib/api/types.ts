@@ -36,6 +36,7 @@ export type User = {
 };
 export type RegisterInput = { phone: string; password: string; name: string };
 export type CreateUserInput = RegisterInput & { role: Role };
+export type UpdateUserInput = { name?: string; phone?: string };
 
 // ---- price ----
 export type Price = {
@@ -51,6 +52,8 @@ export type Plantation = {
   name: string;
   address: string | null;
   createdAt: IsoDate;
+  /** set when removed but kept for history; phones only get active ones */
+  archivedAt: IsoDate | null;
 };
 export type PlantationInput = { name: string; address?: string };
 
@@ -60,8 +63,12 @@ export type Buyer = {
   location: string | null;
   notes: string | null;
   createdAt: IsoDate;
+  /** set when removed but kept for history; phones only get active ones */
+  archivedAt: IsoDate | null;
 };
 export type BuyerInput = { name: string; location?: string; notes?: string };
+/** DELETE on a buyer/plantation: deleted when unused, archived when it has history */
+export type RemoveResult = { result: "deleted" | "archived"; uses: number };
 
 // ---- field records (all carry an offline-generated clientId) ----
 type Synced = {

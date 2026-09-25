@@ -1,8 +1,13 @@
 import type { Http } from "../http";
-import type { Plantation, PlantationInput } from "../types";
+import type { Plantation, PlantationInput, RemoveResult } from "../types";
 
 export const plantations = (http: Http) => ({
-  list: () => http.get<Plantation[]>("/plantations"),
+  /** active only (what phones pull); archived: true = OWNER/ADMIN screen */
+  list: ({ archived = false } = {}) =>
+    http.get<Plantation[]>(
+      "/plantations",
+      archived ? { include: "archived" } : undefined,
+    ),
   get: (id: string) => http.get<Plantation>(`/plantations/${id}`),
   /** OWNER/ADMIN */
   create: (input: PlantationInput) =>
@@ -10,6 +15,8 @@ export const plantations = (http: Http) => ({
   /** OWNER/ADMIN */
   update: (id: string, input: Partial<PlantationInput>) =>
     http.patch<Plantation>(`/plantations/${id}`, input),
+  /** OWNER/ADMIN — deleted if it has no pickups, archived if it has */
+  remove: (id: string) => http.delete<RemoveResult>(`/plantations/${id}`),
   /** OWNER/ADMIN */
-  remove: (id: string) => http.delete<Plantation>(`/plantations/${id}`),
+  restore: (id: string) => http.patch<Plantation>(`/plantations/${id}/restore`),
 });
