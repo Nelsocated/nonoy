@@ -51,7 +51,7 @@ function Saved() {
 }
 
 export default function FieldHome() {
-  const { userId, writer } = useOffline();
+  const { userId, writer, seesStock } = useOffline();
   const data = useTrip(userId);
   const router = useRouter();
   const endDialog = useRef<HTMLDialogElement>(null);
@@ -74,7 +74,7 @@ export default function FieldHome() {
     router.replace("/field?saved=Trip ended");
   }
 
-  const { trip, today } = data;
+  const { trip, stock, today } = data;
 
   return (
     <div className="space-y-5">
@@ -85,13 +85,35 @@ export default function FieldHome() {
       {trip ? (
         <>
           <section className="rounded-xl bg-primary p-5 text-primary-foreground shadow-primary">
-            {/* no stock numbers here: the recount is blind */}
-            <p className="flex items-center gap-2 text-sm opacity-90">
-              <Truck aria-hidden className="size-4" /> Trip open
-            </p>
-            <p className="mt-2 text-2xl font-semibold">
-              Since {day(trip.startedAt)}
-            </p>
+            {/* workers never see the stock (blind recount); owner/admin may */}
+            {seesStock ? (
+              <>
+                <p className="flex items-center gap-2 text-sm opacity-90">
+                  <Truck aria-hidden className="size-4" /> On the truck · trip
+                  since {day(trip.startedAt)}
+                </p>
+                <p className="mt-2 text-4xl font-semibold tabular-nums">
+                  {stock.chicken}
+                  <span className="text-lg font-medium opacity-90">
+                    {" "}
+                    chickens
+                  </span>
+                </p>
+                <p className="text-2xl font-semibold tabular-nums">
+                  {stock.kilo}
+                  <span className="text-base font-medium opacity-90"> kg</span>
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="flex items-center gap-2 text-sm opacity-90">
+                  <Truck aria-hidden className="size-4" /> Trip open
+                </p>
+                <p className="mt-2 text-2xl font-semibold">
+                  Since {day(trip.startedAt)}
+                </p>
+              </>
+            )}
           </section>
 
           <div className="grid grid-cols-2 gap-3">

@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   Store,
   Tag,
+  Truck,
   Users,
   Warehouse,
   type LucideIcon,
@@ -18,6 +19,8 @@ const NAV: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin/buyers", label: "Buyers", icon: Store },
   { href: "/admin/plantations", label: "Plantations", icon: Warehouse },
   { href: "/admin/users", label: "Users", icon: Users },
+  // the worker trip screens, for when the owner goes out with the staff
+  { href: "/field", label: "Field", icon: Truck },
 ];
 
 // Shared by the desktop sidebar and the phone menu.

@@ -7,7 +7,8 @@ const HOME: Record<Role, string> = {
 };
 const AREAS: { prefix: string; roles: Role[] }[] = [
   { prefix: "/admin", roles: ["OWNER", "ADMIN"] },
-  { prefix: "/field", roles: ["WORKER"] },
+  // owner/admin sometimes go out with the staff and record trips themselves
+  { prefix: "/field", roles: ["WORKER", "OWNER", "ADMIN"] },
 ];
 const PUBLIC = ["/login", "/theme", "/~offline"];
 

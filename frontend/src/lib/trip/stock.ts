@@ -23,18 +23,28 @@ export function stockOnTruck(pickups: Load[], sales: Load[]): Stock {
 }
 
 // Selling more than the truck holds is allowed (counts can be off) — just warn.
-// No numbers: the worker must not learn the stock, or the recount isn't blind.
+// No numbers for workers: they must not learn the stock, or the recount isn't
+// blind. Owners/admins may see it (showStock).
 export function overSell(
   stock: Stock,
   chicken: number,
   kilo: string,
+  { showStock = false } = {},
 ): string | null {
-  const parts: string[] = [];
-  if (chicken > stock.chicken) parts.push("chickens");
-  if (toCenti(kilo) > toCenti(stock.kilo)) parts.push("kilos");
-  return parts.length
-    ? `This sale has more ${parts.join(" and ")} than should be on the truck.`
-    : null;
+  const overChicken = chicken > stock.chicken;
+  const overKilo = toCenti(kilo) > toCenti(stock.kilo);
+  if (!overChicken && !overKilo) return null;
+  if (showStock) {
+    const parts: string[] = [];
+    if (overChicken) parts.push(`${Math.max(stock.chicken, 0)} chickens`);
+    if (overKilo)
+      parts.push(`${fromCenti(Math.max(toCenti(stock.kilo), 0))} kg`);
+    return `Only ${parts.join(" / ")} left on the truck.`;
+  }
+  const parts = [overChicken && "chickens", overKilo && "kilos"].filter(
+    Boolean,
+  );
+  return `This sale has more ${parts.join(" and ")} than should be on the truck.`;
 }
 
 // counted − expected: negative = short, positive = over

@@ -19,6 +19,8 @@ import { createWriter, type Writer } from "@/lib/offline/writer";
 
 type Offline = {
   userId: string;
+  /** owner/admin on a trip may see the truck stock; workers never (blind recount) */
+  seesStock: boolean;
   writer: Writer;
   phase: SyncPhase;
   syncNow(): Promise<void>;
@@ -27,9 +29,11 @@ const Ctx = createContext<Offline | null>(null);
 
 export function OfflineProvider({
   userId,
+  seesStock = false,
   children,
 }: {
   userId: string;
+  seesStock?: boolean;
   children: React.ReactNode;
 }) {
   const runtime = useMemo(() => {
@@ -70,11 +74,12 @@ export function OfflineProvider({
   const value = useMemo(
     () => ({
       userId,
+      seesStock,
       writer,
       phase,
       syncNow: () => runtime.requestSync({ manual: true }),
     }),
-    [userId, writer, phase, runtime],
+    [userId, seesStock, writer, phase, runtime],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

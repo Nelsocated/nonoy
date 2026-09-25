@@ -4,6 +4,7 @@ import { ClipboardCheck, Flag } from "lucide-react";
 import Link from "next/link";
 import { forwardRef } from "react";
 import { fromCenti, peso, toCenti } from "@/lib/trip/money";
+import { useOffline } from "@/components/offline/offline-provider";
 import type { TripData } from "./use-trip";
 
 const button =
@@ -17,6 +18,7 @@ export const EndTripDialog = forwardRef<
   HTMLDialogElement,
   { data: TripData; onConfirm: () => void }
 >(function EndTripDialog({ data, onConfirm }, ref) {
+  const { seesStock } = useOffline();
   const close = () =>
     (ref as React.RefObject<HTMLDialogElement | null>).current?.close();
   const sold = data.sales.reduce(
@@ -48,6 +50,15 @@ export const EndTripDialog = forwardRef<
         <dd className="text-right tabular-nums">
           {peso(total(data.expenses))}
         </dd>
+        {/* workers never see the stock (blind recount); owner/admin may */}
+        {seesStock && (
+          <>
+            <dt className="text-muted-foreground">Left on truck</dt>
+            <dd className="text-right tabular-nums">
+              {data.stock.chicken} · {data.stock.kilo} kg
+            </dd>
+          </>
+        )}
       </dl>
       {data.recounts.length === 0 && (
         <p className="mt-4 rounded-md bg-warning-soft px-3 py-2 text-sm text-warning">

@@ -30,7 +30,7 @@ const asOf = (iso: string) =>
   });
 
 export default function SalePage() {
-  const { userId, writer } = useOffline();
+  const { userId, writer, seesStock } = useOffline();
   const data = useTrip(userId);
   const ownerPrice = useLiveQuery(() => getPrice(getDb()), [], undefined);
   const router = useRouter();
@@ -111,7 +111,9 @@ export default function SalePage() {
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!check()) return;
-    const over = overSell(data!.stock, Number(chickens), kilo);
+    const over = overSell(data!.stock, Number(chickens), kilo, {
+      showStock: seesStock,
+    });
     if (over) {
       setWarning(over);
       warn.current?.showModal();
@@ -122,7 +124,14 @@ export default function SalePage() {
 
   return (
     <form onSubmit={submit} noValidate className="space-y-5 pb-4">
-      <FormHeader title="Sale" />
+      <FormHeader
+        title="Sale"
+        hint={
+          seesStock
+            ? `On the truck: ${data.stock.chicken} chickens · ${data.stock.kilo} kg`
+            : undefined
+        }
+      />
 
       <Field label="Buyer">
         {(a) => (

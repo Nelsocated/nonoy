@@ -28,6 +28,11 @@ describe("overSell", () => {
   it("never shows what's on the truck (the recount is blind)", () => {
     expect(overSell(stock, 3, "4.50")).not.toMatch(/\d/);
   });
+  it("shows the numbers to owners/admins, who may see the stock", () => {
+    expect(overSell(stock, 3, "4.50", { showStock: true })).toBe(
+      "Only 2 chickens / 4.00 kg left on the truck.",
+    );
+  });
   it("says nothing when it fits", () => {
     expect(overSell(stock, 2, "4.00")).toBeNull();
   });

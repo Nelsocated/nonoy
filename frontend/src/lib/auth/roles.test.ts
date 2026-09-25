@@ -14,7 +14,9 @@ describe("roles", () => {
   it("matches areas by whole segment, not prefix", () => {
     expect(canAccess("WORKER", "/field/trips")).toBe(true);
     expect(canAccess("WORKER", "/admin")).toBe(false);
-    expect(canAccess("OWNER", "/field")).toBe(false);
+    // owner/admin sometimes go out with the staff and record trips themselves
+    expect(canAccess("OWNER", "/field")).toBe(true);
+    expect(canAccess("ADMIN", "/field/sale")).toBe(true);
     expect(canAccess("WORKER", "/administrator")).toBe(true); // not the /admin area
     expect(canAccess("OWNER", "/fieldwork")).toBe(true); // not the /field area
   });
@@ -49,7 +51,7 @@ describe("guard", () => {
       action: "redirect",
       to: "/field",
     });
-    expect(g("/field", owner)).toEqual({ action: "redirect", to: "/admin" });
+    expect(g("/field", owner)).toEqual({ action: "next" });
     expect(g("/", worker)).toEqual({ action: "redirect", to: "/field" });
     expect(g("/admin", owner)).toEqual({ action: "next" });
   });
