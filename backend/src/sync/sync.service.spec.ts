@@ -60,20 +60,52 @@ describe('SyncService', () => {
 
   it('processes trips → pickups → sales → expenses → recounts → trip endings', async () => {
     await service.processBatch(batch, 'w1');
-    expect(calls).toEqual(['trip', 'pickup', 'sale', 'expense', 'recount', 'end']);
+    expect(calls).toEqual([
+      'trip',
+      'pickup',
+      'sale',
+      'expense',
+      'recount',
+      'end',
+    ]);
+  });
+
+  // Worker ended yesterday's trip and started a new one while offline: the old
+  // trip must close before the new one opens, or "one open trip" rejects it.
+  it('ends trips that are not in this batch before creating new trips', async () => {
+    const r = await service.processBatch(
+      {
+        trips: [{ clientId: 't2' }],
+        tripEndings: [
+          { tripId: 't1', endedAt: '2026-01-01T10:00:00Z' },
+          { tripId: 't2', endedAt: '2026-01-01T18:00:00Z' },
+        ],
+      } as any,
+      'w1',
+    );
+    expect(calls).toEqual(['end', 'trip', 'end']);
+    expect(trips.endTrip.mock.calls.map((c) => c[0])).toEqual(['t1', 't2']);
+    expect(r.tripEndings.map((e) => e.clientId)).toEqual(['t1', 't2']);
   });
 
   it('passes the authenticated worker id to every service', async () => {
     await service.processBatch(batch, 'w1');
     expect(trips.create).toHaveBeenCalledWith(batch.trips[0], 'w1');
     expect(sales.create).toHaveBeenCalledWith(batch.sales[0], 'w1');
-    expect(trips.endTrip).toHaveBeenCalledWith('t1', batch.tripEndings[0], 'w1');
+    expect(trips.endTrip).toHaveBeenCalledWith(
+      't1',
+      batch.tripEndings[0],
+      'w1',
+    );
   });
 
   it('one failing item does not abort the rest of the batch', async () => {
     sales.create.mockRejectedValueOnce(new Error('boom'));
     const res = await service.processBatch(
-      { sales: [{ clientId: 'bad' }, { clientId: 'good' }], recounts: [{ clientId: 'r1' }] } as any,
+      {
+        sales: [{ clientId: 'bad' }, { clientId: 'good' }],
+        recounts: [{ clientId: 'r1' }],
+      } as any,
       'w1',
     );
     expect(res.sales).toEqual([
@@ -92,13 +124,21 @@ describe('SyncService', () => {
       inFlight--;
       return { id: dto.clientId };
     });
-    await service.processBatch({ trips: [{ clientId: 'a' }, { clientId: 'b' }] } as any, 'w1');
+    await service.processBatch(
+      { trips: [{ clientId: 'a' }, { clientId: 'b' }] } as any,
+      'w1',
+    );
     expect(maxInFlight).toBe(1);
   });
 
   it('handles an empty batch', async () => {
     expect(await service.processBatch({}, 'w1')).toEqual({
-      trips: [], tripEndings: [], pickups: [], sales: [], recounts: [], expenses: [],
+      trips: [],
+      tripEndings: [],
+      pickups: [],
+      sales: [],
+      recounts: [],
+      expenses: [],
     });
   });
 });

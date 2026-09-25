@@ -35,6 +35,23 @@ export class SyncService {
       expenses: [] as SyncResult[],
     };
 
+    // Endings for trips created in an EARLIER batch go before new trips: a
+    // worker who ended yesterday's trip and started today's while offline
+    // would otherwise hit "one open trip per worker" on the new one.
+    // (Records can still attach to an ended trip, so this order is safe.)
+    const newTripIds = new Set((dto.trips ?? []).map((t) => t.clientId));
+    const [earlierEndings, sameBatchEndings] = partition(
+      dto.tripEndings ?? [],
+      (e) => !newTripIds.has(e.tripId),
+    );
+    for (const item of earlierEndings) {
+      results.tripEndings.push(
+        await this.safely(item.tripId, () =>
+          this.tripsService.endTrip(item.tripId, item, workerId),
+        ),
+      );
+    }
+
     // Trips MUST go first — pickups/sales/recounts all reference a tripId,
     // and if the trip itself hasn't synced yet, everything downstream fails
     // its ownership/existence check.
@@ -89,12 +106,14 @@ export class SyncService {
 
     // Trip endings last of all — end the trip only once everything that
     // happened during it has been recorded
-    results.tripEndings = await Promise.all(
-      (dto.tripEndings ?? []).map((item) =>
-        this.safely(item.tripId, () =>
-          this.tripsService.endTrip(item.tripId, item, workerId),
+    results.tripEndings.push(
+      ...(await Promise.all(
+        sameBatchEndings.map((item) =>
+          this.safely(item.tripId, () =>
+            this.tripsService.endTrip(item.tripId, item, workerId),
+          ),
         ),
-      ),
+      )),
     );
 
     return results;
@@ -119,4 +138,11 @@ export class SyncService {
       return { clientId, status: 'error', error: (err as Error).message };
     }
   }
+}
+
+function partition<T>(items: T[], test: (item: T) => boolean): [T[], T[]] {
+  const yes: T[] = [];
+  const no: T[] = [];
+  for (const item of items) (test(item) ? yes : no).push(item);
+  return [yes, no];
 }
