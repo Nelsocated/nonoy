@@ -1,4 +1,8 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateUserDto } from './users.dto.js';
@@ -41,6 +45,43 @@ export class UsersService {
     return this.prisma.user.update({
       where: { id },
       data: { refreshTokenHash },
+    });
+  }
+
+  // never select passwordHash / refreshTokenHash for API responses
+  private static readonly publicFields = {
+    id: true,
+    name: true,
+    phone: true,
+    role: true,
+    isActive: true,
+    createdAt: true,
+  } as const;
+
+  async list(roles: Role[]) {
+    return this.prisma.user.findMany({
+      where: { role: { in: roles } },
+      select: UsersService.publicFields,
+      orderBy: [{ role: 'asc' }, { name: 'asc' }],
+    });
+  }
+
+  async getProfile(id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: UsersService.publicFields,
+    });
+    if (!user) throw new NotFoundException('User not found');
+    return user;
+  }
+
+  // deactivating also revokes the refresh token; JwtStrategy rejects their
+  // access token on the next request, so they're logged out immediately
+  async setActive(id: string, isActive: boolean) {
+    return this.prisma.user.update({
+      where: { id },
+      data: isActive ? { isActive } : { isActive, refreshTokenHash: null },
+      select: UsersService.publicFields,
     });
   }
 }

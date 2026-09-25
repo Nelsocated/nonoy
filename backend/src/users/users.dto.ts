@@ -1,4 +1,4 @@
-import { IsEnum, IsString, MinLength } from 'class-validator';
+import { IsBoolean, IsEnum, IsString, MinLength } from 'class-validator';
 import { Role } from '../generated/prisma/enums.js';
 
 export class CreateUserDto {
@@ -20,4 +20,9 @@ export class CreateUserDto {
 export class AdminCreateUserDto extends CreateUserDto {
   @IsEnum(Role)
   role: Role;
+}
+
+export class SetActiveDto {
+  @IsBoolean()
+  isActive: boolean;
 }

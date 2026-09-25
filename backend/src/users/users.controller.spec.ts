@@ -6,7 +6,12 @@ import { Role } from '../generated/prisma/enums.js';
 
 describe('UsersController', () => {
   let controller: UsersController;
-  const users = { create: vi.fn(async (_dto, role: Role = Role.WORKER) => ({ id: 'new', role })) };
+  const users = {
+    create: vi.fn(async (_dto, role: Role = Role.WORKER) => ({ id: 'new', role })),
+    list: vi.fn(async () => []),
+    getProfile: vi.fn(),
+    setActive: vi.fn(async (id: string, isActive: boolean) => ({ id, isActive })),
+  };
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -44,5 +49,37 @@ describe('UsersController', () => {
     await controller.register({ phone: '09170000009', password: 'secret1', name: 'X' });
     expect(users.create).toHaveBeenCalledWith(expect.anything());
     expect(users.create.mock.calls[0]).toHaveLength(1); // default role = WORKER
+  });
+
+  describe('management', () => {
+    it('ADMIN lists every role, OWNER only workers', async () => {
+      await controller.list(as(Role.ADMIN));
+      expect(users.list).toHaveBeenLastCalledWith([Role.ADMIN, Role.OWNER, Role.WORKER]);
+      await controller.list(as(Role.OWNER));
+      expect(users.list).toHaveBeenLastCalledWith([Role.WORKER]);
+    });
+
+    it.each([
+      [Role.ADMIN, Role.OWNER],
+      [Role.ADMIN, Role.ADMIN],
+      [Role.OWNER, Role.WORKER],
+    ])('%s can deactivate %s', async (me, target) => {
+      users.getProfile.mockResolvedValue({ id: 'u2', role: target });
+      await expect(controller.setActive('u2', { isActive: false }, as(me))).resolves.toEqual({ id: 'u2', isActive: false });
+    });
+
+    it.each([
+      [Role.OWNER, Role.OWNER],
+      [Role.OWNER, Role.ADMIN],
+    ])('%s cannot deactivate %s', async (me, target) => {
+      users.getProfile.mockResolvedValue({ id: 'u2', role: target });
+      await expect(controller.setActive('u2', { isActive: false }, as(me))).rejects.toThrow(ForbiddenException);
+      expect(users.setActive).not.toHaveBeenCalled();
+    });
+
+    it('nobody can deactivate themselves', async () => {
+      await expect(controller.setActive('me', { isActive: false }, as(Role.ADMIN))).rejects.toThrow(ForbiddenException);
+      expect(users.setActive).not.toHaveBeenCalled();
+    });
   });
 });

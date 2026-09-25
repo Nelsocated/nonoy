@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { UsersService } from '../../users/users.service.js';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(private usersService: UsersService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
@@ -12,7 +13,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: { sub: string; role: string }) {
-    return { id: payload.sub, role: payload.role };
+  // One primary-key lookup per request so a deactivated user is cut off
+  // immediately (not when their access token expires), and a role change
+  // applies right away instead of whatever the token was issued with.
+  async validate(payload: { sub: string }) {
+    const user = await this.usersService.findById(payload.sub);
+    if (!user?.isActive) throw new UnauthorizedException();
+    return { id: user.id, role: user.role };
   }
 }
