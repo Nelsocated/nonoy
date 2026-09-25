@@ -1,7 +1,7 @@
 "use client";
 
 import { LayoutDashboard, X } from "lucide-react";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Logo } from "@/components/logo";
 import type { SessionUser } from "@/lib/api/types";
 import { AdminNav } from "./admin-nav";
@@ -12,6 +12,15 @@ import { UserMenu } from "./user-menu";
 export function AdminMobileBar({ user }: { user: SessionUser }) {
   const panel = useRef<HTMLDialogElement>(null);
   const close = () => panel.current?.close();
+
+  // the bar hides from md up, but an open modal would stay on top: close it
+  // when a rotated phone or resized window crosses into the sidebar layout
+  useEffect(() => {
+    const wide = window.matchMedia("(min-width: 48rem)"); // Tailwind md
+    const onChange = () => wide.matches && panel.current?.close();
+    wide.addEventListener("change", onChange);
+    return () => wide.removeEventListener("change", onChange);
+  }, []);
 
   return (
     <header className="flex items-center gap-3 border-b bg-surface px-4 py-2 md:hidden">
