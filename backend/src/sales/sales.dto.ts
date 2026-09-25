@@ -5,7 +5,9 @@ import {
   IsInt,
   IsPositive,
   IsDateString,
+  IsEnum,
 } from 'class-validator';
+import { PaymentMethod } from '../generated/prisma/enums.js';
 import { IsDecimalAmount } from '../common/is-decimal-amount.decorator.js';
 
 export class CreateSaleDto {
@@ -31,6 +33,11 @@ export class CreateSaleDto {
 
   @IsDecimalAmount()
   amount: string;
+
+  // optional so older app versions keep syncing; defaults to CASH
+  @IsOptional()
+  @IsEnum(PaymentMethod)
+  paymentMethod?: PaymentMethod;
 
   @IsDateString()
   createdAtClient: string;

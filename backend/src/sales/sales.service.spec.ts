@@ -68,6 +68,18 @@ describe('SalesService', () => {
     );
   });
 
+  it('stores the payment method, defaulting to CASH in the log', async () => {
+    access.assertOwnership.mockResolvedValue({ endedAt: null });
+    const qr = await service.create({ ...sale('2026-01-01T10:00:00Z'), paymentMethod: 'QR' }, 'w1');
+    expect(qr.paymentMethod).toBe('QR');
+
+    await service.create(sale('2026-01-01T10:00:00Z'), 'w1');
+    expect(logs.record).toHaveBeenLastCalledWith(
+      expect.objectContaining({ payload: expect.objectContaining({ paymentMethod: 'CASH' }) }),
+      tx,
+    );
+  });
+
   it('is idempotent on clientId', async () => {
     access.assertOwnership.mockResolvedValue({ endedAt: null });
     const existing = { id: 'old' };
