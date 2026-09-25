@@ -1,0 +1,22 @@
+import { IsOptional, IsUUID, Matches } from 'class-validator';
+
+const DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+// Dates are calendar days in the report timezone (REPORT_TIMEZONE, default Asia/Manila).
+// Both ends are inclusive. Omitted → the last 7 days up to today.
+export class ReportRangeDto {
+  @IsOptional()
+  @Matches(DAY, { message: 'from must be YYYY-MM-DD' })
+  from?: string;
+
+  @IsOptional()
+  @Matches(DAY, { message: 'to must be YYYY-MM-DD' })
+  to?: string;
+}
+
+export class DailyReportDto extends ReportRangeDto {
+  // narrow the daily summary to one worker
+  @IsOptional()
+  @IsUUID()
+  workerId?: string;
+}
