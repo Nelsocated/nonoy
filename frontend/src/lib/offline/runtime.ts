@@ -21,6 +21,9 @@ export function createRuntime({
   schedule?: Schedule;
 }) {
   let phase: SyncPhase = "idle";
+  // set when the provider unmounts (logout, user switch): a pass still in
+  // flight must not schedule retries or sync the old user's queue later
+  let stopped = false;
   let running: Promise<void> | null = null;
   let again = false;
   let cancelRetry = () => {};
@@ -39,6 +42,7 @@ export function createRuntime({
         ? await navigator.locks.request(LOCK, run)
         : await run();
     cancelRetry();
+    if (stopped) return;
     if (outcome.kind === "offline") {
       set("offline");
       cancelRetry = schedule(() => void requestSync(), outcome.retryInMs);
@@ -48,6 +52,7 @@ export function createRuntime({
   }
 
   function requestSync(): Promise<void> {
+    if (stopped) return Promise.resolve();
     if (running) {
       again = true;
       return running;
@@ -66,7 +71,15 @@ export function createRuntime({
   }
 
   function start() {
+    stopped = false; // React dev mode runs effects twice: start, stop, start
     const kick = () => void requestSync();
+    if (typeof window === "undefined") {
+      kick();
+      return () => {
+        stopped = true;
+        cancelRetry();
+      };
+    }
     const onVisible = () => document.visibilityState === "visible" && kick();
     window.addEventListener("online", kick);
     document.addEventListener("visibilitychange", onVisible);
@@ -79,6 +92,7 @@ export function createRuntime({
       window.removeEventListener("online", kick);
       document.removeEventListener("visibilitychange", onVisible);
       clearInterval(timer);
+      stopped = true;
       cancelRetry();
     };
   }

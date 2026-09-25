@@ -1,7 +1,13 @@
 import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
 import { API_URL, INTERNAL_PROXY_SECRET } from "@/lib/env";
-import { backendHeaders, isForwardable, targetUrl } from "@/lib/api/forward";
+import {
+  OFFLINE_USER_HEADER,
+  backendHeaders,
+  isForwardable,
+  offlineUserMismatch,
+  targetUrl,
+} from "@/lib/api/forward";
 import {
   COOKIE,
   clearSessionCookies,
@@ -34,6 +40,18 @@ async function forward(request: NextRequest, { params }: Ctx) {
   if (!refresh)
     return NextResponse.json(
       { statusCode: 401, message: "Not signed in" },
+      { status: 401 },
+    );
+  // offline queue of a different user than the one signed in: don't forward
+  // (and don't clear this user's cookies) — the sync engine just pauses
+  if (
+    offlineUserMismatch(
+      request.headers.get(OFFLINE_USER_HEADER),
+      parseUser(jar.get(COOKIE.user)?.value),
+    )
+  )
+    return NextResponse.json(
+      { statusCode: 401, message: "Signed in as a different user" },
       { status: 401 },
     );
 

@@ -1,3 +1,5 @@
+import type { SessionUser } from "./types";
+
 // Rules for what the /api/* forwarder may pass on to Nest.
 
 // /auth/* hands out tokens; those must stay in httpOnly cookies, so the browser
@@ -22,4 +24,16 @@ export function backendHeaders(
 
 export function targetUrl(base: string, path: string[], search: string) {
   return `${base.replace(/\/$/, "")}/${path.map(encodeURIComponent).join("/")}${search}`;
+}
+
+// Offline sync sends the id of the user whose queue it is. If someone else is
+// signed in now (shared phone, stale tab), refuse, so one worker's records are
+// never saved under another's account.
+export const OFFLINE_USER_HEADER = "x-offline-user";
+
+export function offlineUserMismatch(
+  claimed: string | null,
+  user: SessionUser | null,
+) {
+  return !!claimed && user?.id !== claimed;
 }

@@ -8,6 +8,7 @@ import {
   useSyncExternalStore,
 } from "react";
 import { createApi } from "@/lib/api";
+import { OFFLINE_USER_HEADER } from "@/lib/api/forward";
 import { createHttp } from "@/lib/api/http";
 import { getDb } from "@/lib/offline/db";
 import { createSyncEngine } from "@/lib/offline/engine";
@@ -23,10 +24,6 @@ type Offline = {
 };
 const Ctx = createContext<Offline | null>(null);
 
-// No onUnauthorized redirect here: a dead session pauses sync (queue kept)
-// instead of yanking the worker to /login mid-task.
-const syncApi = createApi(createHttp({ baseUrl: "/api" }));
-
 export function OfflineProvider({
   userId,
   children,
@@ -35,6 +32,15 @@ export function OfflineProvider({
   children: React.ReactNode;
 }) {
   const runtime = useMemo(() => {
+    // No onUnauthorized redirect: a dead session pauses sync (queue kept)
+    // instead of yanking the worker to /login mid-task. The header lets /api
+    // refuse this queue if a different user is signed in now.
+    const syncApi = createApi(
+      createHttp({
+        baseUrl: "/api",
+        headers: () => ({ [OFFLINE_USER_HEADER]: userId }),
+      }),
+    );
     const db = getDb();
     const engine = createSyncEngine({
       db,

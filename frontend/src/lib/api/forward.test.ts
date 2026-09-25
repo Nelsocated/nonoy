@@ -44,3 +44,17 @@ describe("backendHeaders", () => {
     ).toEqual({});
   });
 });
+
+describe("offlineUserMismatch", () => {
+  const worker = { id: "w1", name: "A", role: "WORKER" as const };
+  it("flags an offline sync made for a different signed-in user", async () => {
+    const { offlineUserMismatch } = await import("./forward");
+    expect(offlineUserMismatch("w2", worker)).toBe(true);
+    expect(offlineUserMismatch("w2", null)).toBe(true);
+  });
+  it("allows the same user, and requests that don't say who they're for", async () => {
+    const { offlineUserMismatch } = await import("./forward");
+    expect(offlineUserMismatch("w1", worker)).toBe(false);
+    expect(offlineUserMismatch(null, worker)).toBe(false);
+  });
+});

@@ -55,3 +55,23 @@ describe("runtime", () => {
     expect(seen).toEqual(["syncing", "paused"]);
   });
 });
+
+describe("runtime after stop", () => {
+  it("does nothing once stopped, even for a retry scheduled before stopping", async () => {
+    let retry: (() => void) | undefined;
+    const syncOnce = vi.fn(async () => ({
+      kind: "offline" as const,
+      retryInMs: 30_000,
+    }));
+    const rt = createRuntime({
+      engine: { syncOnce },
+      schedule: (fn) => ((retry = fn), () => {}),
+    });
+    const stop = rt.start();
+    await vi.waitFor(() => expect(syncOnce).toHaveBeenCalledTimes(1));
+    stop();
+    retry?.();
+    await rt.requestSync();
+    expect(syncOnce).toHaveBeenCalledTimes(1);
+  });
+});
