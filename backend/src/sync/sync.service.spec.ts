@@ -88,6 +88,33 @@ describe('SyncService', () => {
     expect(r.tripEndings.map((e) => e.clientId)).toEqual(['t1', 't2']);
   });
 
+  // Two trips in one offline day: trip 1 must be closed before trip 2 opens,
+  // even though both (and their endings) arrive in the same batch.
+  it('ends an earlier trip of the same batch before creating the next', async () => {
+    const r = await service.processBatch(
+      {
+        // phone order isn't trusted — trips go by start time
+        trips: [
+          { clientId: 't2', startedAt: '2026-01-01T13:00:00Z' },
+          { clientId: 't1', startedAt: '2026-01-01T06:00:00Z' },
+        ],
+        tripEndings: [
+          { tripId: 't1', endedAt: '2026-01-01T12:00:00Z' },
+          { tripId: 't2', endedAt: '2026-01-01T18:00:00Z' },
+        ],
+        sales: [{ clientId: 's1' }],
+      } as any,
+      'w1',
+    );
+    expect(calls).toEqual(['trip', 'end', 'trip', 'sale', 'end']);
+    expect(trips.create.mock.calls.map((c) => c[0].clientId)).toEqual([
+      't1',
+      't2',
+    ]);
+    expect(trips.endTrip.mock.calls.map((c) => c[0])).toEqual(['t1', 't2']);
+    expect(r.tripEndings.map((e) => e.clientId)).toEqual(['t1', 't2']);
+  });
+
   it('passes the authenticated worker id to every service', async () => {
     await service.processBatch(batch, 'w1');
     expect(trips.create).toHaveBeenCalledWith(batch.trips[0], 'w1');

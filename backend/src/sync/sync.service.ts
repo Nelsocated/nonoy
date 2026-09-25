@@ -38,7 +38,8 @@ export class SyncService {
     // Endings for trips created in an EARLIER batch go before new trips: a
     // worker who ended yesterday's trip and started today's while offline
     // would otherwise hit "one open trip per worker" on the new one.
-    // (Records can still attach to an ended trip, so this order is safe.)
+    // (Records can still attach to an ended trip, so this order is safe: a
+    // sale is only flagged if it was made after its trip's end.)
     const newTripIds = new Set((dto.trips ?? []).map((t) => t.clientId));
     const [earlierEndings, sameBatchEndings] = partition(
       dto.tripEndings ?? [],
@@ -56,13 +57,28 @@ export class SyncService {
     // and if the trip itself hasn't synced yet, everything downstream fails
     // its ownership/existence check.
     // Sequential, not Promise.all — two trips in one batch would otherwise
-    // race the "one open trip per worker" check
-    for (const item of dto.trips ?? []) {
+    // race the "one open trip per worker" check. In start order, and a trip
+    // followed by another one in this batch (two trips in one offline day) is
+    // ended right away, or the next one hits "one open trip per worker" too.
+    const trips = [...(dto.trips ?? [])].sort(
+      (a, b) => Date.parse(a.startedAt) - Date.parse(b.startedAt) || 0,
+    );
+    const endingOf = new Map(sameBatchEndings.map((e) => [e.tripId, e]));
+    for (const [i, item] of trips.entries()) {
       results.trips.push(
         await this.safely(item.clientId, () =>
           this.tripsService.create(item, workerId),
         ),
       );
+      const ending = endingOf.get(item.clientId);
+      if (ending && i < trips.length - 1) {
+        endingOf.delete(item.clientId);
+        results.tripEndings.push(
+          await this.safely(ending.tripId, () =>
+            this.tripsService.endTrip(ending.tripId, ending, workerId),
+          ),
+        );
+      }
     }
 
     // Pickups and sales don't depend on each other, but both need their
@@ -104,11 +120,11 @@ export class SyncService {
       ),
     );
 
-    // Trip endings last of all — end the trip only once everything that
-    // happened during it has been recorded
+    // The latest trip's ending last of all — end it only once everything
+    // that happened during it has been recorded
     results.tripEndings.push(
       ...(await Promise.all(
-        sameBatchEndings.map((item) =>
+        [...endingOf.values()].map((item) =>
           this.safely(item.tripId, () =>
             this.tripsService.endTrip(item.tripId, item, workerId),
           ),
