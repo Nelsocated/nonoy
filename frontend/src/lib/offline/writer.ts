@@ -131,6 +131,7 @@ export function createWriter(
         ...base,
         amount: saleAmount(base.totalKilo, base.pricePerKilo),
       };
+      check.saleTotal(input.amount);
       const paymentMethod = input.paymentMethod ?? "CASH";
       const s = stamp();
       return save(

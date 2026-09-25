@@ -26,6 +26,12 @@ export function amount(value: string, label: string) {
     fail(`${label} must be a number with up to 2 decimals.`);
 }
 
+// kilos × price can outgrow the column even when both numbers fit on their own
+export function saleTotal(value: string) {
+  if (!DECIMAL.test(value))
+    fail("This sale's total is too large. Check the kilos and price.");
+}
+
 export function chickens(value: number, { allowZero = false } = {}) {
   if (!Number.isInteger(value) || value < (allowZero ? 0 : 1))
     fail(

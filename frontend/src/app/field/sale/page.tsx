@@ -64,6 +64,8 @@ export default function SalePage() {
     TWO_DP.test(kilo) && TWO_DP.test(pricePerKilo)
       ? saleAmount(kilo, pricePerKilo)
       : null;
+  // kilos × price can pass as numbers yet outgrow the database column
+  const tooBig = total !== null && !TWO_DP.test(total);
   const buyers = [...data.buyers].sort((a, b) => a[1].localeCompare(b[1]));
 
   function check() {
@@ -77,7 +79,7 @@ export default function SalePage() {
         ? "Enter a price per kg."
         : "No owner price yet — type today's price per kg.";
     setErrors(e);
-    return Object.keys(e).length === 0;
+    return Object.keys(e).length === 0 && !tooBig; // shown under the total
   }
 
   async function save() {
@@ -234,6 +236,11 @@ export default function SalePage() {
         <p className="text-3xl font-semibold tabular-nums">
           {total ? peso(total) : "—"}
         </p>
+        {tooBig && (
+          <p className="mt-1 text-sm text-danger">
+            Too large to save. Check the kilos and price.
+          </p>
+        )}
       </div>
 
       {errors.form && (

@@ -143,6 +143,28 @@ describe("writer validation (same rules as the backend DTOs)", () => {
     ).rejects.toThrow(/chicken/i);
     expect(await db.outbox.count()).toBe(0);
   });
+  it("rejects a sale whose total is too big for the database", async () => {
+    const db = testDb();
+    const w = createWriter(db, "w1");
+    // each number fits Decimal(10, 2), but 99,999 kg × ₱1,001 doesn't
+    await expect(
+      w.recordSale({
+        tripId: trip,
+        chickenCount: 1,
+        totalKilo: "99999.00",
+        pricePerKilo: "1001.00",
+      }),
+    ).rejects.toThrow(/total is too large/i);
+    expect(await db.outbox.count()).toBe(0);
+    // the largest total that fits is still fine
+    await w.recordSale({
+      tripId: trip,
+      chickenCount: 1,
+      totalKilo: "99999.99",
+      pricePerKilo: "1000.00",
+    });
+    expect(await db.outbox.count()).toBe(1);
+  });
   it("accepts a zero recount and treats an empty buyer as none", async () => {
     const db = testDb();
     const w = createWriter(db, "w1");
