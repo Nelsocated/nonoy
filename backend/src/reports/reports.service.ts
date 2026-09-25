@@ -25,16 +25,16 @@ type SaleSums = Sums & {
 };
 type ExpenseSums = { count: number; amount: string };
 
-const zeroSums = (): Sums => ({ chicken: 0, kilo: '0' });
+const zeroSums = (): Sums => ({ chicken: 0, kilo: '0.00' });
 const zeroSales = (): SaleSums => ({
   ...zeroSums(),
   count: 0,
-  amount: '0',
-  cash: '0',
-  qr: '0',
+  amount: '0.00',
+  cash: '0.00',
+  qr: '0.00',
   conflicts: 0,
 });
-const zeroExpenses = (): ExpenseSums => ({ count: 0, amount: '0' });
+const zeroExpenses = (): ExpenseSums => ({ count: 0, amount: '0.00' });
 const minus = (a: string, b: string) => new Decimal(a).minus(b).toFixed(2);
 
 @Injectable()
@@ -98,7 +98,7 @@ export class ReportsService {
       this.prisma.$queryRaw<(Sums & { day: string })[]>`
         SELECT ${this.day(Prisma.sql`p."createdAtClient"`)} AS day,
                COALESCE(SUM(p."chickenCount"), 0)::int AS chicken,
-               COALESCE(SUM(p."totalKilo"), 0)::text AS kilo
+               COALESCE(SUM(p."totalKilo"), 0)::numeric(12,2)::text AS kilo
         FROM pickups p JOIN trips t ON t.id = p."tripId"
         WHERE p."createdAtClient" >= ${start} AND p."createdAtClient" < ${end}
           ${byWorker(Prisma.sql`t."workerId"`)}
@@ -107,10 +107,10 @@ export class ReportsService {
         SELECT ${this.day(Prisma.sql`s."createdAtClient"`)} AS day,
                COUNT(*)::int AS count,
                COALESCE(SUM(s."chickenCount"), 0)::int AS chicken,
-               COALESCE(SUM(s."totalKilo"), 0)::text AS kilo,
-               COALESCE(SUM(s.amount), 0)::text AS amount,
-               COALESCE(SUM(s.amount) FILTER (WHERE s."paymentMethod" = 'CASH'), 0)::text AS cash,
-               COALESCE(SUM(s.amount) FILTER (WHERE s."paymentMethod" = 'QR'), 0)::text AS qr,
+               COALESCE(SUM(s."totalKilo"), 0)::numeric(12,2)::text AS kilo,
+               COALESCE(SUM(s.amount), 0)::numeric(12,2)::text AS amount,
+               COALESCE(SUM(s.amount) FILTER (WHERE s."paymentMethod" = 'CASH'), 0)::numeric(12,2)::text AS cash,
+               COALESCE(SUM(s.amount) FILTER (WHERE s."paymentMethod" = 'QR'), 0)::numeric(12,2)::text AS qr,
                (COUNT(*) FILTER (WHERE s."syncStatus" = 'CONFLICT'))::int AS conflicts
         FROM sales s JOIN trips t ON t.id = s."tripId"
         WHERE s."createdAtClient" >= ${start} AND s."createdAtClient" < ${end}
@@ -119,7 +119,7 @@ export class ReportsService {
       this.prisma.$queryRaw<(ExpenseSums & { day: string })[]>`
         SELECT ${this.day(Prisma.sql`e."createdAtClient"`)} AS day,
                COUNT(*)::int AS count,
-               COALESCE(SUM(e.amount), 0)::text AS amount
+               COALESCE(SUM(e.amount), 0)::numeric(12,2)::text AS amount
         FROM expenses e
         WHERE e."createdAtClient" >= ${start} AND e."createdAtClient" < ${end}
           ${byWorker(Prisma.sql`e."workerId"`)}
@@ -161,7 +161,7 @@ export class ReportsService {
       this.prisma.$queryRaw<(Sums & { workerId: string })[]>`
         SELECT t."workerId",
                COALESCE(SUM(p."chickenCount"), 0)::int AS chicken,
-               COALESCE(SUM(p."totalKilo"), 0)::text AS kilo
+               COALESCE(SUM(p."totalKilo"), 0)::numeric(12,2)::text AS kilo
         FROM pickups p JOIN trips t ON t.id = p."tripId"
         WHERE p."createdAtClient" >= ${start} AND p."createdAtClient" < ${end}
         GROUP BY 1`,
@@ -169,16 +169,16 @@ export class ReportsService {
         SELECT t."workerId",
                COUNT(*)::int AS count,
                COALESCE(SUM(s."chickenCount"), 0)::int AS chicken,
-               COALESCE(SUM(s."totalKilo"), 0)::text AS kilo,
-               COALESCE(SUM(s.amount), 0)::text AS amount,
-               COALESCE(SUM(s.amount) FILTER (WHERE s."paymentMethod" = 'CASH'), 0)::text AS cash,
-               COALESCE(SUM(s.amount) FILTER (WHERE s."paymentMethod" = 'QR'), 0)::text AS qr,
+               COALESCE(SUM(s."totalKilo"), 0)::numeric(12,2)::text AS kilo,
+               COALESCE(SUM(s.amount), 0)::numeric(12,2)::text AS amount,
+               COALESCE(SUM(s.amount) FILTER (WHERE s."paymentMethod" = 'CASH'), 0)::numeric(12,2)::text AS cash,
+               COALESCE(SUM(s.amount) FILTER (WHERE s."paymentMethod" = 'QR'), 0)::numeric(12,2)::text AS qr,
                (COUNT(*) FILTER (WHERE s."syncStatus" = 'CONFLICT'))::int AS conflicts
         FROM sales s JOIN trips t ON t.id = s."tripId"
         WHERE s."createdAtClient" >= ${start} AND s."createdAtClient" < ${end}
         GROUP BY 1`,
       this.prisma.$queryRaw<(ExpenseSums & { workerId: string })[]>`
-        SELECT "workerId", COUNT(*)::int AS count, COALESCE(SUM(amount), 0)::text AS amount
+        SELECT "workerId", COUNT(*)::int AS count, COALESCE(SUM(amount), 0)::numeric(12,2)::text AS amount
         FROM expenses
         WHERE "createdAtClient" >= ${start} AND "createdAtClient" < ${end}
         GROUP BY 1`,
