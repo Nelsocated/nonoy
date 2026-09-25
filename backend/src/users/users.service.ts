@@ -23,7 +23,7 @@ export class UsersService {
   async create(dto: CreateUserDto, role: Role = Role.WORKER) {
     const existing = await this.findByPhone(dto.phone);
     if (existing) {
-      throw new ConflictException('Phone number already registered');
+      throw new ConflictException('That phone number is already used');
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
@@ -82,6 +82,35 @@ export class UsersService {
     });
     if (!user) throw new NotFoundException('User not found');
     return user;
+  }
+
+  async update(id: string, dto: { name?: string; phone?: string }) {
+    await this.getProfile(id);
+    if (dto.phone) {
+      const owner = await this.findByPhone(dto.phone);
+      if (owner && owner.id !== id)
+        throw new ConflictException('That phone number is already used');
+    }
+    return this.prisma.user.update({
+      where: { id },
+      data: dto,
+      select: UsersService.publicFields,
+    });
+  }
+
+  // clears every refresh token: they're logged out on all devices
+  async resetPassword(id: string, password: string) {
+    await this.getProfile(id);
+    return this.prisma.user.update({
+      where: { id },
+      data: {
+        passwordHash: await bcrypt.hash(password, 10),
+        refreshTokenHash: null,
+        previousRefreshTokenHash: null,
+        refreshRotatedAt: null,
+      },
+      select: UsersService.publicFields,
+    });
   }
 
   // deactivating also revokes the refresh token; JwtStrategy rejects their

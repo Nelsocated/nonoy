@@ -1,4 +1,11 @@
-import { IsBoolean, IsEnum, IsString, MinLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
 import { Role } from '../generated/prisma/enums.js';
 
 export class CreateUserDto {
@@ -25,4 +32,24 @@ export class AdminCreateUserDto extends CreateUserDto {
 export class SetActiveDto {
   @IsBoolean()
   isActive: boolean;
+}
+
+// PATCH /users/:id — fix a name or change the login phone
+export class UpdateUserDto {
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty({ message: 'Enter a name' })
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(11, { message: 'Insert a valid phone number' })
+  phone?: string;
+}
+
+// PATCH /users/:id/password — staff set a new one when a worker forgets theirs
+export class ResetPasswordDto {
+  @IsString()
+  @MinLength(6)
+  password: string;
 }

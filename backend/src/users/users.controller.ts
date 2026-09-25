@@ -16,13 +16,19 @@ import { Public } from '../auth/decorators/public.decorator.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { Role } from '../generated/prisma/enums.js';
 import type { AuthenticatedUser } from '../auth/auth.controller.js';
-import { AdminCreateUserDto, CreateUserDto, SetActiveDto } from './users.dto.js';
+import {
+  AdminCreateUserDto,
+  CreateUserDto,
+  ResetPasswordDto,
+  SetActiveDto,
+  UpdateUserDto,
+} from './users.dto.js';
 
-// Which roles each role may create, list and (de)activate. ADMIN (runs the
-// system) can manage anyone; OWNER (runs the business) only manages workers.
+// Which roles each role may create, list and manage. Owner and admin share
+// one UI and the same powers (decided 2026-09-26).
 const CAN_MANAGE: Partial<Record<Role, Role[]>> = {
   [Role.ADMIN]: [Role.ADMIN, Role.OWNER, Role.WORKER],
-  [Role.OWNER]: [Role.WORKER],
+  [Role.OWNER]: [Role.ADMIN, Role.OWNER, Role.WORKER],
 };
 
 @Controller('users')
@@ -77,13 +83,42 @@ export class UsersController {
       // stops the last admin from locking everyone out
       throw new ForbiddenException('You cannot change your own active status');
     }
+    await this.assertCanManage(id, req.user);
+    return this.usersService.setActive(id, dto.isActive);
+  }
+
+  @Roles(Role.OWNER, Role.ADMIN)
+  @Patch(':id')
+  async update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateUserDto,
+    @Req() req: Request & { user: AuthenticatedUser },
+  ) {
+    await this.assertCanManage(id, req.user);
+    return this.usersService.update(id, dto);
+  }
+
+  @Roles(Role.OWNER, Role.ADMIN)
+  @Patch(':id/password')
+  async resetPassword(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ResetPasswordDto,
+    @Req() req: Request & { user: AuthenticatedUser },
+  ) {
+    if (id === req.user.id) {
+      throw new ForbiddenException('You cannot reset your own password here');
+    }
+    await this.assertCanManage(id, req.user);
+    return this.usersService.resetPassword(id, dto.password);
+  }
+
+  private async assertCanManage(id: string, me: AuthenticatedUser) {
     const target = await this.usersService.getProfile(id);
-    const allowed = CAN_MANAGE[req.user.role as Role] ?? [];
+    const allowed = CAN_MANAGE[me.role as Role] ?? [];
     if (!allowed.includes(target.role)) {
       throw new ForbiddenException(
-        `${req.user.role} cannot manage ${target.role} accounts`,
+        `${me.role} cannot manage ${target.role} accounts`,
       );
     }
-    return this.usersService.setActive(id, dto.isActive);
   }
 }
