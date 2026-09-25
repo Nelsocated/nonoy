@@ -1,26 +1,131 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Nonoy theme — minimal, red & white.
+ *
+ * Components use the semantic tokens (bg-primary, text-muted-foreground,
+ * border-border…), never raw reds, so the brand can be retuned here in one place.
+ *
+ * Red is a deep crimson, not pure #FF0000: white text on primary is 4.8:1
+ * (WCAG AA). Neutrals are slightly warm so they sit comfortably next to red.
+ * Light-only for now — the app is used outdoors, where light screens read best.
+ */
+
+@theme static {
+  /* ---- brand red scale ---- */
+  --color-brand-50: oklch(97.1% 0.013 17.38);
+  --color-brand-100: oklch(93.6% 0.032 17.717);
+  --color-brand-200: oklch(88.5% 0.062 18.334);
+  --color-brand-300: oklch(80.8% 0.114 19.571);
+  --color-brand-400: oklch(70.4% 0.191 22.216);
+  --color-brand-500: oklch(63.7% 0.237 25.331);
+  --color-brand-600: oklch(57.7% 0.245 27.325);
+  --color-brand-700: oklch(50.5% 0.213 27.518);
+  --color-brand-800: oklch(44.4% 0.177 26.899);
+  --color-brand-900: oklch(39.6% 0.141 25.723);
+  --color-brand-950: oklch(25.8% 0.092 26.042);
+
+  /* ---- warm neutrals ---- */
+  --color-ink-50: oklch(98.6% 0.002 48);
+  --color-ink-100: oklch(96.8% 0.003 48);
+  --color-ink-200: oklch(92.4% 0.004 48);
+  --color-ink-300: oklch(86.9% 0.006 50);
+  --color-ink-400: oklch(70.9% 0.01 52);
+  --color-ink-500: oklch(55.3% 0.012 55);
+  --color-ink-600: oklch(44.4% 0.011 60);
+  --color-ink-700: oklch(37.4% 0.01 60);
+  --color-ink-800: oklch(26.8% 0.007 40);
+  --color-ink-900: oklch(21.6% 0.006 45);
+  --color-ink-950: oklch(14.7% 0.004 45);
+
+  /* ---- semantic tokens ---- */
+  --color-background: var(--color-ink-50); /* page: a breath off pure white */
+  --color-foreground: var(--color-ink-900); /* body text: soft black, not #000 */
+
+  --color-surface: #ffffff; /* cards, sheets, inputs */
+  --color-surface-foreground: var(--color-ink-900);
+
+  --color-primary: var(--color-brand-600);
+  --color-primary-hover: var(--color-brand-700);
+  --color-primary-active: var(--color-brand-800);
+  --color-primary-foreground: #ffffff;
+  --color-primary-soft: var(--color-brand-50); /* selected rows, active nav, badges */
+  --color-primary-soft-foreground: var(--color-brand-700);
+
+  --color-muted: var(--color-ink-100);
+  --color-muted-foreground: var(--color-ink-500); /* labels, captions, hints */
+
+  --color-border: var(--color-ink-200);
+  --color-input: var(--color-ink-300);
+  --color-ring: var(--color-brand-500);
+
+  /* status — error shares the brand hue, so always pair it with an icon/text */
+  --color-danger: var(--color-brand-700);
+  --color-danger-soft: var(--color-brand-50);
+  --color-success: oklch(52.7% 0.137 150);
+  --color-success-soft: oklch(96.2% 0.044 157);
+  --color-warning: oklch(55.5% 0.146 65);
+  --color-warning-soft: oklch(97.3% 0.071 103);
+
+  /* ---- type ---- */
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* ---- shape & depth: soft, barely-there ---- */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1.25rem;
+
+  --shadow-card: 0 1px 2px oklch(21.6% 0.006 45 / 0.04),
+    0 1px 3px oklch(21.6% 0.006 45 / 0.06);
+  --shadow-raised: 0 4px 16px -4px oklch(21.6% 0.006 45 / 0.1),
+    0 2px 4px oklch(21.6% 0.006 45 / 0.04);
+  --shadow-primary: 0 4px 14px -4px oklch(57.7% 0.245 27.325 / 0.45);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    color-scheme: light;
+    -webkit-tap-highlight-color: transparent;
   }
-}
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* default border color for bare `border` utilities */
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-border);
+  }
+
+  ::selection {
+    background-color: var(--color-brand-100);
+    color: var(--color-brand-900);
+  }
+
+  /* one consistent, visible focus ring for keyboard users */
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+
+  /* money and counts line up in tables */
+  table,
+  input[inputmode="decimal"],
+  input[inputmode="numeric"] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-ink-400);
+  }
 }
