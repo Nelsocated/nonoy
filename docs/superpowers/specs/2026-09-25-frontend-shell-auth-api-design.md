@@ -84,7 +84,7 @@ The proxy is an optimistic check only; the backend's `RolesGuard` remains the au
 
 ## Out of scope
 
-Landing page, real dashboard content, worker offline queue (the typed `/sync` endpoint
+Landing page, real dashboard content, local cache + worker offline queue (the typed `/sync` endpoint
 exists), nav entries for pages not yet built, real logo.
 
 ## Testing
@@ -93,3 +93,10 @@ exists), nav entries for pages not yet built, real logo.
   `http.ts` error mapping, refresh de-duplication.
 - Manual check with the dev servers: log in as the seeded admin → `/admin`; visit
   `/field` → bounced to `/admin`; log out → `/login`; unauthenticated `/admin` → `/login`.
+
+## Next feature: local cache (decided 2026-09-25)
+
+Both: cached API reads for everyone (pages load instantly, show last data offline) and an
+offline write queue for workers (IndexedDB, pushed to `/sync` when back online). Built as its
+own spec right after this one. This design keeps it pluggable: screens call `createApi(http)`,
+so a caching/queueing `Http` wraps the browser one without changing endpoint modules or pages.
