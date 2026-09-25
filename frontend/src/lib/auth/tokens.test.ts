@@ -19,3 +19,15 @@ describe("tokens", () => {
     expect(isExpiring(jwt({ exp: now / 1000 + 300 }), now)).toBe(false);
   });
 });
+
+describe("tokenRole", () => {
+  it("reads a known role from the access token", async () => {
+    const { tokenRole } = await import("./tokens");
+    expect(tokenRole(jwt({ sub: "u", role: "WORKER" }))).toBe("WORKER");
+  });
+  it("returns null for unknown roles or garbage", async () => {
+    const { tokenRole } = await import("./tokens");
+    expect(tokenRole(jwt({ role: "GOD" }))).toBeNull();
+    expect(tokenRole("garbage")).toBeNull();
+  });
+});

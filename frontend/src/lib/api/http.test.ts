@@ -53,3 +53,10 @@ describe("createHttp", () => {
     expect(onUnauthorized).toHaveBeenCalledOnce();
   });
 });
+
+describe("non-JSON responses", () => {
+  it("still throws ApiError with the status for an HTML error page", async () => {
+    const http = createHttp({ baseUrl: "http://x", fetch: async () => new Response("<html>502 Bad Gateway</html>", { status: 502 }) });
+    await expect(http.get("/x")).rejects.toMatchObject({ name: "ApiError", status: 502, message: "Request failed (502)" });
+  });
+});

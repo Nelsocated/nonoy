@@ -17,3 +17,16 @@ describe("forward", () => {
     expect(targetUrl("http://x:4000/", ["buyers", "a b"], "")).toBe("http://x:4000/buyers/a%20b");
   });
 });
+
+describe("backendHeaders", () => {
+  it("forwards the browser IP (first X-Forwarded-For entry) with the shared secret", async () => {
+    const { backendHeaders } = await import("./forward");
+    const h = backendHeaders(new Headers({ "x-forwarded-for": "203.0.113.7, 10.0.0.1" }), "s3cret");
+    expect(h).toEqual({ "X-Forwarded-For": "203.0.113.7", "X-Internal-Secret": "s3cret" });
+  });
+  it("falls back to X-Real-IP, and sends nothing without a secret", async () => {
+    const { backendHeaders } = await import("./forward");
+    expect(backendHeaders(new Headers({ "x-real-ip": "198.51.100.2" }), "s")).toEqual({ "X-Forwarded-For": "198.51.100.2", "X-Internal-Secret": "s" });
+    expect(backendHeaders(new Headers({ "x-forwarded-for": "1.2.3.4" }), undefined)).toEqual({});
+  });
+});

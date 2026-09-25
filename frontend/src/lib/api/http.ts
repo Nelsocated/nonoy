@@ -41,6 +41,15 @@ export function errorMessage(body: unknown, status: number) {
   return `Request failed (${status})`;
 }
 
+// error pages from proxies (502 HTML) must still become an ApiError with the status
+function parseJson(text: string): unknown {
+  try {
+    return text ? JSON.parse(text) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export function createHttp({ baseUrl, headers, onUnauthorized, fetch: fetchImpl = fetch }: HttpOptions): Http {
   async function request<T>(method: string, path: string, body?: unknown, query?: Query): Promise<T> {
     const h = new Headers(await headers?.());
@@ -54,8 +63,7 @@ export function createHttp({ baseUrl, headers, onUnauthorized, fetch: fetchImpl 
       cache: "no-store",
     });
 
-    const text = await res.text();
-    const data = text ? JSON.parse(text) : undefined;
+    const data = parseJson(await res.text());
     if (!res.ok) {
       if (res.status === 401) onUnauthorized?.();
       throw new ApiError(res.status, errorMessage(data, res.status));

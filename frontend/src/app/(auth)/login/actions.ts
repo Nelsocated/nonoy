@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { ApiError, type LoginResponse } from "@/lib/api";
-import { publicApi } from "@/lib/api/server";
+import { forwardingHeaders, publicApi } from "@/lib/api/server";
 import { API_URL } from "@/lib/env";
 import { homeFor } from "@/lib/auth/roles";
 import { clearSession, getSession, setSession } from "@/lib/auth/session";
@@ -34,7 +34,7 @@ export async function logout() {
   if (session?.accessToken) {
     await fetch(`${API_URL}/auth/logout`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${session.accessToken}` },
+      headers: { ...(await forwardingHeaders()), Authorization: `Bearer ${session.accessToken}` },
       cache: "no-store",
     }).catch(() => {});
   }

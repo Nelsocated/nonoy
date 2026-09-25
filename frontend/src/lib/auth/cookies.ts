@@ -1,4 +1,5 @@
-import type { Role, SessionUser, Tokens } from "@/lib/api/types";
+import type { RefreshedTokens, Role, SessionUser } from "@/lib/api/types";
+import { tokenRole } from "./tokens";
 
 export const COOKIE = { access: "nonoy_access", refresh: "nonoy_refresh", user: "nonoy_user" } as const;
 
@@ -29,12 +30,20 @@ export function parseUser(raw?: string): SessionUser | null {
   return null;
 }
 
-export function writeSessionCookies(jar: Jar, tokens: Tokens, user?: SessionUser) {
+export function writeSessionCookies(jar: Jar, tokens: RefreshedTokens, user?: SessionUser) {
   jar.set(COOKIE.access, tokens.accessToken, cookieOptions);
-  jar.set(COOKIE.refresh, tokens.refreshToken, cookieOptions);
+  if (tokens.refreshToken) jar.set(COOKIE.refresh, tokens.refreshToken, cookieOptions);
   if (user) jar.set(COOKIE.user, JSON.stringify(user), cookieOptions);
 }
 
 export function clearSessionCookies(jar: Jar) {
   for (const name of Object.values(COOKIE)) jar.delete(name);
+}
+
+// The user cookie is written at login; the backend puts the current role (from the
+// DB) in every refreshed access token, so pick up a role change from there.
+export function userAfterRefresh(user: SessionUser | null, accessToken: string): SessionUser | undefined {
+  const role = tokenRole(accessToken);
+  if (!user || !role || role === user.role) return undefined;
+  return { ...user, role };
 }

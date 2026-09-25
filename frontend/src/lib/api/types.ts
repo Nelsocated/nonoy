@@ -18,6 +18,8 @@ type Ref = { id: string; name: string };
 // ---- auth / users ----
 export type SessionUser = { id: string; name: string; role: Role };
 export type Tokens = { accessToken: string; refreshToken: string };
+/** refreshToken is null inside the backend's grace window: keep the current one */
+export type RefreshedTokens = { accessToken: string; refreshToken: string | null };
 export type LoginResponse = Tokens & { user: SessionUser };
 export type LoginInput = { phone: string; password: string };
 
