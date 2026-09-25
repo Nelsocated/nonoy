@@ -1,11 +1,15 @@
-// Placeholder until the client sends their logo — swap the box for an <Image> then.
+import Image from "next/image";
 
-export function Logo({ className = "" }: { className?: string }) {
+// Full Mang Frito logo for now; a chicken-only mark for small sizes is coming from the client.
+export function Logo({ className = "size-10" }: { className?: string }) {
   return (
-    <div
-      aria-label="Nonoy"
-      role="img"
-      className={`size-10 rounded-md border border-dashed border-input bg-surface ${className}`}
+    <Image
+      src="/logo.png"
+      alt="Mang Frito"
+      width={512}
+      height={512}
+      priority
+      className={`rounded-full ${className}`}
     />
   );
 }

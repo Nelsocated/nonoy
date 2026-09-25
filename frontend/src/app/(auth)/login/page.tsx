@@ -6,7 +6,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   return (
     <div className="w-full max-w-sm space-y-6">
       <div className="space-y-3">
-        <Logo />
+        <Logo className="size-24" />
         <h1 className="text-2xl font-semibold tracking-tight">Sign in</h1>
         <p className="text-sm text-muted-foreground">Use the phone number your manager registered.</p>
       </div>

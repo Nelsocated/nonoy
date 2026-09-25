@@ -11,7 +11,7 @@ export function AdminSidebar({ user }: { user: SessionUser }) {
     <aside className="flex flex-col gap-6 border-b bg-surface p-4 md:sticky md:top-0 md:h-dvh md:w-60 md:shrink-0 md:border-r md:border-b-0">
       <div className="flex items-center gap-3">
         <Logo className="size-9" />
-        <span className="font-semibold tracking-tight">Nonoy</span>
+        <span className="font-semibold tracking-tight">Mang Frito</span>
       </div>
       <nav className="flex gap-1 md:flex-col">
         {NAV.map((item) => (

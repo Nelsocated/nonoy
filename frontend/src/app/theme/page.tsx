@@ -20,7 +20,7 @@ export default function ThemePage() {
   return (
     <main className="mx-auto w-full max-w-5xl space-y-10 px-4 py-10 sm:px-8">
       <header className="space-y-1">
-        <Logo className="mb-4" />
+        <Logo className="mb-4 size-10" />
         <h1 className="text-3xl font-semibold tracking-tight">Theme</h1>
         <p className="text-muted-foreground">Minimal red &amp; white. Tokens live in globals.css.</p>
       </header>
