@@ -1,4 +1,13 @@
-import { IsOptional, IsUUID, Matches } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+import {
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Matches,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -19,4 +28,24 @@ export class DailyReportDto extends ReportRangeDto {
   @IsOptional()
   @IsUUID()
   workerId?: string;
+}
+
+// GET /reports/problems?page=2 — 15 per page
+export class ProblemsQueryDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+}
+
+// PATCH /reports/problems/:kind/:id/check
+export class CheckProblemDto {
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsString()
+  @MaxLength(200)
+  note?: string;
 }

@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { BadRequestException } from '@nestjs/common';
 import { ReportsController } from './reports.controller.js';
 
 describe('ReportsController', () => {
@@ -16,5 +17,12 @@ describe('ReportsController', () => {
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
+  });
+
+  it('only checks recounts and sales', () => {
+    const me = { user: { id: 'me', role: 'OWNER' } } as any;
+    expect(() => controller.checkProblem('foo', 'x', {}, me)).toThrow(
+      BadRequestException,
+    );
   });
 });

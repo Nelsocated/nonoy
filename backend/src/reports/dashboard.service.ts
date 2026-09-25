@@ -1,5 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { Prisma } from '../generated/prisma/client.js';
+
+export const PAGE_SIZE = 15;
+export type ProblemKind = 'recount' | 'sale';
 
 type OpenTripRow = {
   id: string;
@@ -63,5 +67,95 @@ export class DashboardService {
       sales: { amount: r.amount, cash: r.cash, qr: r.qr },
       lastSyncedAt: r.lastSyncedAt,
     }));
+  }
+
+  // Unchecked problems, newest first, 15 per page: recounts that didn't match
+  // and sales that conflicted or had their price changed by the worker.
+  async problems(page = 1) {
+    const offset = (page - 1) * PAGE_SIZE;
+    const unchecked = Prisma.sql`
+      SELECT 'recount' AS kind, id, "createdAtClient" FROM recounts
+      WHERE "discrepancyFlagged" AND "checkedAt" IS NULL
+      UNION ALL
+      SELECT 'sale' AS kind, id, "createdAtClient" FROM sales
+      WHERE "checkedAt" IS NULL AND (
+        "syncStatus" = 'CONFLICT' OR (
+          "pricePerKilo" IS NOT NULL AND "listPricePerKilo" IS NOT NULL
+          AND "pricePerKilo" <> "listPricePerKilo"))`;
+    const [refs, [{ total }]] = await Promise.all([
+      this.prisma.$queryRaw<{ kind: ProblemKind; id: string }[]>`
+        SELECT kind, id FROM (${unchecked}) p
+        ORDER BY "createdAtClient" DESC, id
+        LIMIT ${PAGE_SIZE} OFFSET ${offset}`,
+      this.prisma.$queryRaw<{ total: number }[]>`
+        SELECT COUNT(*)::int AS total FROM (${unchecked}) p`,
+    ]);
+
+    const ids = (kind: ProblemKind) =>
+      refs.filter((r) => r.kind === kind).map((r) => r.id);
+    const trip = {
+      select: { id: true, worker: { select: { id: true, name: true } } },
+    };
+    const [recounts, sales] = await Promise.all([
+      this.prisma.recount.findMany({
+        where: { id: { in: ids('recount') } },
+        include: { trip },
+      }),
+      this.prisma.sale.findMany({
+        where: { id: { in: ids('sale') } },
+        include: { trip, buyer: { select: { id: true, name: true } } },
+      }),
+    ]);
+
+    const recountItems = recounts.map(({ trip: t, ...r }) => ({
+      kind: 'recount' as const,
+      ...r,
+      worker: t.worker,
+      // counted − expected: negative = short, positive = over
+      chickenDifference: r.countedChicken - r.expectedChicken,
+      kiloDifference: r.countedKilo.minus(r.expectedKilo).toFixed(2),
+    }));
+    const saleItems = sales.map(({ trip: t, ...s }) => ({
+      kind: 'sale' as const,
+      ...s,
+      worker: t.worker,
+    }));
+    const byId = new Map(
+      [...recountItems, ...saleItems].map((i) => [`${i.kind}:${i.id}`, i]),
+    );
+
+    return {
+      // keep the SQL order; a row checked meanwhile simply drops out
+      items: refs.flatMap((r) => byId.get(`${r.kind}:${r.id}`) ?? []),
+      total,
+      page,
+      pageSize: PAGE_SIZE,
+    };
+  }
+
+  // Owner/admin looked at it. The first checker is kept if two check at once.
+  async checkProblem(
+    kind: ProblemKind,
+    id: string,
+    note: string | undefined,
+    userId: string,
+  ) {
+    const data = {
+      checkedAt: new Date(),
+      checkedById: userId,
+      checkNote: note || null,
+    };
+    if (kind === 'recount') {
+      const row = await this.prisma.recount.findUnique({ where: { id } });
+      if (!row) throw new NotFoundException('Problem not found');
+      return row.checkedAt
+        ? row
+        : this.prisma.recount.update({ where: { id }, data });
+    }
+    const row = await this.prisma.sale.findUnique({ where: { id } });
+    if (!row) throw new NotFoundException('Problem not found');
+    return row.checkedAt
+      ? row
+      : this.prisma.sale.update({ where: { id }, data });
   }
 }
