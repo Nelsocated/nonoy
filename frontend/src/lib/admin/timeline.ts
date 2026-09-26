@@ -77,3 +77,22 @@ export function tripTimeline(t: TripDetail): TimelineEntry[] {
   ];
   return entries.sort((a, b) => Date.parse(a.at) - Date.parse(b.at));
 }
+
+// Time only when it's the same calendar day as `ref`, else date and time,
+// so a trip past midnight or an old problem isn't mistaken for today.
+export function stamp(
+  iso: string | number,
+  ref: string | number,
+  timeZone?: string,
+) {
+  const day = (d: string | number) =>
+    new Date(d).toLocaleDateString("en-CA", { timeZone });
+  const clock = { hour: "numeric", minute: "2-digit", timeZone } as const;
+  return day(iso) === day(ref)
+    ? new Date(iso).toLocaleTimeString("en-PH", clock)
+    : new Date(iso).toLocaleString("en-PH", {
+        month: "short",
+        day: "numeric",
+        ...clock,
+      });
+}

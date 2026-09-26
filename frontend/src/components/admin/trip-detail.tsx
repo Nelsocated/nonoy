@@ -15,7 +15,7 @@ import { ApiError } from "@/lib/api";
 import { api } from "@/lib/api/browser";
 import { pagedList, pageOf } from "@/lib/admin/paging";
 import { problemSentence } from "@/lib/admin/problems";
-import { tripTimeline, type TimelineEntry } from "@/lib/admin/timeline";
+import { stamp, tripTimeline, type TimelineEntry } from "@/lib/admin/timeline";
 import { peso, twoDp } from "@/lib/trip/money";
 import { CheckProblem } from "./check-problem";
 import { Pager } from "./pager";
@@ -24,11 +24,6 @@ const when = (iso: string) =>
   new Date(iso).toLocaleString("en-PH", {
     month: "short",
     day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-const time = (iso: string) =>
-  new Date(iso).toLocaleTimeString("en-PH", {
     hour: "numeric",
     minute: "2-digit",
   });
@@ -198,7 +193,7 @@ export function TripDetailScreen({ id }: { id: string }) {
                         {e.problem ? problemSentence(e.problem) : title}
                       </span>
                       <span className="block truncate text-xs text-muted-foreground">
-                        {time(e.at)} · {detail}
+                        {stamp(e.at, t.startedAt)} · {detail}
                         {e.problem && !open && (
                           <> · Checked{note ? ` — ${note}` : ""}</>
                         )}

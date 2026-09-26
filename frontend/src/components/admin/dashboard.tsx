@@ -18,6 +18,7 @@ import type { Problem } from "@/lib/api/types";
 import { PAGE_SIZE, pagedList, pageOf } from "@/lib/admin/paging";
 import { problemSentence } from "@/lib/admin/problems";
 import { syncAge, todayInManila } from "@/lib/admin/sync-age";
+import { stamp } from "@/lib/admin/timeline";
 import { asOf } from "@/lib/offline/admin-cache";
 import { peso } from "@/lib/trip/money";
 import { CheckProblem } from "./check-problem";
@@ -188,7 +189,7 @@ export function Dashboard({ name }: { name: string }) {
                           <span className="block truncate text-sm font-medium">
                             {t.worker.name}{" "}
                             <span className="font-normal text-muted-foreground">
-                              · since {time(t.startedAt)}
+                              · since {stamp(t.startedAt, now)}
                             </span>
                           </span>
                           <span className="block truncate text-xs text-muted-foreground tabular-nums">
@@ -254,7 +255,7 @@ export function Dashboard({ name }: { name: string }) {
                             {problemSentence(p)}
                           </span>
                           <span className="block truncate text-xs text-muted-foreground">
-                            {p.worker.name} · {time(p.createdAtClient)}
+                            {p.worker.name} · {stamp(p.createdAtClient, now)}
                           </span>
                         </span>
                       </Link>

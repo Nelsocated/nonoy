@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { TripDetail } from "@/lib/api/types";
-import { tripTimeline } from "./timeline";
+import { stamp, tripTimeline } from "./timeline";
 
 const at = (h: number) => `2026-09-26T0${h}:00:00.000Z`;
 const worker = { id: "w1", name: "Juan" };
@@ -60,5 +60,20 @@ describe("tripTimeline", () => {
     });
     expect(t[2].problem).toMatchObject({ kind: "sale", worker });
     expect(t[3].problem).toBeNull(); // "180.00" vs "180" is the same price
+  });
+});
+
+describe("stamp", () => {
+  const tz = "Asia/Manila";
+  it("shows only the time on the same day", () => {
+    // 11:30 PM and 6:10 AM the same Manila day
+    const s = stamp("2026-09-26T15:30:00Z", "2026-09-25T22:10:00Z", tz);
+    expect(s).toMatch(/11:30/);
+    expect(s).not.toMatch(/Sep/);
+  });
+  it("adds the date after midnight", () => {
+    const s = stamp("2026-09-26T16:30:00Z", "2026-09-26T15:30:00Z", tz);
+    expect(s).toMatch(/Sep 27/);
+    expect(s).toMatch(/12:30/);
   });
 });
