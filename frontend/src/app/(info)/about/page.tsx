@@ -1,3 +1,4 @@
+import { Code } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ContactCard } from "@/components/info/contact";
@@ -45,6 +46,20 @@ export default function AboutPage() {
           Questions about the app, your account or your data? Reach the owner:
         </p>
         <ContactCard />
+      </section>
+
+      <section>
+        <h2>Built by</h2>
+        <p className="flex flex-wrap items-center gap-x-2">
+          <Code aria-hidden className="size-5 text-primary" />
+          <span className="font-semibold">Nelson Lago III</span>
+          <span aria-hidden className="text-muted-foreground">
+            ·
+          </span>
+          <a href="mailto:lagonelson77@gmail.com" className="break-all">
+            lagonelson77@gmail.com
+          </a>
+        </p>
       </section>
 
       <p className="text-muted-foreground">
