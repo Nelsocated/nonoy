@@ -45,6 +45,8 @@ Local development uses the **same database as production**, so what you record l
 - **Info pages**: `/about`, `/help`, `/privacy`, `/terms` (route group `app/(info)`) are public, linked under the login form, in the admin menu and as the field Help tab, and cached for offline. The owner's contact lives in `components/info/contact.tsx`.
 - **Dropdowns**: use `Select` (`components/select.tsx`), not a native `<select>`. It matches the theme, works like a native select from the keyboard (arrows, Home/End, Enter, Esc, type a letter), and opens its list in the top layer so dialogs don't clip it; it flips upward when there's no room below. `size="lg"` for the big field-form inputs.
 - **Admin menu**: the sidebar (and the phone slide-in menu) scrolls between the logo and the account bar, which stays pinned at the bottom.
+- **Scrollbars**: thin and red everywhere, set once in `globals.css` (`scrollbar-color` for Chrome/Firefox, `::-webkit-scrollbar` for Safari).
+- **New buyers on phones**: "(waiting)" comes from `waitingLabel` (`lib/trip/buyer-name.ts`), shared with the admin screens. A pull drops a waiting request the server no longer sends (decided more than 60 days ago). Forms show the `lib/offline/validate.ts` rules under their fields with `problem()`.
 - **Dialogs**: open them with `showDialog(ref.current)` and mark the safe choice `data-autofocus`. React's `autoFocus` only writes the attribute in server HTML, so a dialog drawn in the browser would otherwise focus its first (often risky) button.
 
 ## Layout (`src/`)
