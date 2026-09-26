@@ -4,7 +4,7 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { CircleCheck } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useOffline } from "@/components/offline/offline-provider";
 import { Receipt } from "@/components/receipt/receipt";
 import { primaryButton } from "@/components/trip/form";
@@ -19,7 +19,13 @@ const back =
 function SaleReceipt() {
   const params = useSearchParams();
   const id = params.get("id") ?? "";
-  const saved = params.get("saved") === "1";
+  // "Sale saved" belongs to the moment of saving: remember it for this visit,
+  // then drop it from the address so a reload doesn't say it again
+  const [saved] = useState(() => params.get("saved") === "1");
+  useEffect(() => {
+    if (params.has("saved"))
+      window.history.replaceState(null, "", `?id=${encodeURIComponent(id)}`);
+  }, [params, id]);
   const { userId, userName } = useOffline();
 
   // null = not on this phone (or someone else's); undefined = still loading
