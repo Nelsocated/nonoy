@@ -57,7 +57,7 @@ export function MonthPicker({
   const ready = value && current;
   const [year, month] = value ? value.split("-") : ["", ""];
   return (
-    <div className="grid grid-cols-[minmax(9rem,1fr)_minmax(6rem,auto)] gap-2">
+    <div className="grid grid-cols-[minmax(9rem,1fr)_minmax(6.5rem,auto)] gap-2">
       <Dropdown
         id={`${ids}-month`}
         label="Month"

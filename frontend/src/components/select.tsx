@@ -99,7 +99,10 @@ export function Select({
     const up = below < want && above > below;
     setPlace({
       left: b.left,
-      width: b.width,
+      // at least as wide as the button, wider when a row needs it (a
+      // narrow year button would otherwise cut "2026" off), never off-screen
+      minWidth: b.width,
+      maxWidth: window.innerWidth - b.left - 8,
       maxHeight: Math.max(Math.min(256, up ? above : below), 120),
       // the popover's default inset is 0 on every side: clear the unused ones
       right: "auto",
@@ -289,7 +292,7 @@ export function Select({
         // clicks on a row mustn't pull focus off the button
         onMouseDown={(e) => e.preventDefault()}
         style={place}
-        className={`select-pop fixed z-50 m-0 overflow-y-auto overscroll-contain rounded-md border border-input bg-surface p-1 text-foreground shadow-raised ${open ? "" : "hidden"}`}
+        className={`select-pop fixed z-50 m-0 w-max overflow-y-auto overscroll-contain rounded-md border border-input bg-surface p-1 text-foreground shadow-raised ${open ? "" : "hidden"}`}
       >
         {options.map((o, i) => {
           const isSelected = i === selected;
