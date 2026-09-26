@@ -12,5 +12,7 @@ export function matchesSearch(
 // what the server did on Remove: deleted when unused, archived when it has history
 export function removedMessage(r: RemoveResult, noun: "sale" | "pickup") {
   if (r.result === "deleted") return "Deleted.";
+  // no sales, but a new-buyer request points at it
+  if (r.uses === 0) return "Archived — a new buyer request uses it.";
   return `Archived — it has ${r.uses} ${noun}${r.uses === 1 ? "" : "s"}, so it's kept for history.`;
 }

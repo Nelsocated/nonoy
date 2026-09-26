@@ -20,5 +20,8 @@ describe("removedMessage", () => {
     expect(removedMessage({ result: "archived", uses: 12 }, "pickup")).toBe(
       "Archived — it has 12 pickups, so it's kept for history.",
     );
+    expect(removedMessage({ result: "archived", uses: 0 }, "sale")).toBe(
+      "Archived — a new buyer request uses it.",
+    );
   });
 });
