@@ -6,6 +6,7 @@ import {
   FileBarChart,
   LayoutDashboard,
   QrCode,
+  Route,
   Store,
   Tag,
   Truck,
@@ -19,6 +20,7 @@ import { navActive, navIdle } from "@/lib/ui/styles";
 const NAV: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/reports", label: "Reports", icon: FileBarChart },
+  { href: "/admin/trips", label: "Trips", icon: Route },
   { href: "/admin/price", label: "Price", icon: Tag },
   { href: "/admin/qr-codes", label: "QR codes", icon: QrCode },
   { href: "/admin/buyers", label: "Buyers", icon: Store },

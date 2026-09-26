@@ -36,6 +36,8 @@ export function CheckProblem({
       dialog.current?.close();
       void queryClient.invalidateQueries({ queryKey: ["problems"] });
       void queryClient.invalidateQueries({ queryKey: ["trip"] });
+      // the trips list shows a "to check" count per trip
+      void queryClient.invalidateQueries({ queryKey: ["trips"] });
       onDone?.();
     },
     onError: (e) =>
