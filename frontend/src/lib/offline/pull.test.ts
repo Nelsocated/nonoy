@@ -337,4 +337,33 @@ describe("pullInto — payment QR codes", () => {
     await pullInto(db, "w1", api);
     expect(await db.buyerRequests.count()).toBe(1);
   });
+
+  it("drops a synced waiting request the server no longer sends", async () => {
+    const db = testDb();
+    const waiting = {
+      userId: "w1",
+      createdAtClient: "",
+      name: "Nena",
+      location: null,
+      status: "PENDING" as const,
+      buyerId: null,
+    };
+    // decided long ago (not sent), still sending, and failed to sync
+    await db.buyerRequests.bulkPut([
+      { ...waiting, clientId: "old", state: "synced" },
+      { ...waiting, clientId: "queued", state: "synced" },
+      { ...waiting, clientId: "failed", state: "error" },
+    ]);
+    await db.outbox.add({
+      userId: "w1",
+      kind: "buyerRequest",
+      clientId: "queued",
+      payload: {},
+      createdAt: "",
+    } as never);
+    await pullInto(db, "w1", fakeApi());
+    expect(
+      (await db.buyerRequests.toArray()).map((r) => r.clientId).sort(),
+    ).toEqual(["failed", "queued"]);
+  });
 });

@@ -64,7 +64,21 @@ export async function pullInto(
     async () => {
       await db.buyers.clear();
       await db.buyers.bulkPut(buyers);
-      if (requests)
+      if (requests) {
+        // the server sends every one still waiting, so a synced one it left
+        // out was decided long ago: stop showing it as waiting
+        const sent = new Set(requests.map((r) => r.id));
+        await db.buyerRequests
+          .where("userId")
+          .equals(userId)
+          .filter(
+            (r) =>
+              r.state === "synced" &&
+              r.status === "PENDING" &&
+              !sent.has(r.clientId) &&
+              !pending.has(r.clientId),
+          )
+          .delete();
         await db.buyerRequests.bulkPut(
           keep(requests.map((r) => ({ ...r, clientId: r.id }))).map((r) => ({
             clientId: r.clientId,
@@ -76,6 +90,7 @@ export async function pullInto(
             ...synced,
           })),
         );
+      }
       await db.plantations.clear();
       await db.plantations.bulkPut(plantations);
       if (qrs) {
