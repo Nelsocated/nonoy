@@ -261,6 +261,13 @@ describe('SalesService', () => {
       );
     });
 
+    it('a waiting new buyer shows as waiting', async () => {
+      prisma.sale.findUnique.mockResolvedValue(
+        row({ buyer: null, buyerRequest: { name: 'Nena', status: 'PENDING' } }),
+      );
+      expect((await service.receipt('c1')).buyerName).toBe('Nena (waiting)');
+    });
+
     it('walk-in and pre-price sales → nulls', async () => {
       prisma.sale.findUnique.mockResolvedValue(
         row({ buyer: null, pricePerKilo: null }),

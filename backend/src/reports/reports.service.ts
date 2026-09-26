@@ -270,7 +270,11 @@ export class ReportsService {
       }),
       this.prisma.sale.findMany({
         where: { syncStatus: 'CONFLICT', createdAtClient: when },
-        include: { trip, buyer: { select: { id: true, name: true } } },
+        include: {
+          trip,
+          buyer: { select: { id: true, name: true } },
+          buyerRequest: { select: { id: true, name: true, status: true } },
+        },
         orderBy: { createdAtClient: 'desc' },
       }),
       this.prisma.sale.findMany({
@@ -284,7 +288,11 @@ export class ReportsService {
             pricePerKilo: { equals: this.prisma.sale.fields.listPricePerKilo },
           },
         },
-        include: { trip, buyer: { select: { id: true, name: true } } },
+        include: {
+          trip,
+          buyer: { select: { id: true, name: true } },
+          buyerRequest: { select: { id: true, name: true, status: true } },
+        },
         orderBy: { createdAtClient: 'desc' },
       }),
     ]);
@@ -324,7 +332,10 @@ export class ReportsService {
         sales: {
           ...byTime,
           ...checks,
-          include: { buyer: { select: { id: true, name: true } } },
+          include: {
+            buyer: { select: { id: true, name: true } },
+            buyerRequest: { select: { id: true, name: true, status: true } },
+          },
         },
         recounts: { ...byTime, ...checks },
         expenses: byTime,

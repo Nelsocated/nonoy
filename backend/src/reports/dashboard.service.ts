@@ -104,7 +104,11 @@ export class DashboardService {
       }),
       this.prisma.sale.findMany({
         where: { id: { in: ids('sale') } },
-        include: { trip, buyer: { select: { id: true, name: true } } },
+        include: {
+          trip,
+          buyer: { select: { id: true, name: true } },
+          buyerRequest: { select: { id: true, name: true, status: true } },
+        },
       }),
     ]);
 

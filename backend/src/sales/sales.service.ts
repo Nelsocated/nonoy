@@ -13,6 +13,7 @@ import {
 } from '../generated/prisma/enums.js';
 import { TripAccessService } from '../trips/trips-access.service.js';
 import { CreateSaleDto } from './sales.dto.js';
+import { saleBuyerName } from '../buyer-requests/buyer-label.js';
 
 @Injectable()
 export class SalesService {
@@ -136,6 +137,7 @@ export class SalesService {
       where: { clientId },
       include: {
         buyer: { select: { name: true } },
+        buyerRequest: { select: { name: true, status: true } },
         trip: { select: { worker: { select: { name: true } } } },
       },
     });
@@ -146,7 +148,7 @@ export class SalesService {
       tripId: sale.tripId,
       createdAtClient: sale.createdAtClient,
       workerName: sale.trip.worker.name,
-      buyerName: sale.buyer?.name ?? null,
+      buyerName: saleBuyerName(sale.buyer, sale.buyerRequest),
       chickenCount: sale.chickenCount,
       totalKilo: sale.totalKilo.toFixed(2),
       pricePerKilo: sale.pricePerKilo?.toFixed(2) ?? null,
