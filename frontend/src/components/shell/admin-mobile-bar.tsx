@@ -46,8 +46,10 @@ export function AdminMobileBar({ user }: { user: SessionUser }) {
         onClick={(e) => e.target === panel.current && close()}
         className="slide-panel ml-auto mr-0 h-dvh max-h-dvh w-[min(18rem,85vw)] bg-surface p-0 text-foreground shadow-card"
       >
-        <div className="flex h-full flex-col gap-6 p-4">
-          <div className="flex items-center justify-between">
+        {/* same split as the sidebar: the menu scrolls, the account stays
+            pinned at the bottom */}
+        <div className="flex h-full flex-col">
+          <div className="flex shrink-0 items-center justify-between p-4 pb-2">
             <span className="font-semibold tracking-tight">Menu</span>
             <button
               type="button"
@@ -58,9 +60,13 @@ export function AdminMobileBar({ user }: { user: SessionUser }) {
               <X aria-hidden className="size-5" />
             </button>
           </div>
-          <AdminNav onNavigate={close} />
-          <div className="mt-auto space-y-3 border-t pt-4">
-            <InfoMenu onNavigate={close} />
+          <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto overscroll-contain px-4 py-2">
+            <AdminNav onNavigate={close} />
+            <div className="mt-auto">
+              <InfoMenu onNavigate={close} />
+            </div>
+          </div>
+          <div className="shrink-0 border-t p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
             <UserMenu user={user} />
           </div>
         </div>
