@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useRef, useState } from "react";
 import {
+  ChevronRight,
   CircleCheck,
   ClipboardCheck,
   Flag,
@@ -167,9 +168,15 @@ export default function FieldHome() {
         </section>
       )}
 
-      <section className="rounded-xl bg-surface p-5 shadow-card">
-        <h2 className="text-sm text-muted-foreground">
+      <Link
+        href="/field/sales"
+        className="block rounded-xl bg-surface p-5 shadow-card transition-colors hover:bg-muted active:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-100"
+      >
+        <h2 className="flex items-center justify-between text-sm text-muted-foreground">
           Today · {today.sales} {today.sales === 1 ? "sale" : "sales"}
+          <span className="inline-flex items-center gap-1 text-xs font-medium">
+            Receipts <ChevronRight aria-hidden className="size-4" />
+          </span>
         </h2>
         <p className="mt-1 text-2xl font-semibold tabular-nums">
           {peso(today.total)}
@@ -177,7 +184,7 @@ export default function FieldHome() {
         <p className="mt-1 text-sm text-muted-foreground tabular-nums">
           {peso(today.cash)} cash · {peso(today.qr)} QR
         </p>
-      </section>
+      </Link>
 
       {!trip && data.recentTrips.length > 0 && (
         <section className="space-y-2">

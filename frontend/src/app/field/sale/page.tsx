@@ -85,7 +85,7 @@ export default function SalePage() {
   async function save() {
     setSaving(true);
     try {
-      await writer.recordSale({
+      const id = await writer.recordSale({
         tripId: trip.clientId,
         buyerId: buyerId || undefined,
         chickenCount: Number(chickens),
@@ -94,9 +94,7 @@ export default function SalePage() {
         listPricePerKilo: listPrice,
         paymentMethod: payment,
       });
-      router.replace(
-        `/field?saved=${encodeURIComponent(`Sale saved · ${peso(total!)}`)}`,
-      );
+      router.replace(`/field/sale/receipt?id=${id}&saved=1`);
     } catch (e) {
       setErrors({
         form:
