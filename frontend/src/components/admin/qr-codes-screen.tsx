@@ -71,6 +71,15 @@ export function QrCodesScreen() {
     setStatus({ text, ok: true });
     void queryClient.invalidateQueries({ queryKey: ["paymentQrs"] });
   };
+  // removed by someone else meanwhile: close up and show the fresh list
+  const gone = (e: unknown) => {
+    if (!(e instanceof ApiError && e.status === 404)) return false;
+    confirm.current?.close();
+    form.current?.close();
+    setStatus({ text: "That QR code was already removed.", ok: false });
+    void queryClient.invalidateQueries({ queryKey: ["paymentQrs"] });
+    return true;
+  };
 
   const save = useMutation({
     mutationFn: (body: { label: string; payload: string }) =>
@@ -81,8 +90,10 @@ export function QrCodesScreen() {
       form.current?.close();
       done("Saved.");
     },
-    onError: (e) =>
-      setErrors({ form: message(e, "Couldn't save the QR code.") }),
+    onError: (e) => {
+      if (!gone(e))
+        setErrors({ form: message(e, "Couldn't save the QR code.") });
+    },
   });
   const remove = useMutation({
     mutationFn: (id: string) => api.paymentQrs.remove(id),
@@ -92,6 +103,7 @@ export function QrCodesScreen() {
       done("QR code removed.");
     },
     onError: (e) => {
+      if (gone(e)) return;
       confirm.current?.close();
       setErrors({ form: message(e, "Couldn't remove the QR code.") });
     },
