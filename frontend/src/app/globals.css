@@ -175,3 +175,36 @@
     transition: none;
   }
 }
+
+/* Paper: A4, black on white, no shadows or scroll areas; table headers repeat
+ * on each page and rows don't split. Red accents become thin dark lines so
+ * they survive black-and-white printers. */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 10pt;
+  }
+  * {
+    box-shadow: none !important;
+  }
+  [class*="bg-primary-soft"],
+  [class*="bg-muted"] {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  [class*="border-t-primary"] {
+    border-top-color: #000 !important;
+  }
+  thead {
+    display: table-header-group;
+  }
+  tr {
+    break-inside: avoid;
+  }
+}

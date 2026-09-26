@@ -26,7 +26,7 @@ export function AdminMobileBar({ user }: { user: SessionUser }) {
 
   return (
     // sticky under the red top strip, so the menu button stays in reach
-    <header className="sticky top-1 z-10 flex items-center gap-3 border-b bg-surface/95 px-4 py-2 backdrop-blur-sm md:hidden">
+    <header className="sticky top-1 z-10 flex items-center gap-3 border-b bg-surface/95 px-4 py-2 backdrop-blur-sm md:hidden print:hidden">
       <Logo className="size-9" />
       <span className="flex-1 font-semibold tracking-tight">Mang Frito</span>
       <button

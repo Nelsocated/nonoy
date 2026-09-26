@@ -12,7 +12,7 @@ export function AdminSidebar({ user }: { user: SessionUser }) {
       <AdminMobileBar user={user} />
 
       {/* tablets/desktop: full sidebar */}
-      <aside className="hidden flex-col gap-6 border-r bg-surface p-4 md:sticky md:top-1 md:flex md:h-[calc(100dvh-0.25rem)] md:w-60 md:shrink-0">
+      <aside className="hidden flex-col gap-6 border-r bg-surface p-4 md:sticky md:top-1 md:flex md:h-[calc(100dvh-0.25rem)] md:w-60 md:shrink-0 print:hidden">
         <div className="flex items-center gap-3">
           <Logo className="size-9" />
           <span className="font-semibold tracking-tight">Mang Frito</span>
