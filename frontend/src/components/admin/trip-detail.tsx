@@ -207,6 +207,14 @@ export function TripDetailScreen({ id }: { id: string }) {
                     {open && e.problem && (
                       <CheckProblem kind={e.problem.kind} id={e.row.id} />
                     )}
+                    {e.type === "sale" && (
+                      <Link
+                        href={`/admin/receipts/${e.row.clientId}`}
+                        className="inline-flex min-h-11 shrink-0 items-center rounded-md px-3 text-sm font-medium text-primary hover:bg-primary-soft focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-100"
+                      >
+                        Receipt
+                      </Link>
+                    )}
                   </li>
                 );
               })}

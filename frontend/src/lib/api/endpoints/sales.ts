@@ -1,5 +1,5 @@
 import type { Http } from "../http";
-import type { CreateSaleInput, Sale } from "../types";
+import type { CreateSaleInput, Sale, SaleReceipt } from "../types";
 
 export const sales = (http: Http) => ({
   create: (input: CreateSaleInput) => http.post<Sale>("/sales", input),
@@ -8,4 +8,7 @@ export const sales = (http: Http) => ({
     http.get<Sale[]>("/sales", {
       conflicted: opts.conflicted ? "true" : undefined,
     }),
+  /** OWNER/ADMIN — one sale's receipt (buyerName null = walk-in) */
+  receipt: (clientId: string) =>
+    http.get<SaleReceipt>(`/sales/${clientId}/receipt`),
 });
