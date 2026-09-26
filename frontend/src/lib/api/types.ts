@@ -285,6 +285,25 @@ export type OpenTrip = {
   /** last time anything from this trip reached the server */
   lastSyncedAt: IsoDate | null;
 };
+/** GET /reports/trips (OWNER/ADMIN) — one row of the trips list */
+export type TripListItem = {
+  id: string;
+  startedAt: IsoDate;
+  endedAt: IsoDate | null;
+  worker: Ref;
+  pickedUp: StockSums;
+  sales: { count: number; amount: Decimal };
+  expenses: Decimal;
+  net: Decimal;
+  /** unchecked problems on this trip */
+  problems: number;
+};
+export type TripsPage = {
+  items: TripListItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
 export type RecountProblem = Recount & {
   kind: "recount";
   worker: Ref;

@@ -8,6 +8,7 @@ import type {
   ProblemsPage,
   ReportRange,
   TripDetail,
+  TripsPage,
   WorkerReport,
 } from "../types";
 
@@ -28,6 +29,9 @@ export const reports = (http: Http) => ({
   /** OWNER/ADMIN — mark a problem as looked at (optional note) */
   check: (kind: ProblemKind, id: string, note?: string) =>
     http.patch(`/reports/problems/${kind}/${id}/check`, { note }),
+  /** OWNER/ADMIN — trips started in a month, 15 per page, newest first */
+  trips: (q: { month: string; workerId?: string; page?: number }) =>
+    http.get<TripsPage>("/reports/trips", q),
   /** any role — workers only their own trips */
   trip: (id: string) => http.get<TripDetail>(`/reports/trips/${id}`),
 });
