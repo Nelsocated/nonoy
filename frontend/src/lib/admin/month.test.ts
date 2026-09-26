@@ -3,6 +3,7 @@ import type { DailyReport } from "@/lib/api/types";
 import {
   clampMonth,
   daysUpTo,
+  deviceMonth,
   monthChoices,
   pickMonth,
   yearChoices,
@@ -172,5 +173,12 @@ describe("month picker", () => {
     expect(pickMonth("2027", "11", "2027-03")).toBe("2027-03");
     expect(pickMonth("2026", "11", "2027-03")).toBe("2026-11");
     expect(pickMonth("2026", "02", "2026-09")).toBe("2026-02");
+  });
+});
+
+describe("deviceMonth", () => {
+  it("uses Manila time, so late on the last day in UTC is already next month", () => {
+    expect(deviceMonth(new Date("2026-09-30T17:00:00Z"))).toBe("2026-10");
+    expect(deviceMonth(new Date("2026-09-30T15:00:00Z"))).toBe("2026-09");
   });
 });

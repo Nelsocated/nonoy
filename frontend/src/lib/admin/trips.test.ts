@@ -1,20 +1,37 @@
 import { describe, expect, it } from "vitest";
-import { tripTimes } from "./trips";
+import { parseWorker, tripDay, tripsBack } from "./trips";
 
-describe("tripTimes", () => {
-  const tz = "Asia/Manila";
-  it("date, start and end on the same day", () => {
-    const s = tripTimes("2026-09-01T22:10:00Z", "2026-09-02T08:30:00Z", tz);
-    expect(s).toMatch(/^Wed, Sep 2 · 6:10\sAM → 4:30\sPM$/);
+describe("tripDay", () => {
+  it("is the start day in Manila time", () => {
+    // 10:10 PM UTC on Sep 1 is 6:10 AM on Sep 2 in Manila
+    expect(tripDay("2026-09-01T22:10:00Z")).toBe("Wed, Sep 2");
   });
-  it("says Still out while the trip is open", () => {
-    expect(tripTimes("2026-09-01T22:10:00Z", null, tz)).toMatch(
-      / → Still out$/,
+});
+
+describe("parseWorker", () => {
+  it("keeps a user id", () => {
+    const id = "3f9a2c7e-1b2d-4c5e-8f90-123456789abc";
+    expect(parseWorker(id)).toBe(id);
+  });
+  it("drops anything else", () => {
+    expect(parseWorker(null)).toBe("");
+    expect(parseWorker("juan")).toBe("");
+    expect(parseWorker("3f9a2c7e-1b2d-4c5e-8f90")).toBe("");
+  });
+});
+
+describe("tripsBack", () => {
+  it("allows the trips list, with or without filters", () => {
+    expect(tripsBack("/admin/trips")).toBe("/admin/trips");
+    expect(tripsBack("/admin/trips?month=2026-09&page=2")).toBe(
+      "/admin/trips?month=2026-09&page=2",
     );
   });
-  it("adds the end date when it ends on another day", () => {
-    expect(
-      tripTimes("2026-09-01T22:10:00Z", "2026-09-02T17:00:00Z", tz),
-    ).toMatch(/→ Sep 3, 1:00\sAM$/);
+  it("refuses other pages and other sites", () => {
+    expect(tripsBack(undefined)).toBeNull();
+    expect(tripsBack("/admin/users")).toBeNull();
+    expect(tripsBack("https://evil.example/admin/trips")).toBeNull();
+    expect(tripsBack("/admin/trips/../../x")).toBeNull();
+    expect(tripsBack("/admin/trips?x=//evil")).toBeNull();
   });
 });

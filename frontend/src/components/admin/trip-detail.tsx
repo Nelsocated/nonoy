@@ -42,7 +42,14 @@ function Stat({
 }
 
 // Owner/admin view of one trip: totals, then everything recorded, in order.
-export function TripDetailScreen({ id }: { id: string }) {
+// backTo: the trips list it was opened from; otherwise back to the dashboard
+export function TripDetailScreen({
+  id,
+  backTo,
+}: {
+  id: string;
+  backTo?: string | null;
+}) {
   const trip = useQuery({
     queryKey: ["trip", id],
     queryFn: () => api.reports.trip(id),
@@ -53,10 +60,11 @@ export function TripDetailScreen({ id }: { id: string }) {
 
   const back = (
     <Link
-      href="/admin"
+      href={backTo ?? "/admin"}
       className="inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
     >
-      <ArrowLeft aria-hidden className="size-4" /> Dashboard
+      <ArrowLeft aria-hidden className="size-4" />{" "}
+      {backTo ? "Trips" : "Dashboard"}
     </Link>
   );
 

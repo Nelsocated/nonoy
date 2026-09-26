@@ -4,136 +4,104 @@ import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, ChevronRight, CloudOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useId, useState } from "react";
+import { useEffect, useId } from "react";
 import { MonthPicker } from "@/components/admin/month-picker";
 import { useOnline } from "@/components/offline/use-sync-data";
 import { api } from "@/lib/api/browser";
 import type { TripListItem } from "@/lib/api/types";
 import {
   clampMonth,
+  deviceMonth,
   monthLabel,
   monthOf,
   parseMonth,
   type Month,
 } from "@/lib/admin/month";
 import { PAGE_SIZE, pagedList } from "@/lib/admin/paging";
-import { tripTimeline } from "@/lib/admin/timeline";
-import { tripTimes } from "@/lib/admin/trips";
+import { parseWorker, tripDay } from "@/lib/admin/trips";
 import { asOf } from "@/lib/offline/admin-cache";
 import { peso } from "@/lib/trip/money";
 import { cardCount, cardTitle, titleBar } from "@/lib/ui/styles";
 import { Pager } from "./pager";
-import { TripRecords } from "./trip-records";
 
 const select =
   "min-h-11 w-full appearance-none rounded-md border border-input bg-surface py-2 pr-9 pl-3 text-base font-medium outline-none transition focus:border-primary focus:ring-3 focus:ring-brand-100";
 const retry =
   "inline-flex min-h-11 items-center rounded-md border border-input bg-surface px-3 text-sm font-medium hover:bg-primary-soft focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-100 disabled:opacity-50";
 
-// What was recorded on one trip, loaded when its row is opened.
-function TripPanel({ id }: { id: string }) {
-  const online = useOnline();
-  const trip = useQuery({
-    queryKey: ["trip", id],
-    queryFn: () => api.reports.trip(id),
-  });
-  const line = "px-5 py-4 text-sm text-muted-foreground";
+// list columns once the card is wide enough (42rem); narrower, each row
+// stacks into two lines
+const cols =
+  "@2xl:grid @2xl:grid-cols-[6.5rem_minmax(0,1fr)_4.5rem_7rem_7rem_6rem] @2xl:items-center @2xl:gap-3";
+const num = "text-right tabular-nums";
 
-  if (!trip.data) {
-    if (trip.fetchStatus === "paused")
-      return (
-        <p className={line}>This trip isn&apos;t saved on this device yet.</p>
-      );
-    if (trip.isError)
-      return (
-        <div className="flex items-center justify-between gap-3 px-5 py-3">
-          <p className="text-sm text-danger">Couldn&apos;t load this trip.</p>
-          <button
-            type="button"
-            onClick={() => void trip.refetch()}
-            disabled={!online}
-            className={retry}
-          >
-            Try again
-          </button>
-        </div>
-      );
-    return (
-      <p role="status" className={line}>
-        Loading…
-      </p>
-    );
-  }
-  const entries = tripTimeline(trip.data);
-  return (
-    <div className="border-t border-brand-100 bg-background/60">
-      {entries.length ? (
-        <TripRecords trip={trip.data} entries={entries} className="divide-y" />
-      ) : (
-        <p className={line}>Nothing recorded yet.</p>
-      )}
-      <Link
-        href={`/admin/trips/${id}`}
-        className="flex min-h-11 items-center justify-end gap-1 border-t px-5 text-sm font-medium text-primary hover:bg-primary-soft focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-100"
-      >
-        Open trip page <ChevronRight aria-hidden className="size-4" />
-      </Link>
-    </div>
+function TripRow({ trip, back }: { trip: TripListItem; back: string }) {
+  const out = !trip.endedAt;
+  const check = trip.problems > 0 && (
+    <span className="shrink-0 rounded-full bg-warning-soft px-2 py-0.5 text-xs font-semibold whitespace-nowrap text-warning">
+      {trip.problems} to check
+    </span>
   );
-}
-
-function TripRow({
-  trip,
-  open,
-  onToggle,
-}: {
-  trip: TripListItem;
-  open: boolean;
-  onToggle: () => void;
-}) {
-  const panel = useId();
   return (
     <li>
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={open}
-        aria-controls={panel}
-        className="flex min-h-16 w-full items-center gap-3 px-5 py-2 text-left transition-colors hover:bg-primary-soft/50 focus-visible:bg-primary-soft/50 focus-visible:outline-none"
+      <Link
+        href={`/admin/trips/${trip.id}?back=${encodeURIComponent(back)}`}
+        className={`flex min-h-16 flex-col justify-center gap-0.5 px-5 py-2 text-sm transition-colors hover:bg-primary-soft/50 focus-visible:bg-primary-soft/50 focus-visible:outline-none ${cols}`}
       >
-        <ChevronDown
-          aria-hidden
-          className={`size-5 shrink-0 text-primary transition-transform motion-reduce:transition-none ${open ? "rotate-180" : ""}`}
-        />
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-medium">
-            {trip.worker.name}{" "}
-            <span className="font-normal text-muted-foreground">
-              · {tripTimes(trip.startedAt, trip.endedAt)}
-            </span>
+        {/* narrow: name + day, then the numbers */}
+        <span className="flex items-center gap-2 @2xl:hidden">
+          <span className="min-w-0 flex-1 truncate font-medium">
+            {trip.worker.name}
           </span>
-          <span className="block truncate text-xs text-muted-foreground tabular-nums">
-            {trip.pickedUp.chicken} chickens · {peso(trip.sales.amount)} · net{" "}
-            {peso(trip.net)}
+          {check}
+          <span className="shrink-0 text-muted-foreground">
+            {tripDay(trip.startedAt)}
           </span>
+          <ChevronRight aria-hidden className="size-4 shrink-0 text-primary" />
         </span>
-        {trip.problems > 0 && (
-          <span className="shrink-0 rounded-full bg-warning-soft px-2 py-0.5 text-xs font-semibold text-warning">
-            {trip.problems} to check
-          </span>
-        )}
-      </button>
-      {open && (
-        <div id={panel}>
-          <TripPanel id={trip.id} />
-        </div>
-      )}
+        <span className="truncate text-xs text-muted-foreground tabular-nums @2xl:hidden">
+          {out && (
+            <span className="font-semibold text-primary">Still out · </span>
+          )}
+          {trip.pickedUp.chicken} chickens · {peso(trip.sales.amount)} · net{" "}
+          {peso(trip.net)}
+        </span>
+
+        {/* wide: one cell per column, labels for screen readers */}
+        <span className="hidden @2xl:block">
+          <span className="block">{tripDay(trip.startedAt)}</span>
+          {out && (
+            <span className="block text-xs font-semibold text-primary">
+              Still out
+            </span>
+          )}
+        </span>
+        <span className="hidden truncate font-medium @2xl:block">
+          {trip.worker.name}
+        </span>
+        <span className={`hidden @2xl:block ${num}`}>
+          {trip.pickedUp.chicken}
+          <span className="sr-only"> chickens</span>
+        </span>
+        <span className={`hidden @2xl:block ${num}`}>
+          <span className="sr-only">sales </span>
+          {peso(trip.sales.amount)}
+        </span>
+        <span className={`hidden font-medium @2xl:block ${num}`}>
+          <span className="sr-only">net </span>
+          {peso(trip.net)}
+        </span>
+        <span className="hidden items-center justify-end gap-2 @2xl:flex">
+          {check}
+          <ChevronRight aria-hidden className="size-4 shrink-0 text-primary" />
+        </span>
+      </Link>
     </li>
   );
 }
 
-// Owner/admin: every trip in a month (optionally one worker), rows open in
-// place to show what was recorded.
+// Owner/admin: every trip in a month (optionally one worker); each row opens
+// that trip's page.
 export function TripsScreen() {
   const router = useRouter();
   const params = useSearchParams();
@@ -149,15 +117,20 @@ export function TripsScreen() {
     today.isFetching && online && !today.isFetchedAfterMount
       ? undefined
       : today.data?.to;
-  const current = todayDay ? monthOf(todayDay) : null;
+  // offline with nothing saved: the phone's own month, so saved pages show
+  const current = todayDay
+    ? monthOf(todayDay)
+    : today.fetchStatus === "paused"
+      ? deviceMonth()
+      : null;
   const month = current
     ? clampMonth(parseMonth(params.get("month")) ?? current, current)
     : null;
-  const worker = params.get("worker") ?? "";
+  const worker = parseWorker(params.get("worker"));
   const page = Math.max(1, Math.floor(Number(params.get("page"))) || 1);
 
   // month and worker changes start again at page 1
-  function set(next: { month?: Month; worker?: string; page?: number }) {
+  function query(next: { month?: Month; worker?: string; page?: number }) {
     const q = new URLSearchParams();
     const m = next.month ?? month;
     const w = next.worker ?? worker;
@@ -165,8 +138,10 @@ export function TripsScreen() {
     if (m) q.set("month", m);
     if (w) q.set("worker", w);
     if (p > 1) q.set("page", String(p));
-    router.replace(`/admin/trips?${q}`);
+    return `/admin/trips?${q}`;
   }
+  const set = (next: Parameters<typeof query>[0]) =>
+    router.replace(query(next));
 
   const users = useQuery({
     queryKey: ["users"],
@@ -187,18 +162,17 @@ export function TripsScreen() {
       }),
     enabled: !!month,
   });
-  const [opened, setOpened] = useState<Set<string>>(() => new Set());
-  const toggle = (id: string) =>
-    setOpened((s) => {
-      const next = new Set(s);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-
   const label = month ? monthLabel(month) : "";
   const total = trips.data?.total ?? 0;
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const pastEnd =
+    !!trips.data && !trips.data.items.length && total > 0 && page > pages;
+
+  // ?page= past the last page (trips removed, old bookmark): go to the last
+  useEffect(() => {
+    if (pastEnd) router.replace(query({ page: pages }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pastEnd, pages]);
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
@@ -251,7 +225,7 @@ export function TripsScreen() {
         </p>
       )}
 
-      <section className="overflow-hidden rounded-xl border bg-surface shadow-card">
+      <section className="@container overflow-hidden rounded-xl border bg-surface shadow-card">
         <h2 className={cardTitle}>
           Trips in {label || "…"}
           <span className={cardCount}>{total}</span>
@@ -285,16 +259,29 @@ export function TripsScreen() {
               Loading…
             </p>
           )
+        ) : pastEnd ? (
+          <p
+            role="status"
+            className="px-5 py-6 text-center text-sm text-muted-foreground"
+          >
+            Loading…
+          </p>
         ) : trips.data.items.length ? (
           <>
-            <ul className={`divide-y ${pagedList(pages)}`}>
+            <div
+              aria-hidden
+              className={`hidden border-b px-5 py-2 text-xs text-muted-foreground ${cols}`}
+            >
+              <span>Date</span>
+              <span>Worker</span>
+              <span className={num}>Chickens</span>
+              <span className={num}>Sales</span>
+              <span className={num}>Net</span>
+              <span />
+            </div>
+            <ul className={pagedList(pages)}>
               {trips.data.items.map((t) => (
-                <TripRow
-                  key={t.id}
-                  trip={t}
-                  open={opened.has(t.id)}
-                  onToggle={() => toggle(t.id)}
-                />
+                <TripRow key={t.id} trip={t} back={query({})} />
               ))}
             </ul>
             <Pager
@@ -306,9 +293,9 @@ export function TripsScreen() {
           </>
         ) : (
           <p className="px-5 py-6 text-center text-sm text-muted-foreground">
-            {workerName
-              ? `No trips for ${workerName} in ${label}.`
-              : `No trips in ${label}.`}
+            {!worker
+              ? `No trips in ${label}.`
+              : `No trips for ${workerName ?? "this worker"} in ${label}.`}
           </p>
         )}
       </section>
