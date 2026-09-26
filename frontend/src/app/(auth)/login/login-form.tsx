@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useId, useState } from "react";
+import { PasswordInput } from "@/components/password-input";
 import { login } from "./actions";
 
 const input =
@@ -9,10 +10,14 @@ const input =
 export function LoginForm() {
   const [state, action, pending] = useActionState(login, undefined);
   const [phone, setPhone] = useState("");
+  // new key per attempt: the password goes back to hidden after each try
+  const [attempt, setAttempt] = useState(0);
+  const passwordId = useId();
 
   return (
     <form
       action={action}
+      onSubmit={() => setAttempt((a) => a + 1)}
       className="space-y-4 rounded-xl bg-surface p-6 shadow-card"
     >
       <label className="block space-y-1.5">
@@ -31,16 +36,20 @@ export function LoginForm() {
           className={input}
         />
       </label>
-      <label className="block space-y-1.5">
-        <span className="text-sm font-medium">Password</span>
-        <input
+      {/* not wrapped in a <label>: the show/hide button sits inside */}
+      <div className="space-y-1.5">
+        <label htmlFor={passwordId} className="block text-sm font-medium">
+          Password
+        </label>
+        <PasswordInput
+          key={attempt}
+          id={passwordId}
           name="password"
-          type="password"
           autoComplete="current-password"
           required
           className={input}
         />
-      </label>
+      </div>
       {state?.error && (
         <p
           role="alert"

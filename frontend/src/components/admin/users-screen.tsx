@@ -13,6 +13,7 @@ import { useId, useRef, useState } from "react";
 import { useOnline } from "@/components/offline/use-sync-data";
 import { pagedList, pageOf } from "@/lib/admin/paging";
 import { groupByRole, userFormErrors } from "@/lib/admin/users";
+import { PasswordInput } from "@/components/password-input";
 import { Pager } from "./pager";
 import { ApiError } from "@/lib/api";
 import { api } from "@/lib/api/browser";
@@ -65,6 +66,7 @@ export function UsersScreen({ meId }: { meId: string }) {
   const [values, setValues] = useState<Values>(empty);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const dialog = useRef<HTMLDialogElement>(null);
+  const [opened, setOpened] = useState(0);
 
   const act = useMutation({
     mutationFn: async (): Promise<string> => {
@@ -107,6 +109,7 @@ export function UsersScreen({ meId }: { meId: string }) {
   });
 
   function open(next: Mode, user: User | null = null) {
+    setOpened((n) => n + 1); // fresh form: passwords start hidden again
     setMode(next);
     setTarget(user);
     setErrors({});
@@ -142,15 +145,27 @@ export function UsersScreen({ meId }: { meId: string }) {
         <label htmlFor={id} className="text-sm font-medium">
           {label}
         </label>
-        <input
-          id={id}
-          value={values[k]}
-          onChange={set(k)}
-          aria-invalid={!!errors[k]}
-          aria-describedby={errors[k] ? `${id}-error` : undefined}
-          className={input}
-          {...extra}
-        />
+        {k === "password" || k === "confirm" ? (
+          <PasswordInput
+            id={id}
+            value={values[k]}
+            onChange={set(k)}
+            aria-invalid={!!errors[k]}
+            aria-describedby={errors[k] ? `${id}-error` : undefined}
+            className={input}
+            {...extra}
+          />
+        ) : (
+          <input
+            id={id}
+            value={values[k]}
+            onChange={set(k)}
+            aria-invalid={!!errors[k]}
+            aria-describedby={errors[k] ? `${id}-error` : undefined}
+            className={input}
+            {...extra}
+          />
+        )}
         {errors[k] && (
           <p id={`${id}-error`} className="text-sm text-danger">
             {errors[k]}
@@ -315,7 +330,12 @@ export function UsersScreen({ meId }: { meId: string }) {
             </button>
           </div>
         ) : (
-          <form onSubmit={submit} noValidate className="mt-4 space-y-4">
+          <form
+            key={opened}
+            onSubmit={submit}
+            noValidate
+            className="mt-4 space-y-4"
+          >
             {(mode === "add" || mode === "edit") && (
               <>
                 {field("name", "Name", {
@@ -334,7 +354,6 @@ export function UsersScreen({ meId }: { meId: string }) {
             {mode === "add" && (
               <>
                 {field("password", "Password", {
-                  type: "password",
                   autoComplete: "new-password",
                 })}
                 <div className="space-y-1.5">
@@ -365,11 +384,9 @@ export function UsersScreen({ meId }: { meId: string }) {
                 </p>
                 {field("password", "New password", {
                   autoFocus: true,
-                  type: "password",
                   autoComplete: "new-password",
                 })}
                 {field("confirm", "Type it again", {
-                  type: "password",
                   autoComplete: "new-password",
                 })}
               </>
