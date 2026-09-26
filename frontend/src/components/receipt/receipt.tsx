@@ -1,16 +1,7 @@
 import { Banknote, QrCode } from "lucide-react";
 import { Logo } from "@/components/logo";
-import type { ReceiptData } from "@/lib/receipt/receipt";
+import { receiptDate, type ReceiptData } from "@/lib/receipt/receipt";
 import { peso } from "@/lib/trip/money";
-
-const issued = (iso: string) =>
-  new Date(iso).toLocaleString("en-PH", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
 
 function Row({
   label,
@@ -59,7 +50,7 @@ export function Receipt({ data }: { data: ReceiptData }) {
 
         <dl className="mt-5 border-t border-dashed border-border pt-3">
           <Row label="Receipt no." value={data.code} mono />
-          <Row label="Date" value={issued(data.issuedAt)} />
+          <Row label="Date" value={receiptDate(data.issuedAt)} />
           <Row label="Worker" value={data.workerName} />
           <Row label="Buyer" value={data.buyerName} />
         </dl>

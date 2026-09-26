@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { LocalSale } from "@/lib/offline/db";
 import {
   receiptCode,
+  receiptDate,
   receiptFromLocalSale,
   receiptFromServer,
   salesOfDay,
@@ -127,5 +128,16 @@ describe("salesOfDay", () => {
     expect(
       salesOfDay(rows, new Date(2026, 8, 26, 18)).map((s) => s.clientId),
     ).toEqual(["b", "a"]);
+  });
+});
+
+describe("receiptDate", () => {
+  it("prints Manila time with a dot between date and time", () => {
+    // 06:41 UTC = 2:41 PM in Manila, whatever zone the viewer is in
+    expect(receiptDate("2026-09-26T06:41:00.000Z")).toBe(
+      "Sep 26, 2026 · 2:41 PM",
+    );
+    // just after midnight Manila is still the previous day in UTC
+    expect(receiptDate("2026-09-26T16:05:00.000Z")).toMatch(/^Sep 27, 2026 · /);
   });
 });

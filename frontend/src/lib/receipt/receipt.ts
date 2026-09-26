@@ -19,8 +19,28 @@ export type ReceiptData = {
 export const receiptCode = (clientId: string) =>
   `MF-${clientId.slice(0, 8).toUpperCase()}`;
 
-// "10.5" → "10.50": the phone keeps numbers as typed
+// Receipts are the business's papers: always in its own time (Manila), not
+// the viewer's, so the phone and an owner abroad print the same time.
+const BUSINESS_TIME_ZONE = "Asia/Manila";
 
+// "Sep 26, 2026 · 2:41 PM"
+export function receiptDate(iso: string) {
+  const d = new Date(iso);
+  const date = d.toLocaleDateString("en-PH", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    timeZone: BUSINESS_TIME_ZONE,
+  });
+  const time = d.toLocaleTimeString("en-PH", {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: BUSINESS_TIME_ZONE,
+  });
+  return `${date} · ${time}`;
+}
+
+// sale numbers are padded to 2 decimals ("10.5" → "10.50")
 export function receiptFromLocalSale(
   sale: LocalSale,
   buyers: Map<string, string>,
