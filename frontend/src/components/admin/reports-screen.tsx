@@ -23,6 +23,10 @@ import { cardTitle, statCard, titleBar } from "@/lib/ui/styles";
 
 const button =
   "inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-input bg-surface px-3 text-sm font-medium transition-colors hover:bg-primary-soft focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-100 disabled:opacity-50";
+// its own class, not `button` + overrides: bg-surface sits later in the CSS
+// than bg-primary, so combining them left a white button with white text
+const printButton =
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow-primary transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-100 disabled:opacity-50";
 const num = "px-3 py-2 text-right tabular-nums whitespace-nowrap";
 
 const dayName = (d: string) =>
@@ -128,7 +132,7 @@ export function ReportsScreen() {
             type="button"
             onClick={() => window.print()}
             disabled={!report.data}
-            className={`${button} border-primary bg-primary text-primary-foreground hover:bg-primary-hover`}
+            className={printButton}
           >
             <Printer aria-hidden className="size-5" /> Print
           </button>
