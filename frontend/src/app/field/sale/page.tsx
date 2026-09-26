@@ -11,12 +11,14 @@ import {
   inputClass,
   primaryButton,
 } from "@/components/trip/form";
+import { QrDialog } from "@/components/trip/qr-dialog";
 import { useTrip } from "@/components/trip/use-trip";
 import type { PaymentMethod } from "@/lib/api/types";
-import { getDb } from "@/lib/offline/db";
+import { getDb, getPaymentQrs } from "@/lib/offline/db";
 import { getPrice } from "@/lib/offline/price";
 import { InvalidRecordError } from "@/lib/offline/validate";
 import { digits, typedAmount } from "@/lib/trip/input";
+import { showQrState } from "@/lib/qr/qr";
 import { peso, saleAmount, toCenti } from "@/lib/trip/money";
 import { overSell } from "@/lib/trip/stock";
 
@@ -35,6 +37,8 @@ export default function SalePage() {
   const ownerPrice = useLiveQuery(() => getPrice(getDb()), [], undefined);
   const router = useRouter();
   const warn = useRef<HTMLDialogElement>(null);
+  const qrCodes = useLiveQuery(() => getPaymentQrs(getDb()), [], []);
+  const qrView = useRef<HTMLDialogElement>(null);
 
   const [buyerId, setBuyerId] = useState("");
   const [chickens, setChickens] = useState("");
@@ -66,6 +70,7 @@ export default function SalePage() {
       : null;
   // kilos × price can pass as numbers yet outgrow the database column
   const tooBig = total !== null && !TWO_DP.test(total);
+  const qr = showQrState(total, tooBig, qrCodes.length);
   const buyers = [...data.buyers].sort((a, b) => a[1].localeCompare(b[1]));
 
   function check() {
@@ -236,6 +241,21 @@ export default function SalePage() {
             </label>
           ))}
         </div>
+        {payment === "QR" && (
+          <div className="space-y-1.5 pt-1">
+            <button
+              type="button"
+              onClick={() => qrView.current?.showModal()}
+              disabled={!qr.ready}
+              className="flex min-h-12 w-full items-center justify-center gap-2 rounded-md border border-input bg-surface text-base font-medium transition-colors hover:bg-muted disabled:text-muted-foreground disabled:hover:bg-surface focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-100"
+            >
+              <QrCode aria-hidden className="size-5" /> Show QR
+            </button>
+            {qr.hint && (
+              <p className="text-sm text-muted-foreground">{qr.hint}</p>
+            )}
+          </div>
+        )}
       </fieldset>
 
       <div className="rounded-xl bg-surface p-4 shadow-card" aria-live="polite">
@@ -292,6 +312,7 @@ export default function SalePage() {
           </button>
         </div>
       </dialog>
+      <QrDialog ref={qrView} codes={qrCodes} total={total ?? "0"} />
     </form>
   );
 }
