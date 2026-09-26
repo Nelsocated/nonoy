@@ -54,10 +54,14 @@ export class SalesService {
       // decision being made right now, so its sales update can't miss this one.
       let buyerId = dto.buyerId ?? null;
       if (dto.buyerRequestId) {
-        await tx.$executeRaw`SELECT 1 FROM buyer_requests WHERE id = ${dto.buyerRequestId} FOR SHARE`;
-        const request = await tx.buyerRequest.findUnique({
-          where: { id: dto.buyerRequestId },
-        });
+        const [request] = await tx.$queryRaw<
+          {
+            requestedById: string;
+            status: BuyerRequestStatus;
+            buyerId: string | null;
+          }[]
+        >`SELECT "requestedById", status::text AS status, "buyerId"
+          FROM buyer_requests WHERE id = ${dto.buyerRequestId} FOR SHARE`;
         if (!request || request.requestedById !== workerId)
           throw new NotFoundException('Buyer request not found');
         if (
