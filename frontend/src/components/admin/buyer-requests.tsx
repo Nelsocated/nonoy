@@ -1,13 +1,24 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, CircleAlert, CircleCheck } from "lucide-react";
+import {
+  ChevronDown,
+  CircleAlert,
+  CircleCheck,
+  TriangleAlert,
+} from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { useOnline } from "@/components/offline/use-sync-data";
 import { ApiError } from "@/lib/api";
 import { api } from "@/lib/api/browser";
 import type { PendingBuyerRequest } from "@/lib/api/types";
-import { askedLine, decidedNote, salesCount } from "@/lib/admin/buyer-requests";
+import {
+  askedLine,
+  clashNote,
+  decidedNote,
+  nameClash,
+  salesCount,
+} from "@/lib/admin/buyer-requests";
 import { pagedList, pageOf } from "@/lib/admin/paging";
 import { showDialog } from "@/lib/ui/dialog";
 import { cardCount, cardTitle } from "@/lib/ui/styles";
@@ -67,13 +78,29 @@ export function BuyerRequestsCard() {
     return () => clearTimeout(t);
   }, [status]);
 
+  // the decision renames sales everywhere: trips, receipts, problems too
   const refresh = () => {
-    void queryClient.invalidateQueries({ queryKey: ["buyer-requests"] });
-    void queryClient.invalidateQueries({ queryKey: ["buyers"] });
+    for (const key of [
+      "buyer-requests",
+      "buyers",
+      "trip",
+      "trips",
+      "receipt",
+      "problems",
+    ])
+      void queryClient.invalidateQueries({ queryKey: [key] });
   };
 
   const decide = useMutation({
-    mutationFn: async ({ kind, r }: { kind: Kind; r: PendingBuyerRequest }) => {
+    // into: the chosen buyer's name, kept for the note after merging
+    mutationFn: async ({
+      kind,
+      r,
+    }: {
+      kind: Kind;
+      r: PendingBuyerRequest;
+      into?: string;
+    }) => {
       if (kind === "approve")
         await api.buyerRequests.approve(r.id, {
           name: name.trim(),
@@ -82,9 +109,8 @@ export function BuyerRequestsCard() {
       else if (kind === "merge") await api.buyerRequests.merge(r.id, target);
       else await api.buyerRequests.reject(r.id);
     },
-    onSuccess: (_, { kind, r }) => {
+    onSuccess: (_, { kind, r, into = "" }) => {
       box.current?.close();
-      const into = active.find((b) => b.id === target)?.name ?? "";
       setStatus({
         text: decidedNote(
           kind,
@@ -120,13 +146,16 @@ export function BuyerRequestsCard() {
     if (open.kind === "approve" && !name.trim())
       return setError("Enter a name.");
     if (open.kind === "merge" && !target) return setError("Pick a buyer.");
-    decide.mutate(open);
+    decide.mutate({ ...open, into });
   }
 
   const list = requests.data ?? [];
   const shown = pageOf(list, page);
   const r = open?.r;
   const into = active.find((b) => b.id === target)?.name;
+  // approving a name that's already saved would make a second buyer
+  const clash =
+    open?.kind === "approve" ? nameClash(name, buyers.data ?? []) : null;
 
   return (
     <>
@@ -234,6 +263,15 @@ export function BuyerRequestsCard() {
                     maxLength={100}
                     onChange={(e) => setName(e.target.value)}
                   />
+                  {clash && (
+                    <span className="flex items-start gap-1.5 text-sm text-warning">
+                      <TriangleAlert
+                        aria-hidden
+                        className="mt-0.5 size-4 shrink-0"
+                      />
+                      {clashNote(clash)}
+                    </span>
+                  )}
                 </label>
                 <label className="block space-y-1">
                   <span className="text-sm font-medium">Location</span>

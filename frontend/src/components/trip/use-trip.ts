@@ -11,6 +11,7 @@ import {
   type LocalTrip,
 } from "@/lib/offline/db";
 import { salesOfDay } from "@/lib/receipt/receipt";
+import { waitingOf } from "@/lib/trip/buyer-name";
 import { fromCenti, toCenti } from "@/lib/trip/money";
 import { stockOnTruck, type Stock } from "@/lib/trip/stock";
 
@@ -79,9 +80,7 @@ export function useTrip(userId: string): TripData | undefined {
         buyers.filter((b) => !b.archivedAt).map((b) => [b.id, b.name]),
       ),
       requests: new Map(requests.map((r) => [r.clientId, r])),
-      waitingRequests: requests
-        .filter((r) => r.status === "PENDING")
-        .sort((a, b) => a.name.localeCompare(b.name)),
+      waitingRequests: waitingOf(requests),
       plantations: new Map(plantations.map((p) => [p.id, p.name])),
       today: {
         cash: sumAmount(todaySales.filter((s) => s.paymentMethod === "CASH")),

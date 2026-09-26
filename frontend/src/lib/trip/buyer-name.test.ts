@@ -4,6 +4,7 @@ import {
   sameName,
   saleBuyerName,
   type BuyerNames,
+  waitingOf,
 } from "./buyer-name";
 
 const names: BuyerNames = {
@@ -56,5 +57,29 @@ describe("matchBuyer", () => {
   });
   it("otherwise nothing: it's really new", () => {
     expect(matchBuyer("Nena", active, waiting)).toBeNull();
+  });
+});
+
+describe("waitingOf", () => {
+  const req = (clientId: string, name: string, over = {}) => ({
+    clientId,
+    userId: "w1",
+    createdAtClient: "",
+    name,
+    location: null,
+    status: "PENDING" as const,
+    buyerId: null,
+    state: "synced" as const,
+    ...over,
+  });
+  it("still-waiting ones by name; decided or failed-to-sync ones left out", () => {
+    expect(
+      waitingOf([
+        req("r1", "Nena"),
+        req("r2", "Ben", { state: "pending" }),
+        req("r3", "Carlo", { status: "APPROVED" }),
+        req("r4", "Dodong", { state: "error" }),
+      ]).map((r) => r.clientId),
+    ).toEqual(["r2", "r1"]);
   });
 });

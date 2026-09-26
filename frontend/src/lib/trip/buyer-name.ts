@@ -40,3 +40,10 @@ export function matchBuyer(
   const r = waiting.find((w) => sameName(w.name, name));
   return r ? { buyerRequestId: r.clientId } : null;
 }
+
+// New buyers a sale can reuse: still waiting, by name. One whose own sync
+// failed is left out: a sale pointing at it would fail too.
+export const waitingOf = (requests: LocalBuyerRequest[]) =>
+  requests
+    .filter((r) => r.status === "PENDING" && r.state !== "error")
+    .sort((a, b) => a.name.localeCompare(b.name));
