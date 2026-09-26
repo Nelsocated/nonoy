@@ -79,12 +79,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
             </div>
             {/* phones: the visible title is in the red header */}
             <h1 className="sr-only md:hidden">Sign in to Mang Frito</h1>
-            {expired !== undefined && (
-              <p className="rounded-md bg-warning-soft px-3 py-2 text-sm text-warning">
-                Your session ended. Please sign in again.
-              </p>
-            )}
-            <LoginForm />
+            <LoginForm expired={expired !== undefined} />
             <InfoLinks />
           </div>
         </div>

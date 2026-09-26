@@ -1,5 +1,6 @@
 "use client";
 
+import { CircleAlert } from "lucide-react";
 import { useActionState, useId, useState } from "react";
 import { PasswordInput } from "@/components/password-input";
 import { login } from "./actions";
@@ -7,7 +8,8 @@ import { login } from "./actions";
 const input =
   "w-full rounded-md border border-input bg-surface px-3 py-2.5 text-base outline-none transition focus:border-primary focus:ring-3 focus:ring-brand-100";
 
-export function LoginForm() {
+// expired: sent here after the session ended (a quiet note, not an error)
+export function LoginForm({ expired = false }: { expired?: boolean }) {
   const [state, action, pending] = useActionState(login, undefined);
   const [phone, setPhone] = useState("");
   // new key per attempt: the password goes back to hidden after each try
@@ -50,14 +52,6 @@ export function LoginForm() {
           className={input}
         />
       </div>
-      {state?.error && (
-        <p
-          role="alert"
-          className="rounded-md bg-danger-soft px-3 py-2 text-sm text-danger"
-        >
-          {state.error}
-        </p>
-      )}
       <button
         type="submit"
         disabled={pending}
@@ -65,6 +59,22 @@ export function LoginForm() {
       >
         {pending ? "Signing in…" : "Sign in"}
       </button>
+      {/* under the button so it doesn't push the fields around */}
+      {state?.error ? (
+        <p
+          role="alert"
+          className="flex items-start justify-center gap-1.5 text-center text-sm text-danger"
+        >
+          <CircleAlert aria-hidden className="mt-0.5 size-4 shrink-0" />
+          {state.error}
+        </p>
+      ) : (
+        expired && (
+          <p className="text-center text-sm text-muted-foreground">
+            Your session ended. Please sign in again.
+          </p>
+        )
+      )}
     </form>
   );
 }
