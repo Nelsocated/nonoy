@@ -215,6 +215,8 @@ export function TripDetailScreen({ id }: { id: string }) {
                     {e.type === "sale" && (
                       <Link
                         href={`/admin/receipts/${e.row.clientId}`}
+                        // every row says "Receipt": tell screen readers which one
+                        aria-label={`Receipt: ${e.row.buyer?.name ?? "Walk-in"}, ${peso(e.row.amount)}, ${stamp(e.at, t.startedAt)}`}
                         className="inline-flex min-h-11 shrink-0 items-center rounded-md px-3 text-sm font-medium text-primary hover:bg-primary-soft focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-100"
                       >
                         Receipt
