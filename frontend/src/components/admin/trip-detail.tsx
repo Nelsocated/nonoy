@@ -10,7 +10,7 @@ import {
   Wallet,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ApiError } from "@/lib/api";
 import { api } from "@/lib/api/browser";
 import { pagedList, pageOf } from "@/lib/admin/paging";
@@ -90,6 +90,7 @@ export function TripDetailScreen({ id }: { id: string }) {
     retry: (n, e) => !(e instanceof ApiError && e.status === 404) && n < 2,
   });
   const [page, setPage] = useState(1);
+  const recordsHeading = useRef<HTMLHeadingElement>(null);
 
   const back = (
     <Link
@@ -163,7 +164,11 @@ export function TripDetailScreen({ id }: { id: string }) {
       </div>
 
       <section className="overflow-hidden rounded-xl border bg-surface shadow-card">
-        <h2 className="flex items-center justify-between border-b bg-muted/60 px-5 py-2.5 text-sm font-medium">
+        <h2
+          ref={recordsHeading}
+          tabIndex={-1}
+          className="flex items-center justify-between border-b bg-muted/60 px-5 py-2.5 text-sm font-medium focus-visible:outline-none"
+        >
           Everything recorded
           <span className="rounded-full bg-surface px-2 py-0.5 text-xs text-muted-foreground tabular-nums">
             {timeline.length}
@@ -200,7 +205,12 @@ export function TripDetailScreen({ id }: { id: string }) {
                       </span>
                     </span>
                     {open && e.problem && (
-                      <CheckProblem kind={e.problem.kind} id={e.row.id} />
+                      <CheckProblem
+                        kind={e.problem.kind}
+                        id={e.row.id}
+                        // its button goes away once checked
+                        onDone={() => recordsHeading.current?.focus()}
+                      />
                     )}
                     {e.type === "sale" && (
                       <Link

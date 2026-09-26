@@ -11,7 +11,7 @@ import {
   Truck,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useOnline } from "@/components/offline/use-sync-data";
 import { api } from "@/lib/api/browser";
 import type { Problem } from "@/lib/api/types";
@@ -68,6 +68,7 @@ export function Dashboard({ name }: { name: string }) {
   const online = useOnline();
   const [tripPage, setTripPage] = useState(1);
   const [problemPage, setProblemPage] = useState(1);
+  const problemsHeading = useRef<HTMLHeadingElement>(null);
 
   const daily = useQuery({
     // no dates: the server's last 7 days end on today in its REPORT_TIMEZONE
@@ -224,7 +225,11 @@ export function Dashboard({ name }: { name: string }) {
         </section>
 
         <section className={card}>
-          <h2 className={cardTitle}>
+          <h2
+            ref={problemsHeading}
+            tabIndex={-1}
+            className={`${cardTitle} focus-visible:outline-none`}
+          >
             Problems to check
             <span
               className={`${count} ${total ? "bg-warning-soft text-warning" : ""}`}
@@ -262,12 +267,16 @@ export function Dashboard({ name }: { name: string }) {
                       <CheckProblem
                         kind={p.kind}
                         id={p.id}
-                        // checked the last row of a later page: step back one
-                        onDone={() =>
-                          problems.data?.items.length === 1 &&
-                          problemPage > 1 &&
-                          setProblemPage(problemPage - 1)
-                        }
+                        onDone={() => {
+                          // the row (and its button) goes away: keep focus in the list
+                          problemsHeading.current?.focus();
+                          // checked the last row of a later page: step back one
+                          if (
+                            problems.data?.items.length === 1 &&
+                            problemPage > 1
+                          )
+                            setProblemPage(problemPage - 1);
+                        }}
                       />
                     </li>
                   );
