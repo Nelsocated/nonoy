@@ -47,16 +47,16 @@ Local development uses the **same database as production**, so what you record l
 
 ## Layout (`src/`)
 
-| Path                                                                            |                                                                               |
-| ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| `app/field`, `app/admin`, `app/(auth)`                                          | pages                                                                         |
-| `components/admin`, `components/trip`, `components/offline`, `components/shell` | UI                                                                            |
-| `components/receipt`, `components/qr`                                           | the receipt card and the QR drawing, shared by phone and admin                |
-| `lib/api`                                                                       | typed API client (`api.buyers.list()` …) and types mirroring the backend      |
-| `lib/offline`                                                                   | Dexie db, writer (validates like the backend DTOs), sync engine, pull, caches |
-| `lib/receipt`                                                                   | receipt data and code (`MF-XXXXXXXX`), today's sales                          |
-| `lib/qr`                                                                        | read a QR from an image, draw one, when "Show QR" is ready                    |
-| `lib/trip`                                                                      | money (half-up to the centavo), stock, input filters                          |
-| `lib/admin`                                                                     | paging (15 per page), search, problem sentences, sync age                     |
-| `lib/auth`                                                                      | cookies, session, role rules                                                  |
-| `lib/ui`                                                                        | `showDialog()`: opens a `<dialog>` and focuses its `[data-autofocus]` button  |
+| Path                                                                            |                                                                                                                                                    |
+| ------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app/field`, `app/admin`, `app/(auth)`                                          | pages                                                                                                                                              |
+| `components/admin`, `components/trip`, `components/offline`, `components/shell` | UI                                                                                                                                                 |
+| `components/receipt`, `components/qr`                                           | the receipt card and the QR drawing, shared by phone and admin                                                                                     |
+| `lib/api`                                                                       | typed API client (`api.buyers.list()` …) and types mirroring the backend                                                                           |
+| `lib/offline`                                                                   | Dexie db, writer (validates like the backend DTOs), sync engine, pull, caches                                                                      |
+| `lib/receipt`                                                                   | receipt data and code (`MF-XXXXXXXX`), today's sales                                                                                               |
+| `lib/qr`                                                                        | read a QR from an image, draw one, when "Show QR" is ready                                                                                         |
+| `lib/trip`                                                                      | money (half-up to the centavo), stock, input filters                                                                                               |
+| `lib/admin`                                                                     | paging (15 per page), search, problem sentences, sync age                                                                                          |
+| `lib/auth`                                                                      | cookies, session, role rules                                                                                                                       |
+| `lib/ui`                                                                        | `showDialog()` for dialogs; `styles.ts`: the shared red-accent classes (page title bar, card title, stat card, nav states) — use them on new pages |
