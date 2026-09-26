@@ -1,5 +1,6 @@
 import { ForbiddenException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
 import { BuyerRequestsService } from './buyer-requests.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 
@@ -65,6 +66,20 @@ describe('BuyerRequestsService', () => {
       });
       expect(prisma.buyerRequest.create).not.toHaveBeenCalled();
     });
+    it('two sends at once: the loser returns the row the winner saved', async () => {
+      prisma.buyerRequest.findUnique
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ id: 'r1', requestedById: 'w1' });
+      prisma.buyerRequest.create.mockRejectedValue(
+        new PrismaClientKnownRequestError('Unique constraint failed', {
+          code: 'P2002',
+          clientVersion: 'test',
+        }),
+      );
+      await expect(service.create(dto, 'w1')).resolves.toMatchObject({
+        id: 'r1',
+      });
+    });
     it("someone else's id is refused", async () => {
       prisma.buyerRequest.findUnique.mockResolvedValue({
         id: 'r1',
@@ -77,7 +92,7 @@ describe('BuyerRequestsService', () => {
   });
 
   describe('mine', () => {
-    it('last 60 days plus anything still waiting, newest first', async () => {
+    it('last 60 days (asked or decided) plus anything still waiting, newest first', async () => {
       prisma.buyerRequest.findMany.mockResolvedValue([]);
       await service.mine('w1', new Date('2026-09-26T00:00:00Z'));
       expect(prisma.buyerRequest.findMany).toHaveBeenCalledWith({
@@ -86,6 +101,8 @@ describe('BuyerRequestsService', () => {
           OR: [
             { status: 'PENDING' },
             { createdAtClient: { gte: new Date('2026-07-28T00:00:00Z') } },
+            // decided lately though asked long ago: the phone must hear it
+            { decidedAt: { gte: new Date('2026-07-28T00:00:00Z') } },
           ],
         },
         orderBy: { createdAtClient: 'desc' },

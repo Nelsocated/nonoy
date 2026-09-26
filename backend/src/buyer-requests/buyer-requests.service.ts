@@ -5,6 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/client';
 import { Prisma } from '../generated/prisma/client.js';
 import { BuyerRequestStatus } from '../generated/prisma/enums.js';
 import { PrismaService } from '../prisma/prisma.service.js';
@@ -23,38 +24,51 @@ export class BuyerRequestsService {
 
   // from /sync; the phone made the id, so a resend returns the saved one
   async create(dto: CreateBuyerRequestDto, userId: string) {
-    const existing = await this.prisma.buyerRequest.findUnique({
-      where: { id: dto.id },
-    });
-    if (existing) {
-      if (existing.requestedById !== userId)
-        throw new ForbiddenException('Not your buyer request');
-      return existing;
+    const existing = await this.saved(dto.id, userId);
+    if (existing) return existing;
+    try {
+      return await this.prisma.buyerRequest.create({
+        data: {
+          id: dto.id,
+          name: dto.name,
+          location: dto.location ?? null,
+          requestedById: userId,
+          createdAtClient: new Date(dto.createdAtClient),
+        },
+      });
+    } catch (err) {
+      // two sends at once (a resend while the first was still running):
+      // the other one saved it, so answer with that row
+      if (
+        err instanceof PrismaClientKnownRequestError &&
+        err.code === 'P2002'
+      ) {
+        const row = await this.saved(dto.id, userId);
+        if (row) return row;
+      }
+      throw err;
     }
-    return this.prisma.buyerRequest.create({
-      data: {
-        id: dto.id,
-        name: dto.name,
-        location: dto.location ?? null,
-        requestedById: userId,
-        createdAtClient: new Date(dto.createdAtClient),
-      },
-    });
   }
 
-  // the caller's own, for their phone: recent ones, and every one still
-  // waiting (so its sales never turn into "Walk-in" on the phone)
+  private async saved(id: string, userId: string) {
+    const row = await this.prisma.buyerRequest.findUnique({ where: { id } });
+    if (row && row.requestedById !== userId)
+      throw new ForbiddenException('Not your buyer request');
+    return row;
+  }
+
+  // the caller's own, for their phone: every one still waiting (so its
+  // sales never turn into "Walk-in"), and ones asked or decided lately (so
+  // an old request decided today stops showing as waiting)
   async mine(userId: string, now = new Date()) {
+    const since = new Date(now.getTime() - MINE_DAYS * DAY);
     return this.prisma.buyerRequest.findMany({
       where: {
         requestedById: userId,
         OR: [
           { status: 'PENDING' },
-          {
-            createdAtClient: {
-              gte: new Date(now.getTime() - MINE_DAYS * DAY),
-            },
-          },
+          { createdAtClient: { gte: since } },
+          { decidedAt: { gte: since } },
         ],
       },
       orderBy: { createdAtClient: 'desc' },
