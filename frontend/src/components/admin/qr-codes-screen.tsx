@@ -15,6 +15,7 @@ import { QrImage } from "@/components/qr/qr-image";
 import { ApiError } from "@/lib/api";
 import { api } from "@/lib/api/browser";
 import type { PaymentQr } from "@/lib/api/types";
+import { asOf } from "@/lib/offline/admin-cache";
 import {
   MAX_QR_CODES,
   MAX_QR_TEXT,
@@ -183,6 +184,7 @@ export function QrCodesScreen() {
       {!online && (
         <p className="flex items-center gap-2 text-sm text-warning">
           <CloudOff aria-hidden className="size-4" /> Saving needs signal.
+          {list.dataUpdatedAt > 0 && ` ${asOf(list.dataUpdatedAt)}`}
         </p>
       )}
       {full && (
@@ -200,6 +202,21 @@ export function QrCodesScreen() {
         </h2>
         {list.isPending ? (
           <p className="px-5 py-4 text-sm text-muted-foreground">Loading…</p>
+        ) : list.isError && !list.data ? (
+          // not "No QR codes yet": the owner might add duplicates
+          <div className="space-y-3 px-5 py-6 text-center">
+            <p className="text-sm text-danger">
+              Couldn&apos;t load the QR codes.
+            </p>
+            <button
+              type="button"
+              onClick={() => void list.refetch()}
+              disabled={!online || list.isFetching}
+              className={`${quiet} border border-input`}
+            >
+              {list.isFetching ? "Trying…" : "Try again"}
+            </button>
+          </div>
         ) : codes.length ? (
           <ul className="divide-y divide-border">
             {codes.map((c) => (
