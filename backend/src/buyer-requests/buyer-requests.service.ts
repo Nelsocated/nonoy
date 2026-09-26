@@ -112,6 +112,9 @@ export class BuyerRequestsService {
   // it's really a buyer already in the list
   merge(id: string, buyerId: string, userId: string) {
     return this.decide(id, async (tx) => {
+      // hold the buyer too: an archive or delete at the same moment waits,
+      // then sees the request linked to it
+      await tx.$executeRaw`SELECT 1 FROM buyers WHERE id = ${buyerId} FOR SHARE`;
       const buyer = await tx.buyer.findUnique({ where: { id: buyerId } });
       if (!buyer || buyer.archivedAt)
         throw new BadRequestException('Pick an active buyer');
