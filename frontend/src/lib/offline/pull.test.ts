@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Api } from "@/lib/api";
-import { testDb } from "./test-db";
+import { testDb } from "./test-db"; // first: sets up fake IndexedDB
+import { getPaymentQrs } from "./db";
 import { createWriter } from "./writer";
 import { pullInto } from "./pull";
 
@@ -36,6 +37,7 @@ function fakeApi(over: Partial<Record<string, unknown>> = {}) {
     trips: { mine: async () => trips },
     expenses: { mine: async () => [] },
     prices: { current: async () => null },
+    paymentQrs: { list: async () => (over.qrs as unknown[]) ?? [] },
     reports: {
       trip: async (id: string) => ({
         ...trips.find((t) => t.id === id)!,
@@ -47,7 +49,13 @@ function fakeApi(over: Partial<Record<string, unknown>> = {}) {
     },
   } as unknown as Pick<
     Api,
-    "buyers" | "plantations" | "trips" | "expenses" | "reports" | "prices"
+    | "buyers"
+    | "plantations"
+    | "trips"
+    | "expenses"
+    | "reports"
+    | "prices"
+    | "paymentQrs"
   >;
 }
 
@@ -204,5 +212,50 @@ describe("pullInto — owner price", () => {
     expect((await db.meta.get("price"))?.value).toMatchObject({
       pricePerKilo: "170.00",
     });
+  });
+});
+
+describe("pullInto — payment QR codes", () => {
+  const qr = (id: string, label: string) => ({
+    id,
+    label,
+    payload: `pay-${id}`,
+  });
+
+  it("keeps the owner's QR codes on the phone, in the owner's order", async () => {
+    const db = testDb();
+    await pullInto(
+      db,
+      "w1",
+      fakeApi({ qrs: [qr("z", "GCash"), qr("a", "Maya")] }),
+    );
+    expect((await getPaymentQrs(db)).map((q) => q.label)).toEqual([
+      "GCash",
+      "Maya",
+    ]);
+  });
+
+  it("drops a code the owner removed", async () => {
+    const db = testDb();
+    await pullInto(
+      db,
+      "w1",
+      fakeApi({ qrs: [qr("z", "GCash"), qr("a", "Maya")] }),
+    );
+    await pullInto(db, "w1", fakeApi({ qrs: [qr("a", "Maya")] }));
+    expect((await getPaymentQrs(db)).map((q) => q.label)).toEqual(["Maya"]);
+  });
+
+  it("keeps the saved codes when the QR fetch fails", async () => {
+    const db = testDb();
+    await pullInto(db, "w1", fakeApi({ qrs: [qr("z", "GCash")] }));
+    const api = fakeApi();
+    (api as unknown as { paymentQrs: unknown }).paymentQrs = {
+      list: async () => {
+        throw new Error("offline");
+      },
+    };
+    await pullInto(db, "w1", api);
+    expect((await getPaymentQrs(db)).map((q) => q.label)).toEqual(["GCash"]);
   });
 });

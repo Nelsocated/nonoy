@@ -10,16 +10,24 @@ export async function pullInto(
   userId: string,
   api: Pick<
     Api,
-    "buyers" | "plantations" | "trips" | "expenses" | "reports" | "prices"
+    | "buyers"
+    | "plantations"
+    | "trips"
+    | "expenses"
+    | "reports"
+    | "prices"
+    | "paymentQrs"
   >,
 ) {
-  const [buyers, plantations, trips, expenses, price] = await Promise.all([
+  const [buyers, plantations, trips, expenses, price, qrs] = await Promise.all([
     api.buyers.list(),
     api.plantations.list(),
     api.trips.mine(),
     api.expenses.mine(),
     // optional extra: a failed price fetch keeps the saved price, not the old data
     api.prices.current().catch(() => null),
+    // optional extra like the price: a failed fetch keeps the saved codes
+    api.paymentQrs.list().catch(() => null),
   ]);
   const details = await Promise.all(
     trips.slice(0, RECENT_TRIPS).map((t) => api.reports.trip(t.id)),
@@ -39,6 +47,7 @@ export async function pullInto(
     [
       db.buyers,
       db.plantations,
+      db.paymentQrs,
       db.trips,
       db.pickups,
       db.sales,
@@ -51,6 +60,12 @@ export async function pullInto(
       await db.buyers.bulkPut(buyers);
       await db.plantations.clear();
       await db.plantations.bulkPut(plantations);
+      if (qrs) {
+        await db.paymentQrs.clear();
+        await db.paymentQrs.bulkPut(
+          qrs.map((q, position) => ({ ...q, position })),
+        );
+      }
 
       await db.trips.bulkPut(
         keep(trips).map((t) => ({

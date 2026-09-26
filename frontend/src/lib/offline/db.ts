@@ -1,5 +1,10 @@
 import Dexie, { type EntityTable } from "dexie";
-import type { Buyer, PaymentMethod, Plantation } from "@/lib/api/types";
+import type {
+  Buyer,
+  PaymentMethod,
+  PaymentQr,
+  Plantation,
+} from "@/lib/api/types";
 
 // Everything a worker records lives here first; the sync engine sends the outbox.
 export type OutboxKind =
@@ -53,6 +58,8 @@ export type LocalExpense = Mirror & {
   amount: string;
 };
 
+export type LocalPaymentQr = PaymentQr & { position: number }; // server order
+
 export class OfflineDb extends Dexie {
   outbox!: EntityTable<OutboxItem, "id">;
   trips!: EntityTable<LocalTrip, "clientId">;
@@ -62,6 +69,7 @@ export class OfflineDb extends Dexie {
   expenses!: EntityTable<LocalExpense, "clientId">;
   buyers!: EntityTable<Buyer, "id">;
   plantations!: EntityTable<Plantation, "id">;
+  paymentQrs!: EntityTable<LocalPaymentQr, "id">;
   meta!: EntityTable<{ key: string; value: unknown }, "key">;
 
   constructor(name = "mangfrito") {
@@ -77,11 +85,18 @@ export class OfflineDb extends Dexie {
       plantations: "id",
       meta: "key",
     });
+    // v2: the owner's payment QR codes (tables not listed keep their schema)
+    this.version(2).stores({ paymentQrs: "id" });
   }
 }
 
 let db: OfflineDb | null = null;
 export const getDb = () => (db ??= new OfflineDb());
+
+// the owner's QR codes, in the order the owner added them
+export async function getPaymentQrs(d: OfflineDb) {
+  return (await d.paymentQrs.toArray()).sort((a, b) => a.position - b.position);
+}
 
 // which mirror table an outbox kind updates
 export function mirrorTable(d: OfflineDb, kind: OutboxKind) {
