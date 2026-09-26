@@ -74,6 +74,38 @@ export type BuyerInput = { name: string; location?: string; notes?: string };
 /** DELETE on a buyer/plantation: deleted when unused, archived when it has history */
 export type RemoveResult = { result: "deleted" | "archived"; uses: number };
 
+export type BuyerRequestStatus = "PENDING" | "APPROVED" | "MERGED" | "REJECTED";
+/** a new buyer a worker typed on a sale, as shown next to the sale */
+export type BuyerRequestRef = {
+  id: string;
+  name: string;
+  status: BuyerRequestStatus;
+};
+/** GET /buyer-requests (OWNER/ADMIN) — waiting ones, oldest first */
+export type PendingBuyerRequest = {
+  id: string;
+  name: string;
+  location: string | null;
+  createdAtClient: IsoDate;
+  requestedBy: Ref;
+  sales: number;
+};
+/** GET /buyer-requests/mine — the caller's own, for the phone */
+export type MyBuyerRequest = {
+  id: string;
+  name: string;
+  location: string | null;
+  status: BuyerRequestStatus;
+  buyerId: string | null;
+  createdAtClient: IsoDate;
+};
+export type CreateBuyerRequestInput = {
+  id: string;
+  name: string;
+  location: string | null;
+  createdAtClient: IsoDate;
+};
+
 // ---- payment QR codes ----
 /** the text inside the owner's payment QR; phones redraw it */
 export type PaymentQr = { id: string; label: string; payload: string };
@@ -112,6 +144,10 @@ export type Pickup = Synced & {
 export type Sale = Synced & {
   tripId: string;
   buyerId: string | null;
+  /** a new buyer the worker typed; buyerId is set once it's approved/merged */
+  buyerRequestId: string | null;
+  /** included where the server adds it (trip detail, problems) */
+  buyerRequest?: BuyerRequestRef | null;
   chickenCount: number;
   totalKilo: Decimal;
   amount: Decimal;
@@ -172,6 +208,7 @@ export type CreatePickupInput = Logged & {
 export type CreateSaleInput = Logged & {
   tripId: string;
   buyerId?: string;
+  buyerRequestId?: string;
   chickenCount: number;
   totalKilo: Decimal;
   amount: Decimal;
@@ -200,6 +237,7 @@ export type SyncBatch = {
   trips?: CreateTripInput[];
   tripEndings?: (EndTripInput & { tripId: string })[];
   pickups?: CreatePickupInput[];
+  buyerRequests?: CreateBuyerRequestInput[];
   sales?: CreateSaleInput[];
   recounts?: CreateRecountInput[];
   expenses?: CreateExpenseInput[];

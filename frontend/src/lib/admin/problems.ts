@@ -1,5 +1,6 @@
 import type { Problem } from "@/lib/api/types";
 import { peso } from "@/lib/trip/money";
+import { saleBuyerLabel } from "./buyer-label";
 
 const chickens = (n: number) => `${n} chicken${n === 1 ? "" : "s"}`;
 
@@ -20,8 +21,8 @@ export function problemSentence(p: Problem): string {
   // a conflict is the bigger problem, so it wins over a price change; the
   // server's only reason is "recorded after its trip had ended", so say which sale
   if (p.syncStatus === "CONFLICT")
-    return `Sale after trip ended · ${p.buyer?.name ?? "Walk-in"} · ${peso(p.amount)}`;
+    return `Sale after trip ended · ${saleBuyerLabel(p)} · ${peso(p.amount)}`;
   return `Price changed ${peso(p.pricePerKilo ?? "0")} (owner ${peso(
     p.listPricePerKilo ?? "0",
-  )}) · ${p.buyer?.name ?? "Walk-in"}`;
+  )}) · ${saleBuyerLabel(p)}`;
 }

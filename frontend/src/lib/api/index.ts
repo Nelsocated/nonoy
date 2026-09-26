@@ -2,6 +2,7 @@ import type { Http } from "./http";
 import { activityLogs } from "./endpoints/activity-logs";
 import { auth } from "./endpoints/auth";
 import { buyers } from "./endpoints/buyers";
+import { buyerRequests } from "./endpoints/buyer-requests";
 import { expenses } from "./endpoints/expenses";
 import { pickups } from "./endpoints/pickups";
 import { plantations } from "./endpoints/plantations";
@@ -19,6 +20,7 @@ export function createApi(http: Http) {
     auth: auth(http),
     users: users(http),
     buyers: buyers(http),
+    buyerRequests: buyerRequests(http),
     plantations: plantations(http),
     prices: prices(http),
     paymentQrs: paymentQrs(http),

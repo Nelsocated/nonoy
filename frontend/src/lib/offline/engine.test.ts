@@ -7,6 +7,7 @@ import { BACKOFF_MS, createSyncEngine, toBatch } from "./engine";
 const empty = (): SyncResults => ({
   trips: [],
   tripEndings: [],
+  buyerRequests: [],
   pickups: [],
   sales: [],
   recounts: [],

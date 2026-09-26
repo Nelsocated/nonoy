@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import type { TripDetail } from "@/lib/api/types";
+import { saleBuyerLabel } from "@/lib/admin/buyer-label";
 import { problemSentence } from "@/lib/admin/problems";
 import { stamp, type TimelineEntry } from "@/lib/admin/timeline";
 import { peso, twoDp } from "@/lib/trip/money";
@@ -30,7 +31,7 @@ function describe(e: TimelineEntry): { title: string; detail: string } {
       };
     case "sale":
       return {
-        title: `Sale · ${e.row.buyer?.name ?? "Walk-in"} · ${peso(e.row.amount)}`,
+        title: `Sale · ${saleBuyerLabel(e.row)} · ${peso(e.row.amount)}`,
         detail: `${e.row.chickenCount} chickens · ${twoDp(e.row.totalKilo)} kg${
           e.row.pricePerKilo ? ` · ${peso(e.row.pricePerKilo)}/kg` : ""
         } · ${e.row.paymentMethod === "QR" ? "QR" : "Cash"}`,
@@ -100,7 +101,7 @@ export function TripRecords({
               <Link
                 href={`/admin/receipts/${e.row.clientId}`}
                 // every row says "Receipt": tell screen readers which one
-                aria-label={`Receipt: ${e.row.buyer?.name ?? "Walk-in"}, ${peso(e.row.amount)}, ${stamp(e.at, trip.startedAt)}`}
+                aria-label={`Receipt: ${saleBuyerLabel(e.row)}, ${peso(e.row.amount)}, ${stamp(e.at, trip.startedAt)}`}
                 className="inline-flex min-h-11 shrink-0 items-center rounded-md px-3 text-sm font-medium text-primary hover:bg-primary-soft focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-100"
               >
                 Receipt
