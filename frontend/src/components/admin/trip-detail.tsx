@@ -198,7 +198,7 @@ export function TripDetailScreen({ id }: { id: string }) {
                         {e.problem ? problemSentence(e.problem) : title}
                       </span>
                       <span className="block truncate text-xs text-muted-foreground">
-                        {time(e.at)} · {e.problem ? title : detail}
+                        {time(e.at)} · {detail}
                         {e.problem && !open && (
                           <> · Checked{note ? ` — ${note}` : ""}</>
                         )}

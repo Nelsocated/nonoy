@@ -17,9 +17,10 @@ export function problemSentence(p: Problem): string {
     const short = p.chickenDifference < 0 || kiloShort;
     return `Recount ${short ? "short" : "over"} ${[chickenPart, kiloPart].filter(Boolean).join(" / ")}`;
   }
-  // a conflict is the bigger problem, so it wins over a price change
+  // a conflict is the bigger problem, so it wins over a price change; the
+  // server's only reason is "recorded after its trip had ended", so say which sale
   if (p.syncStatus === "CONFLICT")
-    return `Sale after trip ended — ${p.conflictReason ?? "check this sale"}`;
+    return `Sale after trip ended · ${p.buyer?.name ?? "Walk-in"} · ${peso(p.amount)}`;
   return `Price changed ${peso(p.pricePerKilo ?? "0")} (owner ${peso(
     p.listPricePerKilo ?? "0",
   )}) · ${p.buyer?.name ?? "Walk-in"}`;

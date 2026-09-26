@@ -11,6 +11,7 @@ const sale = (over: object) =>
     conflictReason: null,
     pricePerKilo: "175",
     listPricePerKilo: "180",
+    amount: "875.00",
     buyer: null,
     ...over,
   }) as Problem;
@@ -42,11 +43,10 @@ describe("problemSentence", () => {
         sale({
           syncStatus: "CONFLICT",
           conflictReason: "Sale was recorded after its trip had ended",
+          buyer: { id: "b1", name: "Aling Nena" },
         }),
       ),
-    ).toBe(
-      "Sale after trip ended — Sale was recorded after its trip had ended",
-    );
+    ).toBe("Sale after trip ended · Aling Nena · ₱875.00");
   });
   it("shows the price the worker used against the owner's", () => {
     expect(problemSentence(sale({}))).toBe(
