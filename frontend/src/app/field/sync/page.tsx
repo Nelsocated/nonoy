@@ -12,6 +12,7 @@ const KIND: Record<OutboxKind, string> = {
   trip: "Trip started",
   tripEnding: "Trip ended",
   pickup: "Pickup",
+  buyerRequest: "New buyer",
   sale: "Sale",
   recount: "Recount",
   expense: "Expense",

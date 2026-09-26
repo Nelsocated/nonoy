@@ -17,19 +17,23 @@ export async function pullInto(
     | "reports"
     | "prices"
     | "paymentQrs"
+    | "buyerRequests"
   >,
 ) {
-  const [buyers, plantations, trips, expenses, price, qrs] = await Promise.all([
-    // archived too: old sales keep their buyer names; the sale form hides them
-    api.buyers.list({ archived: true }),
-    api.plantations.list(),
-    api.trips.mine(),
-    api.expenses.mine(),
-    // optional extra: a failed price fetch keeps the saved price, not the old data
-    api.prices.current().catch(() => null),
-    // optional extra like the price: a failed fetch keeps the saved codes
-    api.paymentQrs.list().catch(() => null),
-  ]);
+  const [buyers, plantations, trips, expenses, price, qrs, requests] =
+    await Promise.all([
+      // archived too: old sales keep their buyer names; the sale form hides them
+      api.buyers.list({ archived: true }),
+      api.plantations.list(),
+      api.trips.mine(),
+      api.expenses.mine(),
+      // optional extra: a failed price fetch keeps the saved price, not the old data
+      api.prices.current().catch(() => null),
+      // optional extra like the price: a failed fetch keeps the saved codes
+      api.paymentQrs.list().catch(() => null),
+      // optional extra: a failed fetch keeps the saved new-buyer requests
+      api.buyerRequests.mine().catch(() => null),
+    ]);
   const details = await Promise.all(
     trips.slice(0, RECENT_TRIPS).map((t) => api.reports.trip(t.id)),
   );
@@ -47,6 +51,7 @@ export async function pullInto(
     "rw",
     [
       db.buyers,
+      db.buyerRequests,
       db.plantations,
       db.paymentQrs,
       db.trips,
@@ -59,6 +64,18 @@ export async function pullInto(
     async () => {
       await db.buyers.clear();
       await db.buyers.bulkPut(buyers);
+      if (requests)
+        await db.buyerRequests.bulkPut(
+          keep(requests.map((r) => ({ ...r, clientId: r.id }))).map((r) => ({
+            clientId: r.clientId,
+            name: r.name,
+            location: r.location,
+            status: r.status,
+            buyerId: r.buyerId,
+            createdAtClient: r.createdAtClient,
+            ...synced,
+          })),
+        );
       await db.plantations.clear();
       await db.plantations.bulkPut(plantations);
       if (qrs) {
@@ -114,6 +131,7 @@ export async function pullInto(
             clientId: s.clientId,
             tripId: s.tripId,
             buyerId: s.buyerId,
+            buyerRequestId: s.buyerRequestId,
             chickenCount: s.chickenCount,
             totalKilo: s.totalKilo,
             amount: s.amount,

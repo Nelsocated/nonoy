@@ -29,6 +29,7 @@ const KEY: Record<OutboxKind, keyof SyncResults> = {
   trip: "trips",
   tripEnding: "tripEndings",
   pickup: "pickups",
+  buyerRequest: "buyerRequests",
   sale: "sales",
   recount: "recounts",
   expense: "expenses",
@@ -58,7 +59,15 @@ export function createSyncEngine({ db, userId, push, pull }: Deps) {
     let failed = 0;
     await db.transaction(
       "rw",
-      [db.outbox, db.trips, db.pickups, db.sales, db.recounts, db.expenses],
+      [
+        db.outbox,
+        db.trips,
+        db.pickups,
+        db.buyerRequests,
+        db.sales,
+        db.recounts,
+        db.expenses,
+      ],
       async () => {
         for (const item of items) {
           const result: SyncResult | undefined = results[KEY[item.kind]]?.find(

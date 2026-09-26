@@ -1,6 +1,7 @@
 import Dexie, { type EntityTable } from "dexie";
 import type {
   Buyer,
+  BuyerRequestStatus,
   PaymentMethod,
   PaymentQr,
   Plantation,
@@ -8,7 +9,13 @@ import type {
 
 // Everything a worker records lives here first; the sync engine sends the outbox.
 export type OutboxKind =
-  "trip" | "tripEnding" | "pickup" | "sale" | "recount" | "expense";
+  | "trip"
+  | "tripEnding"
+  | "pickup"
+  | "buyerRequest"
+  | "sale"
+  | "recount"
+  | "expense";
 export type MirrorState = "pending" | "synced" | "error" | "conflict";
 
 export type OutboxItem = {
@@ -40,6 +47,7 @@ export type LocalPickup = Mirror & {
 export type LocalSale = Mirror & {
   tripId: string;
   buyerId?: string | null;
+  buyerRequestId?: string | null;
   chickenCount: number;
   totalKilo: string;
   amount: string;
@@ -58,6 +66,14 @@ export type LocalExpense = Mirror & {
   amount: string;
 };
 
+// a new buyer this worker typed on a sale; clientId is the request's id
+export type LocalBuyerRequest = Mirror & {
+  name: string;
+  location: string | null;
+  status: BuyerRequestStatus;
+  buyerId: string | null;
+};
+
 export type LocalPaymentQr = PaymentQr & { position: number }; // server order
 
 export class OfflineDb extends Dexie {
@@ -70,6 +86,7 @@ export class OfflineDb extends Dexie {
   buyers!: EntityTable<Buyer, "id">;
   plantations!: EntityTable<Plantation, "id">;
   paymentQrs!: EntityTable<LocalPaymentQr, "id">;
+  buyerRequests!: EntityTable<LocalBuyerRequest, "clientId">;
   meta!: EntityTable<{ key: string; value: unknown }, "key">;
 
   constructor(name = "mangfrito") {
@@ -87,6 +104,8 @@ export class OfflineDb extends Dexie {
     });
     // v2: the owner's payment QR codes (tables not listed keep their schema)
     this.version(2).stores({ paymentQrs: "id" });
+    // v3: new buyers typed on sales, waiting for the owner
+    this.version(3).stores({ buyerRequests: "clientId, userId" });
   }
 }
 
@@ -106,6 +125,8 @@ export function mirrorTable(d: OfflineDb, kind: OutboxKind) {
       return d.trips;
     case "pickup":
       return d.pickups;
+    case "buyerRequest":
+      return d.buyerRequests;
     case "sale":
       return d.sales;
     case "recount":

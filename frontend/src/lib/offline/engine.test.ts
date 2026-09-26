@@ -25,6 +25,11 @@ const allOk = (b: SyncBatch): SyncResults => ({
     status: "ok",
     serverId: t.tripId,
   })),
+  buyerRequests: (b.buyerRequests ?? []).map((r) => ({
+    clientId: r.id,
+    status: "ok",
+    serverId: r.id,
+  })),
   sales: (b.sales ?? []).map((s) => ({
     clientId: s.clientId,
     status: "ok",
@@ -281,6 +286,35 @@ describe("rejected batches, chunks and slow retries", () => {
     expect(push).not.toHaveBeenCalled();
     await engine.syncOnce({ manual: true });
     expect(push).toHaveBeenCalledOnce();
+    expect(await db.outbox.count()).toBe(0);
+  });
+});
+
+describe("buyer requests", () => {
+  it("sends them under buyerRequests and marks them synced", async () => {
+    const db = testDb();
+    const w = createWriter(db, "w1");
+    const tripId = await w.startTrip();
+    await w.recordSale({
+      tripId,
+      chickenCount: 1,
+      totalKilo: "1.00",
+      pricePerKilo: "180.00",
+      newBuyer: { name: "Nena" },
+    });
+    const [req] = await db.buyerRequests.toArray();
+    const push = vi.fn(async (b: SyncBatch) => allOk(b));
+    const engine = createSyncEngine({
+      db,
+      userId: "w1",
+      push,
+      pull: async () => {},
+    });
+    await engine.syncOnce();
+    expect(push.mock.calls[0][0].buyerRequests).toEqual([
+      expect.objectContaining({ id: req.clientId, name: "Nena" }),
+    ]);
+    expect((await db.buyerRequests.get(req.clientId))!.state).toBe("synced");
     expect(await db.outbox.count()).toBe(0);
   });
 });

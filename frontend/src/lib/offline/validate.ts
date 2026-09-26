@@ -41,6 +41,18 @@ export function chickens(value: number, { allowZero = false } = {}) {
     );
 }
 
+// same limits as the backend buyer request DTO
+export function buyerName(value: string) {
+  const v = value.trim();
+  if (!v) fail("Enter the buyer's name.");
+  if (v.length > 100) fail("Buyer name is too long (100 characters max).");
+}
+
+export function place(value: string) {
+  if (value.trim().length > 100)
+    fail("Place is too long (100 characters max).");
+}
+
 export function description(value: string) {
   const v = value.trim();
   if (!v) fail("Add a description.");

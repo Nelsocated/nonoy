@@ -183,4 +183,74 @@ describe("writer validation (same rules as the backend DTOs)", () => {
     const sale = (await db.outbox.toArray()).find((o) => o.clientId === id)!;
     expect(sale.payload).not.toHaveProperty("buyerId");
   });
+
+  it("recordSale with a new buyer saves the request and the sale together", async () => {
+    const db = testDb();
+    const w = createWriter(db, "w1");
+    const tripId = await w.startTrip();
+    const id = await w.recordSale({
+      tripId,
+      chickenCount: 2,
+      totalKilo: "3.00",
+      pricePerKilo: "180.00",
+      newBuyer: { name: "  Nena ", location: " " },
+    });
+    const [req] = await db.buyerRequests.toArray();
+    expect(req).toMatchObject({
+      userId: "w1",
+      name: "Nena",
+      location: null,
+      status: "PENDING",
+      buyerId: null,
+      state: "pending",
+    });
+    const sale = await db.sales.get(id);
+    expect(sale!.buyerRequestId).toBe(req.clientId);
+    const items = await db.outbox.orderBy("id").toArray();
+    // the request is queued before its sale
+    expect(items.map((i) => i.kind)).toEqual(["trip", "buyerRequest", "sale"]);
+    expect(items[1].payload).toEqual({
+      id: req.clientId,
+      name: "Nena",
+      location: null,
+      createdAtClient: req.createdAtClient,
+    });
+    expect(items[2].payload).toMatchObject({ buyerRequestId: req.clientId });
+    expect(items[2].payload).not.toHaveProperty("buyerId");
+  });
+
+  it("recordSale reuses a waiting request by id", async () => {
+    const db = testDb();
+    const w = createWriter(db, "w1");
+    const tripId = await w.startTrip();
+    const rid = crypto.randomUUID();
+    const id = await w.recordSale({
+      tripId,
+      chickenCount: 1,
+      totalKilo: "1.00",
+      pricePerKilo: "180.00",
+      buyerRequestId: rid,
+    });
+    expect((await db.sales.get(id))!.buyerRequestId).toBe(rid);
+    expect(await db.buyerRequests.count()).toBe(0);
+  });
+
+  it("recordSale refuses a blank or too long new buyer name", async () => {
+    const db = testDb();
+    const w = createWriter(db, "w1");
+    const tripId = await w.startTrip();
+    const base = {
+      tripId,
+      chickenCount: 1,
+      totalKilo: "1.00",
+      pricePerKilo: "180.00",
+    };
+    await expect(
+      w.recordSale({ ...base, newBuyer: { name: " " } }),
+    ).rejects.toThrow("Enter the buyer's name.");
+    await expect(
+      w.recordSale({ ...base, newBuyer: { name: "x".repeat(101) } }),
+    ).rejects.toThrow("too long");
+    expect(await db.sales.count()).toBe(0);
+  });
 });

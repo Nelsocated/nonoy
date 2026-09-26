@@ -49,6 +49,7 @@ function fakeApi(over: Partial<Record<string, unknown>> = {}) {
     expenses: { mine: async () => [] },
     prices: { current: async () => null },
     paymentQrs: { list: async () => (over.qrs as unknown[]) ?? [] },
+    buyerRequests: { mine: async () => (over.requests as unknown[]) ?? [] },
     reports: {
       trip: async (id: string) => ({
         ...trips.find((t) => t.id === id)!,
@@ -67,6 +68,7 @@ function fakeApi(over: Partial<Record<string, unknown>> = {}) {
     | "reports"
     | "prices"
     | "paymentQrs"
+    | "buyerRequests"
   >;
 }
 
@@ -270,5 +272,69 @@ describe("pullInto — payment QR codes", () => {
     };
     await pullInto(db, "w1", api);
     expect((await getPaymentQrs(db)).map((q) => q.label)).toEqual(["GCash"]);
+  });
+
+  it("stores my buyer requests and the sales' request ids", async () => {
+    const db = testDb();
+    await pullInto(
+      db,
+      "w1",
+      fakeApi({
+        trips: [trip("t1", "2026-09-25T01:00:00Z")],
+        requests: [
+          {
+            id: "r1",
+            name: "Nena",
+            location: null,
+            status: "APPROVED",
+            buyerId: "b1",
+            createdAtClient: "2026-09-25T02:00:00Z",
+          },
+        ],
+        sales: [
+          {
+            id: "s1",
+            clientId: "c1",
+            tripId: "t1",
+            buyerId: "b1",
+            buyerRequestId: "r1",
+            chickenCount: 1,
+            totalKilo: "1.00",
+            amount: "1.00",
+            paymentMethod: "CASH",
+            syncStatus: "SYNCED",
+            conflictReason: null,
+            createdAtClient: "2026-09-25T02:00:00Z",
+          },
+        ],
+      }),
+    );
+    expect(await db.buyerRequests.get("r1")).toMatchObject({
+      userId: "w1",
+      status: "APPROVED",
+      buyerId: "b1",
+      state: "synced",
+    });
+    expect((await db.sales.get("c1"))!.buyerRequestId).toBe("r1");
+  });
+
+  it("a failed requests fetch keeps the saved ones", async () => {
+    const db = testDb();
+    await db.buyerRequests.put({
+      clientId: "r1",
+      userId: "w1",
+      state: "synced",
+      createdAtClient: "",
+      name: "Nena",
+      location: null,
+      status: "PENDING",
+      buyerId: null,
+    });
+    const api = fakeApi();
+    (api.buyerRequests as { mine: () => Promise<unknown> }).mine = async () => {
+      throw new Error("offline");
+    };
+    await pullInto(db, "w1", api);
+    expect(await db.buyerRequests.count()).toBe(1);
   });
 });

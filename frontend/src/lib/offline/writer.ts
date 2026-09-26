@@ -6,6 +6,10 @@ import { saleAmount } from "@/lib/trip/money";
 type SaleInput = {
   tripId: string;
   buyerId?: string;
+  /** one of this worker's waiting new buyers */
+  buyerRequestId?: string;
+  /** a buyer not in the list yet: saved as a request with the sale */
+  newBuyer?: { name: string; location?: string };
   chickenCount: number;
   totalKilo: string;
   /** price charged; the amount is computed from it (kilos × price) */
@@ -37,30 +41,39 @@ export function createWriter(
   const now = () => new Date().toISOString();
   const uuid = () => crypto.randomUUID();
 
+  // one record + its outbox item; runs inside the caller's transaction
+  async function put(
+    kind: OutboxKind,
+    clientId: string,
+    payload: Record<string, unknown>,
+    mirror: object,
+  ) {
+    await mirrorTable(db, kind).put({
+      ...mirror,
+      clientId,
+      userId,
+      state: "pending",
+    } as never);
+    await db.outbox.add({
+      userId,
+      kind,
+      clientId,
+      payload,
+      status: "pending",
+      attempts: 0,
+      createdAt: now(),
+    });
+  }
+
   async function save(
     kind: OutboxKind,
     clientId: string,
     payload: Record<string, unknown>,
     mirror: object,
   ) {
-    const table = mirrorTable(db, kind);
-    await db.transaction("rw", db.outbox, table, async () => {
-      await table.put({
-        ...mirror,
-        clientId,
-        userId,
-        state: "pending",
-      } as never);
-      await db.outbox.add({
-        userId,
-        kind,
-        clientId,
-        payload,
-        status: "pending",
-        attempts: 0,
-        createdAt: now(),
-      });
-    });
+    await db.transaction("rw", db.outbox, mirrorTable(db, kind), () =>
+      put(kind, clientId, payload, mirror),
+    );
     onWrite();
     return clientId;
   }
@@ -116,16 +129,39 @@ export function createWriter(
       );
     },
 
-    async recordSale({ buyerId, ...rest }: SaleInput) {
+    async recordSale({
+      buyerId,
+      buyerRequestId,
+      newBuyer,
+      ...rest
+    }: SaleInput) {
       check.uuid(rest.tripId, "trip");
       if (buyerId) check.uuid(buyerId, "buyer");
+      if (buyerRequestId) check.uuid(buyerRequestId, "buyer");
+      if (newBuyer) {
+        check.buyerName(newBuyer.name);
+        check.place(newBuyer.location ?? "");
+      }
       check.chickens(rest.chickenCount);
       check.amount(rest.totalKilo, "Total kilo");
       check.amount(rest.pricePerKilo, "Price per kilo");
       if (rest.listPricePerKilo)
         check.amount(rest.listPricePerKilo, "Owner price");
+
+      // a new buyer becomes a request the sale points at (sent first)
+      const request = newBuyer && {
+        id: uuid(),
+        name: newBuyer.name.trim(),
+        location: newBuyer.location?.trim() || null,
+        createdAtClient: now(),
+      };
+      const requestId = request?.id ?? buyerRequestId;
       // an empty buyer field means a walk-in customer, not an invalid id
-      const base = buyerId ? { ...rest, buyerId } : rest;
+      const base = buyerId
+        ? { ...rest, buyerId }
+        : requestId
+          ? { ...rest, buyerRequestId: requestId }
+          : rest;
       // computed here exactly like the backend checks it (half-up to the centavo)
       const input = {
         ...base,
@@ -134,12 +170,28 @@ export function createWriter(
       check.saleTotal(input.amount);
       const paymentMethod = input.paymentMethod ?? "CASH";
       const s = stamp();
-      return save(
-        "sale",
-        s.clientId,
-        { ...s, ...input, paymentMethod },
-        { ...input, paymentMethod, createdAtClient: s.createdAtClient },
+      await db.transaction(
+        "rw",
+        [db.outbox, db.sales, db.buyerRequests],
+        async () => {
+          if (request)
+            await put("buyerRequest", request.id, request, {
+              name: request.name,
+              location: request.location,
+              status: "PENDING",
+              buyerId: null,
+              createdAtClient: request.createdAtClient,
+            });
+          await put(
+            "sale",
+            s.clientId,
+            { ...s, ...input, paymentMethod },
+            { ...input, paymentMethod, createdAtClient: s.createdAtClient },
+          );
+        },
       );
+      onWrite();
+      return s.clientId;
     },
 
     async recordRecount(input: RecountInput) {
