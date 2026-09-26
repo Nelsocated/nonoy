@@ -14,10 +14,3 @@ export function syncAge(iso: string | null, now = Date.now()) {
         : `last synced ${Math.floor(min / 60)} h ago`;
   return { text, stale: ms > HOUR };
 }
-
-// Reports count calendar days in Manila; "today" must too.
-export function todayInManila(now = new Date()) {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Manila" }).format(
-    now,
-  );
-}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { syncAge, todayInManila } from "./sync-age";
+import { syncAge } from "./sync-age";
 
 const now = Date.parse("2026-09-26T04:00:00Z");
 const ago = (min: number) => new Date(now - min * 60_000).toISOString();
@@ -19,11 +19,5 @@ describe("syncAge", () => {
       text: "last synced 1 h ago",
       stale: true,
     });
-  });
-});
-
-describe("todayInManila", () => {
-  it("uses the Manila calendar day, not UTC", () => {
-    expect(todayInManila(new Date("2026-09-25T17:00:00Z"))).toBe("2026-09-26");
   });
 });

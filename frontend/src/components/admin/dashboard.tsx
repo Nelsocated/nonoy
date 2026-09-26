@@ -17,7 +17,7 @@ import { api } from "@/lib/api/browser";
 import type { Problem } from "@/lib/api/types";
 import { PAGE_SIZE, pagedList, pageOf } from "@/lib/admin/paging";
 import { problemSentence } from "@/lib/admin/problems";
-import { syncAge, todayInManila } from "@/lib/admin/sync-age";
+import { syncAge } from "@/lib/admin/sync-age";
 import { stamp } from "@/lib/admin/timeline";
 import { asOf } from "@/lib/offline/admin-cache";
 import { peso } from "@/lib/trip/money";
@@ -66,13 +66,13 @@ function Stat({
 export function Dashboard({ name }: { name: string }) {
   const queryClient = useQueryClient();
   const online = useOnline();
-  const today = todayInManila();
   const [tripPage, setTripPage] = useState(1);
   const [problemPage, setProblemPage] = useState(1);
 
   const daily = useQuery({
-    queryKey: ["daily", today],
-    queryFn: () => api.reports.daily({ from: today, to: today }),
+    // no dates: the server's last 7 days end on today in its REPORT_TIMEZONE
+    queryKey: ["daily", "today"],
+    queryFn: () => api.reports.daily(),
     refetchInterval: REFRESH,
   });
   const trips = useQuery({
@@ -96,7 +96,7 @@ export function Dashboard({ name }: { name: string }) {
   const total = problems.data?.total ?? 0;
   const problemPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-  const day = daily.data?.days.find((d) => d.day === today);
+  const day = daily.data?.days.find((d) => d.day === daily.data.to);
   const updated = Math.max(
     daily.dataUpdatedAt,
     trips.dataUpdatedAt,
