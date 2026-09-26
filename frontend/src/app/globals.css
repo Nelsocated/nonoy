@@ -180,23 +180,19 @@
  * on each page and rows don't split. Red accents become thin dark lines so
  * they survive black-and-white printers. */
 @media print {
-  /* no page margin = no room for the browser's own header/footer (the page
-   * address, date, page number) in Chrome/Edge; the 12mm goes on the body */
+  /* a real page margin: zero margin + body padding hid the browser's own
+   * header/footer, but Safari and older Chrome then printed pages 2+ right at
+   * the paper's edge. Untick "Headers and footers" in the print dialog to
+   * drop the page address and date. */
   @page {
     size: A4;
-    margin: 0;
+    margin: 12mm;
   }
   html,
   body {
     background: #fff !important;
     color: #000 !important;
     font-size: 10pt;
-  }
-  body {
-    padding: 12mm;
-    /* repeat the padding on every printed page, not just the first/last */
-    -webkit-box-decoration-break: clone;
-    box-decoration-break: clone;
   }
   * {
     box-shadow: none !important;
