@@ -5,6 +5,7 @@ import {
   IsString,
   IsUUID,
   Matches,
+  Max,
   MaxLength,
   Min,
 } from 'class-validator';
@@ -30,12 +31,13 @@ export class DailyReportDto extends ReportRangeDto {
   workerId?: string;
 }
 
-// GET /reports/problems?page=2 — 15 per page
+// GET /reports/problems?page=2 — 15 per page, capped so OFFSET stays sane
 export class ProblemsQueryDto {
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
+  @Max(10_000)
   page?: number;
 }
 

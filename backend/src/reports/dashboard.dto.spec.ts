@@ -11,12 +11,16 @@ describe('dashboard DTOs', () => {
     const long = plainToInstance(CheckProblemDto, { note: 'x'.repeat(201) });
     expect(validateSync(long)).not.toEqual([]);
   });
-  it('page is a whole number from 1', () => {
+  it('page is a whole number from 1 to 10000', () => {
     expect(
       validateSync(plainToInstance(ProblemsQueryDto, { page: '2' })),
     ).toEqual([]);
     expect(
       validateSync(plainToInstance(ProblemsQueryDto, { page: '0' })),
+    ).not.toEqual([]);
+    // a huge page would only make Postgres skip past everything
+    expect(
+      validateSync(plainToInstance(ProblemsQueryDto, { page: '10001' })),
     ).not.toEqual([]);
   });
 });
