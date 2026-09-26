@@ -14,9 +14,10 @@ import {
   CreateBuyerRequestDto,
 } from './buyer-requests.dto.js';
 
-const DAY = 24 * 60 * 60 * 1000;
-// how far back a phone keeps its own decided requests
-const MINE_DAYS = 60;
+export const DAY = 24 * 60 * 60 * 1000;
+// how far back a phone keeps its own decided requests (and so how long a
+// late sale for one can still arrive)
+export const MINE_DAYS = 60;
 
 @Injectable()
 export class BuyerRequestsService {

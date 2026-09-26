@@ -64,6 +64,24 @@ describe('BuyersService', () => {
     expect(tx.buyer.delete).not.toHaveBeenCalled();
   });
 
+  it('only counts requests decided in the last 60 days', async () => {
+    tx.buyer.findUnique.mockResolvedValue({ id: 'b1', archivedAt: null });
+    tx.sale.count.mockResolvedValue(0);
+    tx.buyerRequest.count.mockResolvedValue(0); // decided long ago
+    await expect(
+      service.remove('b1', new Date('2026-09-26T00:00:00Z')),
+    ).resolves.toEqual({ result: 'deleted', uses: 0 });
+    expect(tx.buyerRequest.count).toHaveBeenCalledWith({
+      where: {
+        buyerId: 'b1',
+        OR: [
+          { decidedAt: null },
+          { decidedAt: { gte: new Date('2026-07-28T00:00:00Z') } },
+        ],
+      },
+    });
+  });
+
   it('archives a buyer that has sales, keeping history', async () => {
     tx.buyer.findUnique.mockResolvedValue({ id: 'b1', archivedAt: null });
     tx.sale.count.mockResolvedValue(12);

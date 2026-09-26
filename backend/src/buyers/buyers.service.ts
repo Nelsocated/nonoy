@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { CreateBuyerDto, UpdateBuyerDto } from './buyer.dto.js';
+import { DAY, MINE_DAYS } from '../buyer-requests/buyer-requests.service.js';
 
 @Injectable()
 export class BuyersService {
@@ -31,7 +32,8 @@ export class BuyersService {
 
   // no sales or requests → gone for good; otherwise archived so history
   // keeps the name
-  async remove(id: string) {
+  async remove(id: string, now = new Date()) {
+    const since = new Date(now.getTime() - MINE_DAYS * DAY);
     return this.prisma.$transaction(async (tx) => {
       // lock the row: a sale saved meanwhile waits, so it can't slip in
       // between the count and the delete
@@ -40,8 +42,14 @@ export class BuyersService {
       if (!row) throw new NotFoundException('Buyer not found');
       const uses = await tx.sale.count({ where: { buyerId: id } });
       // a new-buyer request that became (or merged into) this buyer keeps the
-      // link too: its sales still syncing need it
-      const requests = await tx.buyerRequest.count({ where: { buyerId: id } });
+      // link too: its sales still syncing need it. Phones drop a decided
+      // request after 60 days, so older ones no longer hold it.
+      const requests = await tx.buyerRequest.count({
+        where: {
+          buyerId: id,
+          OR: [{ decidedAt: null }, { decidedAt: { gte: since } }],
+        },
+      });
       if (uses === 0 && !requests) {
         await tx.buyer.delete({ where: { id } });
         return { result: 'deleted' as const, uses };
