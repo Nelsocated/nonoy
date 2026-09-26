@@ -27,3 +27,16 @@ const norm = (s: string) => s.trim().replace(/\s+/g, " ").toLowerCase();
 
 // "aling  nena" is the same buyer as "Aling Nena"
 export const sameName = (a: string, b: string) => norm(a) === norm(b);
+
+// Before asking for a new buyer: is it already in the list, or one this
+// worker already asked for?
+export function matchBuyer(
+  name: string,
+  activeBuyers: Map<string, string>,
+  waiting: { clientId: string; name: string }[],
+): { buyerId: string; name: string } | { buyerRequestId: string } | null {
+  for (const [buyerId, n] of activeBuyers)
+    if (sameName(n, name)) return { buyerId, name: n };
+  const r = waiting.find((w) => sameName(w.name, name));
+  return r ? { buyerRequestId: r.clientId } : null;
+}

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { sameName, saleBuyerName, type BuyerNames } from "./buyer-name";
+import {
+  matchBuyer,
+  sameName,
+  saleBuyerName,
+  type BuyerNames,
+} from "./buyer-name";
 
 const names: BuyerNames = {
   buyers: new Map([["b1", "Aling Nena"]]),
@@ -32,5 +37,24 @@ describe("sameName", () => {
   it("ignores case and extra spaces", () => {
     expect(sameName("  aling   NENA ", "Aling Nena")).toBe(true);
     expect(sameName("Nena", "Aling Nena")).toBe(false);
+  });
+});
+
+describe("matchBuyer", () => {
+  const active = new Map([["b1", "Aling Nena"]]);
+  const waiting = [{ clientId: "r1", name: "Mang Ben" }];
+  it("an existing buyer wins", () => {
+    expect(matchBuyer(" aling nena ", active, waiting)).toEqual({
+      buyerId: "b1",
+      name: "Aling Nena",
+    });
+  });
+  it("then one of my waiting new buyers", () => {
+    expect(matchBuyer("MANG BEN", active, waiting)).toEqual({
+      buyerRequestId: "r1",
+    });
+  });
+  it("otherwise nothing: it's really new", () => {
+    expect(matchBuyer("Nena", active, waiting)).toBeNull();
   });
 });

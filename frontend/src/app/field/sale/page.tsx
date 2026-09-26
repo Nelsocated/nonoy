@@ -21,6 +21,7 @@ import { digits, typedAmount } from "@/lib/trip/input";
 import { showQrState } from "@/lib/qr/qr";
 import { peso, saleAmount, toCenti } from "@/lib/trip/money";
 import { overSell } from "@/lib/trip/stock";
+import { matchBuyer } from "@/lib/trip/buyer-name";
 import { showDialog } from "@/lib/ui/dialog";
 import { FormSkeleton } from "@/components/skeleton";
 
@@ -42,7 +43,11 @@ export default function SalePage() {
   const qrCodes = useLiveQuery(() => getPaymentQrs(getDb()), [], []);
   const qrView = useRef<HTMLDialogElement>(null);
 
-  const [buyerId, setBuyerId] = useState("");
+  const [buyer, setBuyer] = useState(""); // "", "b:<id>", "r:<id>" or "new"
+  const [newName, setNewName] = useState("");
+  const [newPlace, setNewPlace] = useState("");
+  // "already in the list" note after a typed name matched a saved buyer
+  const [picked, setPicked] = useState<string | null>(null);
   const [chickens, setChickens] = useState("");
   const [kilo, setKilo] = useState("");
   const [price, setPrice] = useState<string | null>(null); // null = use owner's
@@ -86,6 +91,13 @@ export default function SalePage() {
       e.price = listPrice
         ? "Enter a price per kg."
         : "No owner price yet — type today's price per kg.";
+    if (buyer === "new") {
+      if (!newName.trim()) e.newName = "Enter the buyer's name.";
+      else if (newName.trim().length > 100)
+        e.newName = "Name is too long (100 characters max).";
+      if (newPlace.trim().length > 100)
+        e.newPlace = "Place is too long (100 characters max).";
+    }
     setErrors(e);
     return Object.keys(e).length === 0 && !tooBig; // shown under the total
   }
@@ -95,7 +107,12 @@ export default function SalePage() {
     try {
       const id = await writer.recordSale({
         tripId: trip.clientId,
-        buyerId: buyerId || undefined,
+        buyerId: buyer.startsWith("b:") ? buyer.slice(2) : undefined,
+        buyerRequestId: buyer.startsWith("r:") ? buyer.slice(2) : undefined,
+        newBuyer:
+          buyer === "new"
+            ? { name: newName, location: newPlace || undefined }
+            : undefined,
         chickenCount: Number(chickens),
         totalKilo: kilo,
         pricePerKilo,
@@ -117,6 +134,22 @@ export default function SalePage() {
   function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!check()) return;
+    // already in the list (or already asked for): use that instead
+    if (buyer === "new") {
+      const m = matchBuyer(newName, data!.activeBuyers, data!.waitingRequests);
+      if (m && "buyerId" in m) {
+        setBuyer(`b:${m.buyerId}`);
+        setPicked(`Already in the list — picked ${m.name}. Tap Save again.`);
+        return;
+      }
+      if (m) {
+        setBuyer(`r:${m.buyerRequestId}`);
+        setPicked(
+          "You already asked for this buyer — picked it. Tap Save again.",
+        );
+        return;
+      }
+    }
     const over = overSell(data!.stock, Number(chickens), kilo, {
       showStock: seesStock,
     });
@@ -139,23 +172,65 @@ export default function SalePage() {
         }
       />
 
-      <Field label="Buyer">
+      <Field label="Buyer" hint={picked ?? undefined}>
         {(a) => (
           <select
             {...a}
-            value={buyerId}
-            onChange={(e) => setBuyerId(e.target.value)}
+            value={buyer}
+            onChange={(e) => {
+              setBuyer(e.target.value);
+              setPicked(null);
+            }}
             className={inputClass}
           >
             <option value="">Walk-in</option>
+            {data.waitingRequests.map((r) => (
+              <option key={r.clientId} value={`r:${r.clientId}`}>
+                {r.name} (waiting)
+              </option>
+            ))}
             {buyers.map(([id, name]) => (
-              <option key={id} value={id}>
+              <option key={id} value={`b:${id}`}>
                 {name}
               </option>
             ))}
+            <option value="new">+ New buyer…</option>
           </select>
         )}
       </Field>
+
+      {buyer === "new" && (
+        <div className="space-y-4 rounded-xl border border-brand-100 bg-primary-soft/40 p-4">
+          <Field label="New buyer's name" error={errors.newName}>
+            {(a) => (
+              <input
+                {...a}
+                autoComplete="off"
+                maxLength={100}
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                className={inputClass}
+              />
+            )}
+          </Field>
+          <Field
+            label="Place (optional)"
+            error={errors.newPlace}
+            hint="The owner checks new buyers before they're added to the list."
+          >
+            {(a) => (
+              <input
+                {...a}
+                autoComplete="off"
+                maxLength={100}
+                value={newPlace}
+                onChange={(e) => setNewPlace(e.target.value)}
+                className={inputClass}
+              />
+            )}
+          </Field>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <Field label="Chickens" error={errors.chickens}>
