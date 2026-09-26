@@ -1,6 +1,6 @@
 import QRCode from "qrcode";
 import { describe, expect, it } from "vitest";
-import { qrSvgPath, readQr, showQrState } from "./qr";
+import { crc16, qrSvgPath, qrTextOk, readQr, showQrState } from "./qr";
 
 // draw a QR as RGBA pixels (4 px per module, 4-module white margin)
 function pixels(text: string, { invert = false } = {}) {
@@ -66,6 +66,9 @@ describe("showQrState", () => {
       hint: "No QR codes yet — ask the owner.",
     });
   });
+  it("a zero total isn't ready (the buyer would see ₱0.00)", () => {
+    expect(showQrState("0.00", false, 1).ready).toBe(false);
+  });
   it("no valid total yet (or too large) → enter kilos and price first", () => {
     const hint = "Enter the kilos and price first.";
     expect(showQrState(null, false, 2)).toEqual({ ready: false, hint });
@@ -73,5 +76,30 @@ describe("showQrState", () => {
       ready: false,
       hint,
     });
+  });
+});
+
+describe("qrTextOk", () => {
+  // a QR Ph / EMVCo payload ends in tag 63: "6304" + CRC-16 of everything before it
+  const emv = (body: string) => {
+    const head = `${body}6304`;
+    return head + crc16(head).toString(16).toUpperCase().padStart(4, "0");
+  };
+  const body =
+    "00020101021127300012com.p2pqrpay0108GXCHPHM25802PH5910MANG FRITO";
+
+  it("uses CRC-16/CCITT-FALSE", () => {
+    expect(crc16("123456789")).toBe(0x29b1);
+  });
+  it("accepts a payment QR whose checksum matches", () => {
+    expect(qrTextOk(emv(body))).toBe(true);
+  });
+  it("rejects a payment QR that was misread (checksum doesn't match)", () => {
+    const good = emv(body);
+    expect(qrTextOk(good.replace("MANG FRITO", "MANG FRIT0"))).toBe(false);
+    expect(qrTextOk(good.slice(0, 20) + good.slice(24))).toBe(false);
+  });
+  it("accepts non-payment QR text (links) as is", () => {
+    expect(qrTextOk("https://example.com/pay")).toBe(true);
   });
 });

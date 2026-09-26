@@ -15,7 +15,12 @@ import { QrImage } from "@/components/qr/qr-image";
 import { ApiError } from "@/lib/api";
 import { api } from "@/lib/api/browser";
 import type { PaymentQr } from "@/lib/api/types";
-import { MAX_QR_CODES, MAX_QR_TEXT, readQrFromFile } from "@/lib/qr/qr";
+import {
+  MAX_QR_CODES,
+  MAX_QR_TEXT,
+  qrTextOk,
+  readQrFromFile,
+} from "@/lib/qr/qr";
 
 const input =
   "w-full rounded-md border border-input bg-surface px-3 py-2.5 text-base outline-none transition focus:border-primary focus:ring-3 focus:ring-brand-100 aria-invalid:border-danger";
@@ -29,6 +34,8 @@ const dialog =
 const NOT_FOUND =
   "Couldn't find a QR code in this image — try a clearer screenshot.";
 const TOO_LONG = "This QR holds too much text to save.";
+const MISREAD =
+  "This QR didn't read correctly — try a clearer, uncropped screenshot.";
 
 const message = (e: unknown, fallback: string) =>
   e instanceof ApiError ? e.message : fallback;
@@ -115,6 +122,7 @@ export function QrCodesScreen() {
       const text = await readQrFromFile(file);
       if (!text) imageError(NOT_FOUND);
       else if (text.length > MAX_QR_TEXT) imageError(TOO_LONG);
+      else if (!qrTextOk(text)) imageError(MISREAD);
       else setPayload(text);
     } catch {
       imageError(NOT_FOUND); // not an image the browser can open
