@@ -57,6 +57,9 @@ model User {
   checkedRecounts Recount[]     @relation("RecountChecks")
   checkedSales    Sale[]        @relation("SaleChecks")
 
+  buyerRequestsMade    BuyerRequest[] @relation("BuyerRequestsMade")
+  buyerRequestsDecided BuyerRequest[] @relation("BuyerRequestsDecided")
+
   @@map("users")
 }
 
@@ -84,9 +87,43 @@ model Buyer {
   // set instead of deleting when it has sales; hidden from phones
   archivedAt DateTime?
 
-  sales Sale[]
+  sales    Sale[]
+  requests BuyerRequest[]
 
   @@map("buyers")
+}
+
+enum BuyerRequestStatus {
+  PENDING
+  APPROVED
+  MERGED
+  REJECTED
+}
+
+// A buyer a worker typed on a sale (not in the list yet). Owner/admin approve
+// it (new buyer), merge it into an existing one, or reject it; its sales
+// follow. Kept after the decision as the record of what happened.
+model BuyerRequest {
+  id              String             @id // made on the phone, the sync dedupe key
+  name            String
+  location        String?
+  requestedById   String
+  requestedBy     User               @relation("BuyerRequestsMade", fields: [requestedById], references: [id])
+  createdAtClient DateTime
+  syncedAt        DateTime           @default(now())
+  status          BuyerRequestStatus @default(PENDING)
+  // APPROVED: the buyer it became; MERGED: the one it was the same as
+  buyerId         String?
+  buyer           Buyer?             @relation(fields: [buyerId], references: [id], onDelete: SetNull)
+  decidedById     String?
+  decidedBy       User?              @relation("BuyerRequestsDecided", fields: [decidedById], references: [id], onDelete: SetNull)
+  decidedAt       DateTime?
+
+  sales Sale[]
+
+  @@index([status])
+  @@index([requestedById])
+  @@map("buyer_requests")
 }
 
 // One work session for a worker: pickup -> route of sales -> recount
@@ -133,6 +170,10 @@ model Sale {
   trip             Trip          @relation(fields: [tripId], references: [id])
   buyerId          String?
   buyer            Buyer?        @relation(fields: [buyerId], references: [id])
+  // a buyer the worker typed, waiting for the owner; buyerId is set once
+  // it's approved or merged (kept for history)
+  buyerRequestId   String?
+  buyerRequest     BuyerRequest? @relation(fields: [buyerRequestId], references: [id], onDelete: SetNull)
   chickenCount     Int
   totalKilo        Decimal       @db.Decimal(10, 2)
   amount           Decimal       @db.Decimal(10, 2)
@@ -153,6 +194,7 @@ model Sale {
   checkedBy   User?     @relation("SaleChecks", fields: [checkedById], references: [id], onDelete: SetNull)
   checkNote   String?
 
+  @@index([buyerRequestId])
   @@map("sales")
 }
 

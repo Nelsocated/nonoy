@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { UsersModule } from './users/users.module.js';
 import { PlantationsModule } from './plantations/plantations.module.js';
 import { BuyersModule } from './buyers/buyers.module.js';
+import { BuyerRequestsModule } from './buyer-requests/buyer-requests.module.js';
 import { TripsModule } from './trips/trips.module.js';
 import { SyncModule } from './sync/sync.module.js';
 import { ReportsModule } from './reports/reports.module.js';
@@ -27,6 +28,7 @@ import { PaymentQrsModule } from './payment-qrs/payment-qrs.module.js';
     UsersModule,
     PlantationsModule,
     BuyersModule,
+    BuyerRequestsModule,
     TripsModule,
     SyncModule,
     ReportsModule,
