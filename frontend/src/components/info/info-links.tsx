@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-const LINKS = [
+export const INFO_LINKS = [
   { href: "/about", label: "About" },
   { href: "/help", label: "Help" },
   { href: "/privacy", label: "Privacy" },
@@ -13,7 +13,7 @@ export function InfoLinks({ className = "" }: { className?: string }) {
   return (
     <nav aria-label="About this app" className={className}>
       <ul className="flex flex-wrap items-center justify-center gap-x-1 text-sm">
-        {LINKS.map(({ href, label }) => (
+        {INFO_LINKS.map(({ href, label }) => (
           <li key={href}>
             <Link
               href={href}

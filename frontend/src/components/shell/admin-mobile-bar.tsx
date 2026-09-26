@@ -2,7 +2,7 @@
 
 import { LayoutDashboard, X } from "lucide-react";
 import { useEffect, useRef } from "react";
-import { InfoLinks } from "@/components/info/info-links";
+import { InfoMenu } from "@/components/info/info-menu";
 import { Logo } from "@/components/logo";
 import type { SessionUser } from "@/lib/api/types";
 import { AdminNav } from "./admin-nav";
@@ -59,7 +59,7 @@ export function AdminMobileBar({ user }: { user: SessionUser }) {
           </div>
           <AdminNav onNavigate={close} />
           <div className="mt-auto space-y-3 border-t pt-4">
-            <InfoLinks className="[&_ul]:justify-start" />
+            <InfoMenu onNavigate={close} />
             <UserMenu user={user} />
           </div>
         </div>
