@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  FileBarChart,
   LayoutDashboard,
   QrCode,
   Store,
@@ -17,6 +18,7 @@ import { navActive, navIdle } from "@/lib/ui/styles";
 // add entries here as admin pages are built
 const NAV: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/reports", label: "Reports", icon: FileBarChart },
   { href: "/admin/price", label: "Price", icon: Tag },
   { href: "/admin/qr-codes", label: "QR codes", icon: QrCode },
   { href: "/admin/buyers", label: "Buyers", icon: Store },

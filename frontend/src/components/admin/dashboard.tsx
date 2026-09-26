@@ -143,9 +143,17 @@ export function Dashboard({ name }: { name: string }) {
       )}
 
       <section aria-labelledby="today" className="space-y-2">
-        <h2 id="today" className="text-sm font-semibold text-primary">
-          Today
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 id="today" className="text-sm font-semibold text-primary">
+            Today
+          </h2>
+          <Link
+            href="/admin/reports"
+            className="inline-flex min-h-11 items-center gap-1 rounded-md px-2 text-sm font-medium text-primary hover:bg-primary-soft focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-100"
+          >
+            This month <ChevronRight aria-hidden className="size-4" />
+          </Link>
+        </div>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <Stat
             label="Sales"
