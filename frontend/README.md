@@ -40,8 +40,9 @@ Local development uses the **same database as production**, so what you record l
 ## How it fits together
 
 - **Auth**: login stores httpOnly cookies; `/api/*` forwards to the backend with the token. `src/proxy.ts` guards pages by role: workers → `/field`; owner and admin → `/admin`, and they may also open `/field` for their own trips.
-- **Field (`/field`)**: home (current trip), pickup, sale (owner's price, editable and flagged; paying by QR shows the owner's payment QR full-screen with the amount), receipt after each sale (`/field/sale/receipt?id=`) and today's sales to reopen them (`/field/sales`), recount (blind for workers), expense, end trip, sync. Everything saves to the phone first and syncs in batches of 50 to `/sync`; the sync bar shows what's waiting. Owners and admins on a trip see the stock on the truck; workers never do.
+- **Field (`/field`)**: home (current trip), pickup, sale (owner's price, editable and flagged; paying by QR shows the owner's payment QR full-screen with the amount), receipt after each sale (`/field/sale/receipt?id=`, dates always in Manila time) and today's sales to reopen them (`/field/sales`), recount (blind for workers), expense, end trip, sync. Everything saves to the phone first and syncs in batches of 50 to `/sync`; the sync bar shows what's waiting. Owners and admins on a trip see the stock on the truck; workers never do. Phones keep archived buyers too, so past sales show their names, but the sale form only offers active ones.
 - **Admin (`/admin`)**: dashboard (today's totals, who's out right now, problems to check, auto-refresh every minute), trip detail (`/admin/trips/[id]`) with a receipt per sale (`/admin/receipts/[clientId]`), price, QR codes (add a payment QR from a screenshot, rename, replace, remove; up to 10), buyers, plantations (delete or archive, restore), users (add, edit, reset password, activate). Every list shows 15 rows per page.
+- **Dialogs**: open them with `showDialog(ref.current)` and mark the safe choice `data-autofocus`. React's `autoFocus` only writes the attribute in server HTML, so a dialog drawn in the browser would otherwise focus its first (often risky) button.
 
 ## Layout (`src/`)
 
@@ -57,3 +58,4 @@ Local development uses the **same database as production**, so what you record l
 | `lib/trip`                                                                      | money (half-up to the centavo), stock, input filters                          |
 | `lib/admin`                                                                     | paging (15 per page), search, problem sentences, sync age                     |
 | `lib/auth`                                                                      | cookies, session, role rules                                                  |
+| `lib/ui`                                                                        | `showDialog()`: opens a `<dialog>` and focuses its `[data-autofocus]` button  |
