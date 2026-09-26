@@ -26,6 +26,13 @@ describe("roles", () => {
     expect(isPublic("/~offline")).toBe(true);
     expect(isPublic("/admin")).toBe(false);
   });
+  // readable before signing in: linked under the login form
+  it.each(["/about", "/help", "/privacy", "/terms"])("%s is public", (p) => {
+    expect(isPublic(p)).toBe(true);
+    expect(guard({ pathname: p, user: null, expired: false })).toEqual({
+      action: "next",
+    });
+  });
 });
 
 describe("guard", () => {

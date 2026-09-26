@@ -1,3 +1,4 @@
+import { InfoLinks } from "@/components/info/info-links";
 import { Logo } from "@/components/logo";
 import { LoginForm } from "./login-form";
 
@@ -18,6 +19,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         </p>
       )}
       <LoginForm />
+      <InfoLinks />
     </div>
   );
 }

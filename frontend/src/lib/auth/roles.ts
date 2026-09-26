@@ -10,7 +10,9 @@ const AREAS: { prefix: string; roles: Role[] }[] = [
   // owner/admin sometimes go out with the staff and record trips themselves
   { prefix: "/field", roles: ["WORKER", "OWNER", "ADMIN"] },
 ];
-const PUBLIC = ["/login", "/theme", "/~offline"];
+// info pages (About, Help, Privacy, Terms) are linked under the login form
+export const INFO_PAGES = ["/about", "/help", "/privacy", "/terms"];
+const PUBLIC = ["/login", "/theme", "/~offline", ...INFO_PAGES];
 
 const within = (pathname: string, prefix: string) =>
   pathname === prefix || pathname.startsWith(`${prefix}/`);

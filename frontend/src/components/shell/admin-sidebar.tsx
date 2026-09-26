@@ -1,3 +1,4 @@
+import { InfoLinks } from "@/components/info/info-links";
 import { Logo } from "@/components/logo";
 import type { SessionUser } from "@/lib/api/types";
 import { AdminMobileBar } from "./admin-mobile-bar";
@@ -17,7 +18,8 @@ export function AdminSidebar({ user }: { user: SessionUser }) {
           <span className="font-semibold tracking-tight">Mang Frito</span>
         </div>
         <AdminNav />
-        <div className="mt-auto">
+        <div className="mt-auto space-y-3">
+          <InfoLinks className="[&_ul]:justify-start" />
           <UserMenu user={user} />
         </div>
       </aside>

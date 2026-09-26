@@ -1,3 +1,4 @@
+import { INFO_PAGES } from "@/lib/auth/roles";
 import { PAGES_CACHE } from "./sw-routes";
 
 // bumped by every clear, so a warm-up still running at logout can tell
@@ -26,6 +27,7 @@ export const FIELD_PAGES = [
   "/field/recount",
   "/field/expense",
   "/field/sync",
+  ...INFO_PAGES, // Help mostly, for a worker stuck with no signal
 ];
 
 // Skips redirects (an expired session sends /login, which mustn't be saved as

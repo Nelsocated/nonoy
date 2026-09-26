@@ -4,6 +4,8 @@ import { NavLink, type NavItem } from "./nav-link";
 const NAV: NavItem[] = [
   { href: "/field", label: "Home" },
   { href: "/field/sync", label: "Sync" },
+  // public page, but workers look for it here (cached for offline)
+  { href: "/help", label: "Help" },
 ];
 
 export function FieldNav() {

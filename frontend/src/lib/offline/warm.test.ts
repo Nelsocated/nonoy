@@ -16,6 +16,12 @@ function stubCaches() {
 describe("warmFieldPages", () => {
   afterEach(() => vi.unstubAllGlobals());
 
+  it("includes Help and the info pages, so a worker can read them offline", () => {
+    expect(FIELD_PAGES).toEqual(
+      expect.arrayContaining(["/help", "/about", "/privacy", "/terms"]),
+    );
+  });
+
   it("saves every worker screen into the page cache so it opens offline the first time", async () => {
     const { put, open } = stubCaches();
     vi.stubGlobal(
