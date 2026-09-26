@@ -28,14 +28,19 @@ export type UserFormValues = {
 const PASSWORD_BYTES = 72;
 
 // Checks the users dialog before it talks to the server; field → message.
+// `currentPhone` is the edited user's phone: an unchanged one isn't checked,
+// so someone saved without a phone can still get their name fixed.
 export function userFormErrors(
   mode: UserFormMode,
   values: UserFormValues,
+  currentPhone: string | null = null,
 ): Record<string, string> {
   const err: Record<string, string> = {};
   if (mode === "add" || mode === "edit") {
     if (!values.name.trim()) err.name = "Enter a name.";
-    if (values.phone.trim().length < 11)
+    const phone = values.phone.trim();
+    const changed = mode === "add" || phone !== (currentPhone ?? "");
+    if (changed && phone.length < 11)
       err.phone = "Enter the 11-digit phone number.";
   }
   if (mode === "add" || mode === "password") {

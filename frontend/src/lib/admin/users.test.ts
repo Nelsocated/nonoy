@@ -43,4 +43,13 @@ describe("userFormErrors", () => {
     const max = "x".repeat(72);
     expect(userFormErrors("add", { ...v, password: max })).toEqual({});
   });
+  it("lets a user without a phone keep none while their name is edited", () => {
+    const noPhone = { ...v, name: "Juan D.", phone: "" };
+    expect(userFormErrors("edit", noPhone, null)).toEqual({});
+    // adding, or typing a new short number, is still checked
+    expect(userFormErrors("add", noPhone)).toHaveProperty("phone");
+    expect(
+      userFormErrors("edit", { ...noPhone, phone: "0917" }, null),
+    ).toHaveProperty("phone");
+  });
 });

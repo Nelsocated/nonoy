@@ -119,7 +119,7 @@ export function UsersScreen({ meId }: { meId: string }) {
     e.preventDefault();
     const err =
       mode === "add" || mode === "edit" || mode === "password"
-        ? userFormErrors(mode, values)
+        ? userFormErrors(mode, values, target?.phone)
         : {};
     setErrors(err);
     if (!Object.keys(err).length) act.mutate();
