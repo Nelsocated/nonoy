@@ -50,7 +50,7 @@ export function receiptFromLocalSale(
     code: receiptCode(sale.clientId),
     issuedAt: sale.createdAtClient,
     workerName,
-    // an archived buyer is no longer on the phone
+    // phones keep archived buyers; unknown = not pulled yet (or deleted)
     buyerName: sale.buyerId ? (buyers.get(sale.buyerId) ?? "Buyer") : "Walk-in",
     chickenCount: sale.chickenCount,
     totalKilo: twoDp(sale.totalKilo),

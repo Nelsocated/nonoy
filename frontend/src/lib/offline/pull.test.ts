@@ -19,15 +19,26 @@ function fakeApi(over: Partial<Record<string, unknown>> = {}) {
   const trips = (over.trips as ReturnType<typeof trip>[]) ?? [];
   return {
     buyers: {
-      list: async () => [
-        {
-          id: "b1",
-          name: "Aling Nena",
-          location: null,
-          notes: null,
-          createdAt: "",
-        },
-      ],
+      // like the server: archived ones only when asked for
+      list: async ({ archived = false } = {}) =>
+        [
+          {
+            id: "b1",
+            name: "Aling Nena",
+            location: null,
+            notes: null,
+            createdAt: "",
+            archivedAt: null,
+          },
+          {
+            id: "b2",
+            name: "Mang Ben",
+            location: null,
+            notes: null,
+            createdAt: "",
+            archivedAt: "2026-09-20T00:00:00Z",
+          },
+        ].filter((b) => archived || !b.archivedAt),
     },
     plantations: {
       list: async () => [
@@ -67,7 +78,9 @@ describe("pullInto", () => {
       "w1",
       fakeApi({ trips: [trip("t1", "2026-09-25T01:00:00Z")] }),
     );
-    expect(await db.buyers.count()).toBe(1);
+    // archived buyers too, so old sales and receipts keep their names offline
+    expect(await db.buyers.count()).toBe(2);
+    expect((await db.buyers.get("b2"))?.archivedAt).toBeTruthy();
     expect(await db.plantations.count()).toBe(1);
     expect(await db.trips.get("t1")).toMatchObject({
       userId: "w1",
@@ -208,7 +221,7 @@ describe("pullInto — owner price", () => {
       },
     };
     await pullInto(db, "w1", api);
-    expect(await db.buyers.count()).toBe(1);
+    expect(await db.buyers.count()).toBe(2);
     expect((await db.meta.get("price"))?.value).toMatchObject({
       pricePerKilo: "170.00",
     });

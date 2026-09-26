@@ -2,7 +2,7 @@ import type { Http } from "../http";
 import type { Buyer, BuyerInput, RemoveResult } from "../types";
 
 export const buyers = (http: Http) => ({
-  /** active only (what phones pull); archived: true = OWNER/ADMIN screen */
+  /** active only by default; archived: true adds removed ones (admin screen, and phones for old names) */
   list: ({ archived = false } = {}) =>
     http.get<Buyer[]>(
       "/buyers",

@@ -72,7 +72,9 @@ export default function SalePage() {
   // kilos × price can pass as numbers yet outgrow the database column
   const tooBig = total !== null && !TWO_DP.test(total);
   const qr = showQrState(total, tooBig, qrCodes.length);
-  const buyers = [...data.buyers].sort((a, b) => a[1].localeCompare(b[1]));
+  const buyers = [...data.activeBuyers].sort((a, b) =>
+    a[1].localeCompare(b[1]),
+  );
 
   function check() {
     const e: Record<string, string> = {};

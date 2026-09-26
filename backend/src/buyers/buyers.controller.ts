@@ -19,7 +19,8 @@ export class BuyersController {
 
   // Any authenticated user (worker included) can look up/create buyers —
   // needed for recording sales on the road
-  // ?include=archived is for the owner/admin screen; phones get active only
+  // ?include=archived adds removed ones: the owner/admin screen, and phones
+  // (so past sales keep their buyer names; the sale form hides them)
   @Get()
   findAll(@Query('include') include?: string) {
     return this.buyersService.findAll(include === 'archived');

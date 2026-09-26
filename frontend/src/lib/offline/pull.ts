@@ -20,7 +20,8 @@ export async function pullInto(
   >,
 ) {
   const [buyers, plantations, trips, expenses, price, qrs] = await Promise.all([
-    api.buyers.list(),
+    // archived too: old sales keep their buyer names; the sale form hides them
+    api.buyers.list({ archived: true }),
     api.plantations.list(),
     api.trips.mine(),
     api.expenses.mine(),

@@ -52,7 +52,7 @@ export type Plantation = {
   name: string;
   address: string | null;
   createdAt: IsoDate;
-  /** set when removed but kept for history; phones only get active ones */
+  /** set when removed but kept for history; phones keep it for names, never offer it */
   archivedAt: IsoDate | null;
 };
 export type PlantationInput = { name: string; address?: string };
@@ -63,7 +63,7 @@ export type Buyer = {
   location: string | null;
   notes: string | null;
   createdAt: IsoDate;
-  /** set when removed but kept for history; phones only get active ones */
+  /** set when removed but kept for history; phones keep it for names, never offer it */
   archivedAt: IsoDate | null;
 };
 export type BuyerInput = { name: string; location?: string; notes?: string };

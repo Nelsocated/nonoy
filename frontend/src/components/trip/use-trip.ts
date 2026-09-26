@@ -20,7 +20,10 @@ export type TripData = {
   recounts: LocalRecount[];
   expenses: LocalExpense[];
   stock: Stock;
+  /** every buyer the phone knows (archived too), for names on past sales */
   buyers: Map<string, string>;
+  /** buyers a new sale can pick */
+  activeBuyers: Map<string, string>;
   plantations: Map<string, string>;
   today: { cash: string; qr: string; total: string; sales: number };
   todaySales: LocalSale[]; // today, newest first (receipts list)
@@ -66,6 +69,9 @@ export function useTrip(userId: string): TripData | undefined {
       expenses: byTime(forTrip(expenses)),
       stock: stockOnTruck(tripPickups, tripSales),
       buyers: new Map(buyers.map((b) => [b.id, b.name])),
+      activeBuyers: new Map(
+        buyers.filter((b) => !b.archivedAt).map((b) => [b.id, b.name]),
+      ),
       plantations: new Map(plantations.map((p) => [p.id, p.name])),
       today: {
         cash: sumAmount(todaySales.filter((s) => s.paymentMethod === "CASH")),
