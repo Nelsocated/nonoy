@@ -1,6 +1,6 @@
 import type { PaymentMethod, SaleReceipt } from "@/lib/api/types";
 import type { LocalSale } from "@/lib/offline/db";
-import { fromCenti, toCenti } from "@/lib/trip/money";
+import { twoDp } from "@/lib/trip/money";
 
 // Everything a receipt shows — built the same way on the phone and the admin side.
 export type ReceiptData = {
@@ -20,7 +20,6 @@ export const receiptCode = (clientId: string) =>
   `MF-${clientId.slice(0, 8).toUpperCase()}`;
 
 // "10.5" → "10.50": the phone keeps numbers as typed
-const twoDp = (value: string) => fromCenti(toCenti(value));
 
 export function receiptFromLocalSale(
   sale: LocalSale,

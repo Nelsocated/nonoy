@@ -16,7 +16,7 @@ import { api } from "@/lib/api/browser";
 import { pagedList, pageOf } from "@/lib/admin/paging";
 import { problemSentence } from "@/lib/admin/problems";
 import { tripTimeline, type TimelineEntry } from "@/lib/admin/timeline";
-import { peso } from "@/lib/trip/money";
+import { peso, twoDp } from "@/lib/trip/money";
 import { CheckProblem } from "./check-problem";
 import { Pager } from "./pager";
 
@@ -45,19 +45,19 @@ function describe(e: TimelineEntry): { title: string; detail: string } {
     case "pickup":
       return {
         title: `Pickup · ${e.row.plantation.name}`,
-        detail: `${e.row.chickenCount} chickens · ${e.row.totalKilo} kg`,
+        detail: `${e.row.chickenCount} chickens · ${twoDp(e.row.totalKilo)} kg`,
       };
     case "sale":
       return {
         title: `Sale · ${e.row.buyer?.name ?? "Walk-in"} · ${peso(e.row.amount)}`,
-        detail: `${e.row.chickenCount} chickens · ${e.row.totalKilo} kg${
+        detail: `${e.row.chickenCount} chickens · ${twoDp(e.row.totalKilo)} kg${
           e.row.pricePerKilo ? ` · ${peso(e.row.pricePerKilo)}/kg` : ""
         } · ${e.row.paymentMethod === "QR" ? "QR" : "Cash"}`,
       };
     case "recount":
       return {
         title: "Recount",
-        detail: `Counted ${e.row.countedChicken} chickens · ${e.row.countedKilo} kg (expected ${e.row.expectedChicken} · ${e.row.expectedKilo} kg)`,
+        detail: `Counted ${e.row.countedChicken} chickens · ${twoDp(e.row.countedKilo)} kg (expected ${e.row.expectedChicken} · ${twoDp(e.row.expectedKilo)} kg)`,
       };
     case "expense":
       return {

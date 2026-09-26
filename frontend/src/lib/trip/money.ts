@@ -16,6 +16,9 @@ export function fromCenti(n: number): string {
   return `${sign}${Math.floor(abs / 100)}.${String(abs % 100).padStart(2, "0")}`;
 }
 
+// "12.5" (how the API sends a Decimal) → "12.50"
+export const twoDp = (value: string) => fromCenti(toCenti(value));
+
 // kilos × price per kilo, rounded half-up to the centavo (same as the backend)
 export function saleAmount(kilo: string, pricePerKilo: string): string {
   const product = BigInt(toCenti(kilo)) * BigInt(toCenti(pricePerKilo)); // in 1/10000 pesos

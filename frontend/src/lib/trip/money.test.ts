@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { fromCenti, saleAmount, toCenti } from "./money";
+import { fromCenti, saleAmount, toCenti, twoDp } from "./money";
 
 describe("centavo math", () => {
+  it("pads API decimals to 2 places", () => {
+    expect(twoDp("12.5")).toBe("12.50");
+    expect(twoDp("7")).toBe("7.00");
+    expect(twoDp("-0.3")).toBe("-0.30");
+  });
+
   it("converts 2-dp strings exactly", () => {
     expect(toCenti("180")).toBe(18000);
     expect(toCenti("60.5")).toBe(6050);
