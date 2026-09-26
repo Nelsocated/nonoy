@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useState } from "react";
+import { useState, type RefObject } from "react";
 import { QrImage } from "@/components/qr/qr-image";
 import type { LocalPaymentQr } from "@/lib/offline/db";
 import { peso } from "@/lib/trip/money";
@@ -8,14 +8,18 @@ import { primaryButton } from "./form";
 
 // Full-screen payment QR over the sale form. It sits inside the form, so every
 // button here is type="button" — closing or switching never saves the sale.
-export const QrDialog = forwardRef<
-  HTMLDialogElement,
-  { codes: LocalPaymentQr[]; total: string }
->(function QrDialog({ codes, total }, ref) {
+export function QrDialog({
+  ref,
+  codes,
+  total,
+}: {
+  ref: RefObject<HTMLDialogElement | null>;
+  codes: LocalPaymentQr[];
+  total: string;
+}) {
   const [picked, setPicked] = useState(0);
   const code = codes[Math.min(picked, codes.length - 1)];
-  const close = () =>
-    (ref as React.RefObject<HTMLDialogElement | null>).current?.close();
+  const close = () => ref.current?.close();
 
   return (
     <dialog
@@ -23,7 +27,7 @@ export const QrDialog = forwardRef<
       aria-labelledby="qr-pay-title"
       className="m-0 h-dvh max-h-none w-full max-w-none bg-surface p-0 text-foreground backdrop:bg-ink-950/50"
     >
-      <div className="mx-auto flex h-full max-w-md flex-col gap-5 px-4 py-6">
+      <div className="mx-auto flex h-full max-w-md flex-col gap-5 overflow-y-auto px-4 py-6">
         <div className="text-center">
           <h2
             id="qr-pay-title"
@@ -59,17 +63,23 @@ export const QrDialog = forwardRef<
         )}
 
         <div className="flex flex-1 flex-col items-center justify-center gap-3">
-          {code && (
+          {code ? (
             <>
               <QrImage
                 payload={code.payload}
                 label={code.label}
-                className="w-full max-w-[22rem]"
+                // also capped by height so Close stays on screen sideways
+                className="w-full max-w-[min(22rem,55dvh)] shrink-0"
               />
               <p className="text-center text-sm text-muted-foreground">
                 {code.label} · Ask the buyer to scan and pay
               </p>
             </>
+          ) : (
+            // a sync removed every code while this was open
+            <p className="text-center text-base text-muted-foreground">
+              No QR codes on this phone anymore — ask the owner.
+            </p>
           )}
         </div>
 
@@ -84,4 +94,4 @@ export const QrDialog = forwardRef<
       </div>
     </dialog>
   );
-});
+}
