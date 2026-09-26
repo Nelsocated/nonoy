@@ -11,6 +11,7 @@ import { api } from "@/lib/api/browser";
 import {
   clampMonth,
   daysUpTo,
+  deviceDay,
   monthLabel,
   monthOf,
   monthRange,
@@ -80,10 +81,12 @@ export function ReportsScreen() {
   });
   // the dashboard's cached copy may be from yesterday (a new month at
   // midnight): online, wait for the refresh; offline, the saved one will do
+  // offline with nothing saved: the phone's own day, so saved months show
   const todayDay =
     today.isFetching && online && !today.isFetchedAfterMount
       ? undefined
-      : today.data?.to;
+      : (today.data?.to ??
+        (today.fetchStatus === "paused" ? deviceDay() : undefined));
   const current = todayDay ? monthOf(todayDay) : null;
   const month = current
     ? clampMonth(parseMonth(params.get("month")) ?? current, current)

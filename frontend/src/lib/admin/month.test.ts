@@ -3,6 +3,7 @@ import type { DailyReport } from "@/lib/api/types";
 import {
   clampMonth,
   daysUpTo,
+  deviceDay,
   deviceMonth,
   monthChoices,
   pickMonth,
@@ -180,5 +181,12 @@ describe("deviceMonth", () => {
   it("uses Manila time, so late on the last day in UTC is already next month", () => {
     expect(deviceMonth(new Date("2026-09-30T17:00:00Z"))).toBe("2026-10");
     expect(deviceMonth(new Date("2026-09-30T15:00:00Z"))).toBe("2026-09");
+  });
+});
+
+describe("deviceDay", () => {
+  it("is the phone's date in Manila time", () => {
+    expect(deviceDay(new Date("2026-09-30T17:00:00Z"))).toBe("2026-10-01");
+    expect(deviceDay(new Date("2026-09-30T15:00:00Z"))).toBe("2026-09-30");
   });
 });

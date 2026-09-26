@@ -38,10 +38,12 @@ export function parseMonth(raw: string | null): Month | null {
   return m && Number(m[2]) >= 1 && Number(m[2]) <= 12 ? m[0] : null;
 }
 
-// the month on this device's clock in Manila time: only a stand-in for when
-// the server's today can't be fetched (offline, nothing saved yet)
+// the day / month on this device's clock in Manila time: only a stand-in for
+// when the server's today can't be fetched (offline, nothing saved yet)
+export const deviceDay = (now = new Date()): string =>
+  now.toLocaleDateString("en-CA", { timeZone: "Asia/Manila" });
 export const deviceMonth = (now = new Date()): Month =>
-  now.toLocaleDateString("en-CA", { timeZone: "Asia/Manila" }).slice(0, 7);
+  deviceDay(now).slice(0, 7);
 
 export const clampMonth = (m: Month, current: Month): Month =>
   m > current ? current : m;
