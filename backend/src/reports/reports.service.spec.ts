@@ -116,6 +116,24 @@ describe('ReportsService', () => {
     });
   });
 
+  describe('tripsList worker filter', () => {
+    it('narrows both the page and the count to one worker', async () => {
+      prisma.$queryRaw
+        .mockResolvedValueOnce([
+          { start: '2026-08-31 16:00:00', end: '2026-09-30 16:00:00' },
+        ])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{ total: 0 }]);
+      const w = '3f9a2c7e-1b2d-4c5e-8f90-123456789abc';
+      await service.tripsList({ month: '2026-09', workerId: w });
+      const [, list, count] = prisma.$queryRaw.mock.calls.map((c) =>
+        JSON.stringify(c),
+      );
+      expect(list).toContain(w);
+      expect(count).toContain(w);
+    });
+  });
+
   describe('tripDetail', () => {
     it('workers must own the trip; owners skip the check', async () => {
       prisma.trip.findUnique.mockResolvedValue(null);
