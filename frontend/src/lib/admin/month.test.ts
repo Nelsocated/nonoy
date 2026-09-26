@@ -83,6 +83,8 @@ describe("month helpers", () => {
       "2026-00",
       "2026-9",
       "2026-09-01",
+      "0050-01", // Date.UTC would read years 0-99 as 1900-1999
+      "1999-12", // before the business used the app
     ])
       expect(parseMonth(bad)).toBeNull();
   });

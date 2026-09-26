@@ -31,9 +31,10 @@ export function monthLabel(m: Month) {
   });
 }
 
-// from ?month= — anything else means "the current month"
+// from ?month= — anything else means "the current month". Years start at
+// 2000: Date.UTC reads 0-99 as 1900s, and nothing older exists anyway.
 export function parseMonth(raw: string | null): Month | null {
-  const m = /^(\d{4})-(\d{2})$/.exec(raw ?? "");
+  const m = /^(2\d{3})-(\d{2})$/.exec(raw ?? "");
   return m && Number(m[2]) >= 1 && Number(m[2]) <= 12 ? m[0] : null;
 }
 
