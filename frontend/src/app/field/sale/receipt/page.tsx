@@ -11,6 +11,7 @@ import { primaryButton } from "@/components/trip/form";
 import { getDb } from "@/lib/offline/db";
 import { receiptFromLocalSale } from "@/lib/receipt/receipt";
 import { peso } from "@/lib/trip/money";
+import { ReceiptSkeleton } from "@/components/skeleton";
 
 const back =
   "inline-flex min-h-11 items-center justify-center rounded-md px-3 text-sm font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-100";
@@ -41,8 +42,7 @@ function SaleReceipt() {
     );
   }, [id, userId, userName]);
 
-  if (found === undefined)
-    return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (found === undefined) return <ReceiptSkeleton />;
   if (found === null)
     return (
       <section className="space-y-4 rounded-xl bg-surface p-6 text-center shadow-card">
@@ -86,9 +86,7 @@ function SaleReceipt() {
 
 export default function SaleReceiptPage() {
   return (
-    <Suspense
-      fallback={<p className="text-sm text-muted-foreground">Loading…</p>}
-    >
+    <Suspense fallback={<ReceiptSkeleton />}>
       <SaleReceipt />
     </Suspense>
   );

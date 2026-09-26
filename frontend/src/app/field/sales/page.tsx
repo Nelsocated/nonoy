@@ -7,6 +7,7 @@ import { useTrip } from "@/components/trip/use-trip";
 import { receiptCode } from "@/lib/receipt/receipt";
 import { peso } from "@/lib/trip/money";
 import { titleBar } from "@/lib/ui/styles";
+import { FieldPageSkeleton } from "@/components/skeleton";
 
 const time = (iso: string) =>
   new Date(iso).toLocaleTimeString("en-PH", {
@@ -18,7 +19,7 @@ const time = (iso: string) =>
 export default function SalesPage() {
   const { userId } = useOffline();
   const data = useTrip(userId);
-  if (!data) return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (!data) return <FieldPageSkeleton />;
   const { todaySales, buyers } = data;
 
   return (

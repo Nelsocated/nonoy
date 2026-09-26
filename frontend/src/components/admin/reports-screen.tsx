@@ -20,6 +20,7 @@ import {
 import { asOf } from "@/lib/offline/admin-cache";
 import { peso, twoDp } from "@/lib/trip/money";
 import { cardTitle, statCard, titleBar } from "@/lib/ui/styles";
+import { ContentSkeleton } from "@/components/skeleton";
 
 const button =
   "inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-input bg-surface px-3 text-sm font-medium transition-colors hover:bg-primary-soft focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-100 disabled:opacity-50";
@@ -170,9 +171,7 @@ export function ReportsScreen() {
             to load it.
           </p>
         ) : (
-          <p role="status" className="text-sm text-muted-foreground">
-            Loading…
-          </p>
+          <ContentSkeleton stats />
         )
       ) : t.activeDays === 0 ? (
         <p className="rounded-xl bg-surface p-6 text-center text-muted-foreground shadow-card">

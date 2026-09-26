@@ -23,6 +23,7 @@ import { asOf } from "@/lib/offline/admin-cache";
 import { peso } from "@/lib/trip/money";
 import { cardCount, cardTitle, titleBar } from "@/lib/ui/styles";
 import { Pager } from "./pager";
+import { SkeletonRows } from "@/components/skeleton";
 
 const select =
   "min-h-11 w-full appearance-none rounded-md border border-input bg-surface py-2 pr-9 pl-3 text-base font-medium outline-none transition focus:border-primary focus:ring-3 focus:ring-brand-100";
@@ -252,20 +253,10 @@ export function TripsScreen() {
               </button>
             </div>
           ) : (
-            <p
-              role="status"
-              className="px-5 py-6 text-center text-sm text-muted-foreground"
-            >
-              Loading…
-            </p>
+            <SkeletonRows />
           )
         ) : pastEnd ? (
-          <p
-            role="status"
-            className="px-5 py-6 text-center text-sm text-muted-foreground"
-          >
-            Loading…
-          </p>
+          <SkeletonRows />
         ) : trips.data.items.length ? (
           <>
             <div

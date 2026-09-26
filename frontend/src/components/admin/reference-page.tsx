@@ -21,6 +21,7 @@ import { Pager } from "./pager";
 import { asOf } from "@/lib/offline/admin-cache";
 import { showDialog } from "@/lib/ui/dialog";
 import { cardCount, cardTitle, titleBar } from "@/lib/ui/styles";
+import { SkeletonRows } from "@/components/skeleton";
 
 export type RefField = {
   key: string;
@@ -255,7 +256,7 @@ export function ReferencePage<T extends RefItem>({
           <span className={cardCount}>{active.length}</span>
         </h2>
         {list.isPending ? (
-          <p className="px-5 py-4 text-sm text-muted-foreground">Loading…</p>
+          <SkeletonRows />
         ) : active.length ? (
           <>
             <ul className={pagedList(shown.pages)}>

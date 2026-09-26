@@ -12,6 +12,7 @@ import { peso } from "@/lib/trip/money";
 import { Pager } from "./pager";
 import { TripRecords } from "./trip-records";
 import { cardCount, cardTitle, statCard, titleBar } from "@/lib/ui/styles";
+import { ContentSkeleton } from "@/components/skeleton";
 
 const when = (iso: string) =>
   new Date(iso).toLocaleString("en-PH", {
@@ -72,7 +73,7 @@ export function TripDetailScreen({
     return (
       <div className="mx-auto max-w-3xl space-y-4">
         {back}
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <ContentSkeleton stats />
       </div>
     );
   if (!trip.data)

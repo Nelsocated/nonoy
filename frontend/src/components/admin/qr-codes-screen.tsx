@@ -24,6 +24,7 @@ import {
 } from "@/lib/qr/qr";
 import { showDialog } from "@/lib/ui/dialog";
 import { cardCount, cardTitle, titleBar } from "@/lib/ui/styles";
+import { SkeletonRows } from "@/components/skeleton";
 
 const input =
   "w-full rounded-md border border-input bg-surface px-3 py-2.5 text-base outline-none transition focus:border-primary focus:ring-3 focus:ring-brand-100 aria-invalid:border-danger";
@@ -230,7 +231,7 @@ export function QrCodesScreen() {
           <span className={cardCount}>{codes.length}</span>
         </h2>
         {list.isPending ? (
-          <p className="px-5 py-4 text-sm text-muted-foreground">Loading…</p>
+          <SkeletonRows rows={3} />
         ) : list.isError && !list.data ? (
           // not "No QR codes yet": the owner might add duplicates
           <div className="space-y-3 px-5 py-6 text-center">

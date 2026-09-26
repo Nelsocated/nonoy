@@ -15,6 +15,7 @@ import { useTrip } from "@/components/trip/use-trip";
 import { InvalidRecordError } from "@/lib/offline/validate";
 import { digits, typedAmount } from "@/lib/trip/input";
 import { recountResult, type Stock } from "@/lib/trip/stock";
+import { FormSkeleton } from "@/components/skeleton";
 
 const TWO_DP = /^\d{1,8}(\.\d{1,2})?$/;
 
@@ -40,7 +41,7 @@ export default function RecountPage() {
     if (data && !data.trip && !result) router.replace("/field");
   }, [data, result, router]);
 
-  if (!data) return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (!data) return <FormSkeleton />;
 
   if (result) {
     const diffs = [
@@ -89,8 +90,7 @@ export default function RecountPage() {
     );
   }
 
-  if (!data.trip)
-    return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (!data.trip) return <FormSkeleton />;
   const trip = data.trip;
 
   async function submit(e: React.FormEvent) {

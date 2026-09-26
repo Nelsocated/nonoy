@@ -15,6 +15,7 @@ import { getDb } from "@/lib/offline/db";
 import { InvalidRecordError } from "@/lib/offline/validate";
 import { digits, typedAmount } from "@/lib/trip/input";
 import { toCenti } from "@/lib/trip/money";
+import { FormSkeleton } from "@/components/skeleton";
 
 const TWO_DP = /^\d{1,8}(\.\d{1,2})?$/;
 
@@ -39,8 +40,7 @@ export default function PickupPage() {
     if (data && !data.trip) router.replace("/field");
   }, [data, router]);
 
-  if (!data?.trip || last === undefined)
-    return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (!data?.trip || last === undefined) return <FormSkeleton />;
   const trip = data.trip;
 
   const plantations = [...data.plantations].sort((a, b) =>

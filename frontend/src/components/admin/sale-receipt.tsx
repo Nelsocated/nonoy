@@ -7,6 +7,7 @@ import { Receipt } from "@/components/receipt/receipt";
 import { ApiError } from "@/lib/api";
 import { api } from "@/lib/api/browser";
 import { receiptFromServer } from "@/lib/receipt/receipt";
+import { ReceiptSkeleton } from "@/components/skeleton";
 
 const backClass =
   "inline-flex min-h-11 items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground";
@@ -33,7 +34,7 @@ export function SaleReceiptScreen({ clientId }: { clientId: string }) {
     return (
       <div className="mx-auto max-w-3xl space-y-4">
         {back("/admin", "Dashboard")}
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <ReceiptSkeleton />
       </div>
     );
   if (!sale.data)

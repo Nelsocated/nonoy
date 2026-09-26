@@ -14,6 +14,7 @@ import { peso } from "@/lib/trip/money";
 import { amount, InvalidRecordError } from "@/lib/offline/validate";
 import { showDialog } from "@/lib/ui/dialog";
 import { cardCount, cardTitle, titleBar } from "@/lib/ui/styles";
+import { Bone } from "@/components/skeleton";
 
 const when = (iso: string) =>
   new Date(iso).toLocaleString("en-PH", {
@@ -101,7 +102,11 @@ export default function PricePage() {
             </p>
           </>
         ) : current.isPending ? (
-          <p className="mt-2 text-sm text-muted-foreground">Loading…</p>
+          <div role="status" className="mt-2 space-y-2">
+            <span className="sr-only">Loading…</span>
+            <Bone className="h-9 w-40" />
+            <Bone className="h-4 w-56" />
+          </div>
         ) : (
           <p className="mt-2 text-base">
             No price set yet — workers will have to type one on each sale.

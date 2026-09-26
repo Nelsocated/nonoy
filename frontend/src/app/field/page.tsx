@@ -21,6 +21,7 @@ import { useTrip } from "@/components/trip/use-trip";
 import { peso } from "@/lib/trip/money";
 import { showDialog } from "@/lib/ui/dialog";
 import { iconBadge } from "@/lib/ui/styles";
+import { FieldPageSkeleton } from "@/components/skeleton";
 
 const ACTIONS = [
   { href: "/field/pickup", label: "Pickup", icon: PackagePlus },
@@ -60,7 +61,7 @@ export default function FieldHome() {
   const endDialog = useRef<HTMLDialogElement>(null);
   const [busy, setBusy] = useState(false);
 
-  if (!data) return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (!data) return <FieldPageSkeleton />;
 
   async function start() {
     setBusy(true);

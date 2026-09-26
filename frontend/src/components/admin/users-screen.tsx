@@ -21,6 +21,7 @@ import type { Role, User } from "@/lib/api/types";
 import { asOf } from "@/lib/offline/admin-cache";
 import { showDialog } from "@/lib/ui/dialog";
 import { cardCount, cardTitle, titleBar } from "@/lib/ui/styles";
+import { ContentSkeleton } from "@/components/skeleton";
 
 const input =
   "w-full rounded-md border border-input bg-surface px-3 py-2.5 text-base outline-none transition focus:border-primary focus:ring-3 focus:ring-brand-100 aria-invalid:border-danger";
@@ -224,7 +225,7 @@ export function UsersScreen({ meId, myRole }: { meId: string; myRole: Role }) {
       )}
 
       {users.isPending ? (
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <ContentSkeleton />
       ) : (
         groupByRole(users.data ?? []).map((g) => {
           const shown = pageOf(g.users, pages[g.role] ?? 1);

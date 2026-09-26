@@ -22,6 +22,7 @@ import { showQrState } from "@/lib/qr/qr";
 import { peso, saleAmount, toCenti } from "@/lib/trip/money";
 import { overSell } from "@/lib/trip/stock";
 import { showDialog } from "@/lib/ui/dialog";
+import { FormSkeleton } from "@/components/skeleton";
 
 const TWO_DP = /^\d{1,8}(\.\d{1,2})?$/;
 const asOf = (iso: string) =>
@@ -55,8 +56,7 @@ export default function SalePage() {
     if (data && !data.trip) router.replace("/field");
   }, [data, router]);
 
-  if (!data?.trip || ownerPrice === undefined)
-    return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (!data?.trip || ownerPrice === undefined) return <FormSkeleton />;
   const trip = data.trip;
 
   const listPrice = ownerPrice?.pricePerKilo;

@@ -24,6 +24,7 @@ import { peso } from "@/lib/trip/money";
 import { CheckProblem } from "./check-problem";
 import { Pager } from "./pager";
 import { cardCount, cardTitle, statCard, titleBar } from "@/lib/ui/styles";
+import { SkeletonRows } from "@/components/skeleton";
 
 const REFRESH = 60_000; // TanStack pauses this while the tab is hidden
 const time = (iso: string | number) =>
@@ -222,9 +223,11 @@ export function Dashboard({ name }: { name: string }) {
                 label="open trips"
               />
             </>
+          ) : trips.isPending ? (
+            <SkeletonRows rows={3} />
           ) : (
             <p className="px-5 py-6 text-center text-sm text-muted-foreground">
-              {trips.isPending ? "Loading…" : "Nobody is out right now."}
+              Nobody is out right now.
             </p>
           )}
         </section>
@@ -298,14 +301,14 @@ export function Dashboard({ name }: { name: string }) {
                 label="problems"
               />
             </>
+          ) : problems.isPending ? (
+            <SkeletonRows rows={3} />
           ) : (
             <>
               <p className="px-5 py-6 text-center text-sm text-muted-foreground">
-                {problems.isPending
-                  ? "Loading…"
-                  : problemPage > 1
-                    ? "Nothing left on this page."
-                    : "Nothing to check."}
+                {problemPage > 1
+                  ? "Nothing left on this page."
+                  : "Nothing to check."}
               </p>
               {/* rows checked elsewhere can empty a later page: offer a way back */}
               {problemPage > 1 && (

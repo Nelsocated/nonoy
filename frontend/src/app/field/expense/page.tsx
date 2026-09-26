@@ -13,6 +13,7 @@ import { useTrip } from "@/components/trip/use-trip";
 import { InvalidRecordError } from "@/lib/offline/validate";
 import { typedAmount } from "@/lib/trip/input";
 import { peso, toCenti } from "@/lib/trip/money";
+import { FormSkeleton } from "@/components/skeleton";
 
 const QUICK = ["Gas", "Food", "Toll", "Parking"];
 const TWO_DP = /^\d{1,8}(\.\d{1,2})?$/;
@@ -28,7 +29,7 @@ export default function ExpensePage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
-  if (!data) return <p className="text-sm text-muted-foreground">Loading…</p>;
+  if (!data) return <FormSkeleton />;
   const trip = data.trip;
 
   async function submit(e: React.FormEvent) {
