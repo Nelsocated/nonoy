@@ -92,6 +92,14 @@ export default function SalePage() {
       e.price = listPrice
         ? "Enter a price per kg."
         : "No owner price yet — type today's price per kg.";
+    // the owner decided the picked new buyer while the form was open: it
+    // left the list, so don't save the sale against the old request
+    if (
+      buyer.startsWith("r:") &&
+      !data!.waitingRequests.some((r) => `r:${r.clientId}` === buyer)
+    )
+      e.buyer =
+        "The owner already checked this new buyer. Pick the buyer again.";
     if (buyer === "new") {
       if (!newName.trim()) e.newName = "Enter the buyer's name.";
       else if (newName.trim().length > 100)
@@ -173,7 +181,7 @@ export default function SalePage() {
         }
       />
 
-      <Field label="Buyer" hint={picked ?? undefined}>
+      <Field label="Buyer" error={errors.buyer} hint={picked ?? undefined}>
         {(a) => (
           <Select
             {...a}
