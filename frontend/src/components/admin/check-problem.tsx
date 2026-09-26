@@ -7,6 +7,7 @@ import { useOnline } from "@/components/offline/use-sync-data";
 import { ApiError } from "@/lib/api";
 import { api } from "@/lib/api/browser";
 import type { ProblemKind } from "@/lib/api/types";
+import { showDialog } from "@/lib/ui/dialog";
 
 const button =
   "inline-flex min-h-11 items-center justify-center gap-2 rounded-md px-4 text-base font-medium transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-100 disabled:opacity-50";
@@ -48,7 +49,7 @@ export function CheckProblem({
         onClick={() => {
           setNote("");
           setError(null);
-          dialog.current?.showModal();
+          showDialog(dialog.current);
         }}
         disabled={!online}
         className={`${button} min-h-9 border border-input bg-surface px-3 text-sm hover:bg-muted`}
@@ -105,7 +106,7 @@ export function CheckProblem({
           {/* the safe choice gets focus */}
           <button
             type="button"
-            autoFocus
+            data-autofocus
             onClick={() => dialog.current?.close()}
             className={`${button} text-muted-foreground hover:bg-muted`}
           >

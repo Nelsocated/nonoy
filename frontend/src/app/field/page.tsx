@@ -19,6 +19,7 @@ import { EndTripDialog } from "@/components/trip/end-trip-dialog";
 import { RecordList } from "@/components/trip/record-list";
 import { useTrip } from "@/components/trip/use-trip";
 import { peso } from "@/lib/trip/money";
+import { showDialog } from "@/lib/ui/dialog";
 
 const ACTIONS = [
   { href: "/field/pickup", label: "Pickup", icon: PackagePlus },
@@ -130,7 +131,7 @@ export default function FieldHome() {
 
           <button
             type="button"
-            onClick={() => endDialog.current?.showModal()}
+            onClick={() => showDialog(endDialog.current)}
             className="flex min-h-12 w-full items-center justify-center gap-2 rounded-md border border-input bg-surface text-base font-medium transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-100"
           >
             <Flag aria-hidden className="size-5" /> End trip

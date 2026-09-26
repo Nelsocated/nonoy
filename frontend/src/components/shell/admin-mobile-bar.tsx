@@ -6,6 +6,7 @@ import { Logo } from "@/components/logo";
 import type { SessionUser } from "@/lib/api/types";
 import { AdminNav } from "./admin-nav";
 import { UserMenu } from "./user-menu";
+import { showDialog } from "@/lib/ui/dialog";
 
 // Phones: a slim bar with the logo and one menu button; the navigation and
 // the account (name, log out) live in a panel that slides in from the right.
@@ -28,7 +29,7 @@ export function AdminMobileBar({ user }: { user: SessionUser }) {
       <span className="flex-1 font-semibold tracking-tight">Mang Frito</span>
       <button
         type="button"
-        onClick={() => panel.current?.showModal()}
+        onClick={() => showDialog(panel.current)}
         aria-label="Open menu"
         aria-haspopup="dialog"
         className="flex size-11 items-center justify-center rounded-md text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-100"

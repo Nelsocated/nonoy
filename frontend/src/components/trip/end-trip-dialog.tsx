@@ -92,7 +92,7 @@ export const EndTripDialog = forwardRef<
         </button>
         <button
           type="button"
-          autoFocus
+          data-autofocus
           onClick={close}
           className={`${button} text-muted-foreground hover:bg-muted`}
         >

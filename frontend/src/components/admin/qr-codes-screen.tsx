@@ -22,6 +22,7 @@ import {
   qrTextOk,
   readQrFromFile,
 } from "@/lib/qr/qr";
+import { showDialog } from "@/lib/ui/dialog";
 
 const input =
   "w-full rounded-md border border-input bg-surface px-3 py-2.5 text-base outline-none transition focus:border-primary focus:ring-3 focus:ring-brand-100 aria-invalid:border-danger";
@@ -126,7 +127,7 @@ export function QrCodesScreen() {
     setLabel(item === "new" ? "" : item.label);
     setPayload(item === "new" ? null : item.payload);
     setErrors({});
-    form.current?.showModal();
+    showDialog(form.current);
   }
 
   const imageError = (text: string | null) =>
@@ -365,7 +366,7 @@ export function QrCodesScreen() {
             {current && (
               <button
                 type="button"
-                onClick={() => confirm.current?.showModal()}
+                onClick={() => showDialog(confirm.current)}
                 className={`${button} text-danger hover:bg-danger-soft`}
               >
                 <Trash aria-hidden className="size-5" /> Remove
@@ -399,7 +400,7 @@ export function QrCodesScreen() {
           {/* focus the safe choice */}
           <button
             type="button"
-            autoFocus
+            data-autofocus
             onClick={() => confirm.current?.close()}
             className={quiet}
           >

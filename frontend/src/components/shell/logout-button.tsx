@@ -6,6 +6,7 @@ import { logout } from "@/app/(auth)/login/actions";
 import { clearAdminCache } from "@/lib/offline/admin-cache";
 import { getDb } from "@/lib/offline/db";
 import { clearPageCaches } from "@/lib/offline/sw-caches";
+import { showDialog } from "@/lib/ui/dialog";
 
 const button =
   "min-h-11 rounded-md px-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-100";
@@ -24,7 +25,7 @@ export function LogoutButton({ userId }: { userId: string }) {
 
   const show = (a: Ask) => {
     setAsk(a);
-    dialog.current?.showModal();
+    showDialog(dialog.current);
   };
 
   async function leave() {
@@ -78,7 +79,7 @@ export function LogoutButton({ userId }: { userId: string }) {
             <div className="mt-6 flex flex-col">
               <button
                 type="button"
-                autoFocus
+                data-autofocus
                 onClick={close}
                 className={`${button} bg-primary text-base text-primary-foreground hover:bg-primary-hover active:bg-primary-active`}
               >
@@ -101,7 +102,7 @@ export function LogoutButton({ userId }: { userId: string }) {
             <div className="mt-6 flex flex-col gap-2">
               <button
                 type="button"
-                autoFocus
+                data-autofocus
                 onClick={close}
                 className={`${button} bg-primary text-base text-primary-foreground hover:bg-primary-hover active:bg-primary-active`}
               >

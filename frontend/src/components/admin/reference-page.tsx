@@ -19,6 +19,7 @@ import { pagedList, pageOf } from "@/lib/admin/paging";
 import { matchesSearch, removedMessage } from "@/lib/admin/search";
 import { Pager } from "./pager";
 import { asOf } from "@/lib/offline/admin-cache";
+import { showDialog } from "@/lib/ui/dialog";
 
 export type RefField = {
   key: string;
@@ -156,7 +157,7 @@ export function ReferencePage<T extends RefItem>({
         ]),
       ),
     );
-    form.current?.showModal();
+    showDialog(form.current);
   }
 
   function submit(e: React.FormEvent) {
@@ -415,7 +416,7 @@ export function ReferencePage<T extends RefItem>({
             {current && (
               <button
                 type="button"
-                onClick={() => confirm.current?.showModal()}
+                onClick={() => showDialog(confirm.current)}
                 className={`${button} text-danger hover:bg-danger-soft`}
               >
                 <Trash aria-hidden className="size-5" /> Remove
@@ -449,7 +450,7 @@ export function ReferencePage<T extends RefItem>({
           {/* focus the safe choice */}
           <button
             type="button"
-            autoFocus
+            data-autofocus
             onClick={() => confirm.current?.close()}
             className={quiet}
           >

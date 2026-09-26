@@ -21,6 +21,7 @@ import { digits, typedAmount } from "@/lib/trip/input";
 import { showQrState } from "@/lib/qr/qr";
 import { peso, saleAmount, toCenti } from "@/lib/trip/money";
 import { overSell } from "@/lib/trip/stock";
+import { showDialog } from "@/lib/ui/dialog";
 
 const TWO_DP = /^\d{1,8}(\.\d{1,2})?$/;
 const asOf = (iso: string) =>
@@ -119,7 +120,7 @@ export default function SalePage() {
     });
     if (over) {
       setWarning(over);
-      warn.current?.showModal();
+      showDialog(warn.current);
       return;
     }
     void save();
@@ -245,7 +246,7 @@ export default function SalePage() {
           <div className="space-y-1.5 pt-1">
             <button
               type="button"
-              onClick={() => qrView.current?.showModal()}
+              onClick={() => showDialog(qrView.current)}
               disabled={!qr.ready}
               className="flex min-h-12 w-full items-center justify-center gap-2 rounded-md border border-input bg-surface text-base font-medium transition-colors hover:bg-muted disabled:text-muted-foreground disabled:hover:bg-surface focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-100"
             >
@@ -294,7 +295,7 @@ export default function SalePage() {
         <div className="mt-6 flex flex-col gap-2">
           <button
             type="button"
-            autoFocus
+            data-autofocus
             onClick={() => warn.current?.close()}
             className="min-h-12 rounded-md bg-primary px-4 text-base font-medium text-primary-foreground hover:bg-primary-hover"
           >

@@ -12,6 +12,7 @@ import { asOf } from "@/lib/offline/admin-cache";
 import { typedAmount } from "@/lib/trip/input";
 import { peso } from "@/lib/trip/money";
 import { amount, InvalidRecordError } from "@/lib/offline/validate";
+import { showDialog } from "@/lib/ui/dialog";
 
 const when = (iso: string) =>
   new Date(iso).toLocaleString("en-PH", {
@@ -62,7 +63,7 @@ export default function PricePage() {
       if (Number(value) <= 0)
         throw new InvalidRecordError("Price must be more than 0.");
       setError(null);
-      confirm.current?.showModal();
+      showDialog(confirm.current);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Check the price.");
     }
@@ -228,7 +229,7 @@ export default function PricePage() {
           {/* focus the safe choice: Enter shouldn't change every worker's price */}
           <button
             type="button"
-            autoFocus
+            data-autofocus
             onClick={() => confirm.current?.close()}
             className={`${button} text-muted-foreground hover:bg-muted`}
           >

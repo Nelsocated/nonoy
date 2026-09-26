@@ -18,6 +18,7 @@ import { ApiError } from "@/lib/api";
 import { api } from "@/lib/api/browser";
 import type { Role, User } from "@/lib/api/types";
 import { asOf } from "@/lib/offline/admin-cache";
+import { showDialog } from "@/lib/ui/dialog";
 
 const input =
   "w-full rounded-md border border-input bg-surface px-3 py-2.5 text-base outline-none transition focus:border-primary focus:ring-3 focus:ring-brand-100 aria-invalid:border-danger";
@@ -112,7 +113,7 @@ export function UsersScreen({ meId }: { meId: string }) {
     setValues(
       user ? { ...empty, name: user.name, phone: user.phone ?? "" } : empty,
     );
-    if (!dialog.current?.open) dialog.current?.showModal();
+    showDialog(dialog.current);
   }
 
   function submit(e: React.FormEvent) {
@@ -306,7 +307,7 @@ export function UsersScreen({ meId }: { meId: string }) {
             )}
             <button
               type="button"
-              autoFocus
+              data-autofocus
               onClick={() => dialog.current?.close()}
               className={quiet}
             >
@@ -408,7 +409,7 @@ export function UsersScreen({ meId }: { meId: string }) {
               {/* the safe choice gets focus on the confirm-only steps */}
               <button
                 type="button"
-                autoFocus={mode === "active"}
+                data-autofocus={mode === "active" || undefined}
                 onClick={() => dialog.current?.close()}
                 className={quiet}
               >

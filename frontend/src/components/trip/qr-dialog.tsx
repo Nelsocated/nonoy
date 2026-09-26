@@ -85,7 +85,7 @@ export function QrDialog({
 
         <button
           type="button"
-          autoFocus
+          data-autofocus
           onClick={close}
           className={primaryButton}
         >
