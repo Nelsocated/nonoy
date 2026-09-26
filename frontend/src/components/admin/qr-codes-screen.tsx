@@ -62,6 +62,9 @@ export function QrCodesScreen() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const form = useRef<HTMLDialogElement>(null);
   const confirm = useRef<HTMLDialogElement>(null);
+  // bumped each time the form opens: a slow image read from an earlier
+  // opening must not fill in the new one
+  const opening = useRef(0);
 
   const codes = list.data ?? [];
   const current = editing && editing !== "new" ? editing : null;
@@ -110,6 +113,8 @@ export function QrCodesScreen() {
   });
 
   function open(item: PaymentQr | "new") {
+    opening.current += 1;
+    setReading(false);
     setEditing(item);
     setLabel(item === "new" ? "" : item.label);
     setPayload(item === "new" ? null : item.payload);
@@ -129,18 +134,21 @@ export function QrCodesScreen() {
     const file = e.target.files?.[0];
     e.target.value = ""; // picking the same file again still fires
     if (!file) return;
+    const mine = opening.current;
     setReading(true);
     imageError(null);
     try {
       const text = await readQrFromFile(file);
+      if (mine !== opening.current) return;
       if (!text) imageError(NOT_FOUND);
       else if (text.length > MAX_QR_TEXT) imageError(TOO_LONG);
       else if (!qrTextOk(text)) imageError(MISREAD);
       else setPayload(text);
     } catch {
-      imageError(NOT_FOUND); // not an image the browser can open
+      // not an image the browser can open
+      if (mine === opening.current) imageError(NOT_FOUND);
     } finally {
-      setReading(false);
+      if (mine === opening.current) setReading(false);
     }
   }
 
