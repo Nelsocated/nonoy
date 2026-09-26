@@ -23,6 +23,7 @@ import {
   readQrFromFile,
 } from "@/lib/qr/qr";
 import { showDialog } from "@/lib/ui/dialog";
+import { cardCount, cardTitle, titleBar } from "@/lib/ui/styles";
 
 const input =
   "w-full rounded-md border border-input bg-surface px-3 py-2.5 text-base outline-none transition focus:border-primary focus:ring-3 focus:ring-brand-100 aria-invalid:border-danger";
@@ -174,7 +175,9 @@ export function QrCodesScreen() {
     <div className="mx-auto max-w-2xl space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">QR codes</h1>
+          <h1 className={`text-2xl font-semibold tracking-tight ${titleBar}`}>
+            QR codes
+          </h1>
           <p className="text-sm text-muted-foreground">
             Payment QR codes workers show buyers who pay by QR — GCash, Maya,
             bank. Up to {MAX_QR_CODES}.
@@ -222,11 +225,9 @@ export function QrCodesScreen() {
       )}
 
       <section className="overflow-hidden rounded-xl border bg-surface shadow-card">
-        <h2 className="flex items-center justify-between border-b bg-muted/60 px-5 py-2.5 text-sm font-medium">
+        <h2 className={cardTitle}>
           QR codes
-          <span className="rounded-full bg-surface px-2 py-0.5 text-xs text-muted-foreground tabular-nums">
-            {codes.length}
-          </span>
+          <span className={cardCount}>{codes.length}</span>
         </h2>
         {list.isPending ? (
           <p className="px-5 py-4 text-sm text-muted-foreground">Loading…</p>

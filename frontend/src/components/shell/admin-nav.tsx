@@ -12,6 +12,7 @@ import {
   Warehouse,
   type LucideIcon,
 } from "lucide-react";
+import { navActive, navIdle } from "@/lib/ui/styles";
 
 // add entries here as admin pages are built
 const NAV: { href: string; label: string; icon: LucideIcon }[] = [
@@ -43,9 +44,7 @@ export function AdminNav({ onNavigate }: { onNavigate?: () => void }) {
             onClick={onNavigate}
             aria-current={active ? "page" : undefined}
             className={`flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-100 ${
-              active
-                ? "bg-primary-soft text-primary-soft-foreground"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              active ? navActive : navIdle
             }`}
           >
             <Icon aria-hidden className="size-5 shrink-0" />

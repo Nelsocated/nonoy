@@ -23,6 +23,7 @@ import { asOf } from "@/lib/offline/admin-cache";
 import { peso } from "@/lib/trip/money";
 import { CheckProblem } from "./check-problem";
 import { Pager } from "./pager";
+import { cardCount, cardTitle, statCard, titleBar } from "@/lib/ui/styles";
 
 const REFRESH = 60_000; // TanStack pauses this while the tab is hidden
 const time = (iso: string | number) =>
@@ -32,10 +33,6 @@ const time = (iso: string | number) =>
   });
 
 const card = "overflow-hidden rounded-xl border bg-surface shadow-card";
-const cardTitle =
-  "flex items-center justify-between border-b bg-muted/60 px-5 py-2.5 text-sm font-medium";
-const count =
-  "rounded-full bg-surface px-2 py-0.5 text-xs text-muted-foreground tabular-nums";
 
 function problemIcon(p: Problem) {
   if (p.kind === "recount") return ClipboardCheck;
@@ -52,7 +49,7 @@ function Stat({
   sub?: string;
 }) {
   return (
-    <div className="rounded-xl border bg-surface p-4 shadow-card">
+    <div className={statCard}>
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="mt-1 text-xl font-semibold tabular-nums">{value}</p>
       {sub && (
@@ -111,7 +108,7 @@ export function Dashboard({ name }: { name: string }) {
     <div className="mx-auto max-w-5xl space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">
+          <h1 className={`text-2xl font-semibold tracking-tight ${titleBar}`}>
             Welcome, {name}
           </h1>
           <p className="text-sm text-muted-foreground">
@@ -146,7 +143,7 @@ export function Dashboard({ name }: { name: string }) {
       )}
 
       <section aria-labelledby="today" className="space-y-2">
-        <h2 id="today" className="text-sm font-medium text-muted-foreground">
+        <h2 id="today" className="text-sm font-semibold text-primary">
           Today
         </h2>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -169,7 +166,7 @@ export function Dashboard({ name }: { name: string }) {
         <section className={card}>
           <h2 className={cardTitle}>
             Out right now
-            <span className={count}>{trips.data?.length ?? 0}</span>
+            <span className={cardCount}>{trips.data?.length ?? 0}</span>
           </h2>
           {trips.data?.length ? (
             <>
@@ -232,7 +229,11 @@ export function Dashboard({ name }: { name: string }) {
           >
             Problems to check
             <span
-              className={`${count} ${total ? "bg-warning-soft text-warning" : ""}`}
+              className={
+                total
+                  ? "rounded-full bg-warning-soft px-2 py-0.5 text-xs font-semibold text-warning tabular-nums"
+                  : cardCount
+              }
             >
               {total}
             </span>

@@ -19,6 +19,7 @@ import { stamp, tripTimeline, type TimelineEntry } from "@/lib/admin/timeline";
 import { peso, twoDp } from "@/lib/trip/money";
 import { CheckProblem } from "./check-problem";
 import { Pager } from "./pager";
+import { cardCount, cardTitle, statCard, titleBar } from "@/lib/ui/styles";
 
 const when = (iso: string) =>
   new Date(iso).toLocaleString("en-PH", {
@@ -72,7 +73,7 @@ function Stat({
   sub?: string;
 }) {
   return (
-    <div className="rounded-xl border bg-surface p-4 shadow-card">
+    <div className={statCard}>
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="mt-1 text-lg font-semibold tabular-nums">{value}</p>
       {sub && (
@@ -129,7 +130,7 @@ export function TripDetailScreen({ id }: { id: string }) {
     <div className="mx-auto max-w-3xl space-y-5">
       {back}
       <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">
+        <h1 className={`text-2xl font-semibold tracking-tight ${titleBar}`}>
           {t.worker.name}&apos;s trip
         </h1>
         <p className="text-sm text-muted-foreground">
@@ -167,12 +168,10 @@ export function TripDetailScreen({ id }: { id: string }) {
         <h2
           ref={recordsHeading}
           tabIndex={-1}
-          className="flex items-center justify-between border-b bg-muted/60 px-5 py-2.5 text-sm font-medium focus-visible:outline-none"
+          className={`${cardTitle} focus-visible:outline-none`}
         >
           Everything recorded
-          <span className="rounded-full bg-surface px-2 py-0.5 text-xs text-muted-foreground tabular-nums">
-            {timeline.length}
-          </span>
+          <span className={cardCount}>{timeline.length}</span>
         </h2>
         {timeline.length ? (
           <>

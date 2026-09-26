@@ -20,6 +20,7 @@ import { api } from "@/lib/api/browser";
 import type { Role, User } from "@/lib/api/types";
 import { asOf } from "@/lib/offline/admin-cache";
 import { showDialog } from "@/lib/ui/dialog";
+import { cardCount, cardTitle, titleBar } from "@/lib/ui/styles";
 
 const input =
   "w-full rounded-md border border-input bg-surface px-3 py-2.5 text-base outline-none transition focus:border-primary focus:ring-3 focus:ring-brand-100 aria-invalid:border-danger";
@@ -190,7 +191,9 @@ export function UsersScreen({ meId }: { meId: string }) {
     <div className="mx-auto max-w-2xl space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">Users</h1>
+          <h1 className={`text-2xl font-semibold tracking-tight ${titleBar}`}>
+            Users
+          </h1>
           <p className="text-sm text-muted-foreground">
             Everyone who can log in. Workers use their phone number to sign in.
           </p>
@@ -230,11 +233,9 @@ export function UsersScreen({ meId }: { meId: string }) {
               key={g.role}
               className="overflow-hidden rounded-xl border bg-surface shadow-card"
             >
-              <h2 className="flex items-center justify-between border-b bg-muted/60 px-5 py-2.5 text-sm font-medium">
+              <h2 className={cardTitle}>
                 {g.label}
-                <span className="rounded-full bg-surface px-2 py-0.5 text-xs text-muted-foreground tabular-nums">
-                  {g.users.length}
-                </span>
+                <span className={cardCount}>{g.users.length}</span>
               </h2>
               <ul className={pagedList(shown.pages)}>
                 {shown.rows.map((u) => (

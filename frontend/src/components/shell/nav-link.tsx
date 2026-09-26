@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { navActive, navIdle } from "@/lib/ui/styles";
 
 export type NavItem = { href: string; label: string };
 
@@ -20,7 +21,7 @@ export function NavLink({
     <Link
       href={href}
       aria-current={active ? "page" : undefined}
-      className={`${className} ${active ? "bg-primary-soft text-primary-soft-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground"}`}
+      className={`${className} ${active ? navActive : navIdle}`}
     >
       {label}
     </Link>

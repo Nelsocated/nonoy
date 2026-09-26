@@ -2,12 +2,14 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { InfoLinks } from "@/components/info/info-links";
 import { Logo } from "@/components/logo";
+import { topStrip } from "@/lib/ui/styles";
 
 // About, Help, Privacy and Terms: public, readable before signing in, and
 // cached on workers' phones. "/" sends people to their home or to login.
 export default function InfoLayout({ children }: LayoutProps<"/">) {
   return (
     <div className="flex flex-1 flex-col bg-background">
+      <div aria-hidden className={topStrip} />
       <header className="border-b bg-surface">
         <div className="mx-auto flex max-w-2xl items-center gap-3 px-4 py-2">
           <Logo className="size-9" />

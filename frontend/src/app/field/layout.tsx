@@ -7,6 +7,7 @@ import { SyncBar } from "@/components/offline/sync-bar";
 import { FieldNav } from "@/components/shell/field-nav";
 import { UserMenu } from "@/components/shell/user-menu";
 import { getSession } from "@/lib/auth/session";
+import { topStrip } from "@/lib/ui/styles";
 
 export default async function FieldLayout({ children }: LayoutProps<"/field">) {
   const session = await getSession();
@@ -20,6 +21,7 @@ export default async function FieldLayout({ children }: LayoutProps<"/field">) {
       seesStock={staff}
     >
       <div className="flex flex-1 flex-col pb-16">
+        <div aria-hidden className={topStrip} />
         <header className="flex items-center gap-3 border-b bg-surface px-4 py-3">
           <Logo className="size-8" />
           <div className="flex-1">

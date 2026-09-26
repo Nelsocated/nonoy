@@ -20,6 +20,7 @@ import { matchesSearch, removedMessage } from "@/lib/admin/search";
 import { Pager } from "./pager";
 import { asOf } from "@/lib/offline/admin-cache";
 import { showDialog } from "@/lib/ui/dialog";
+import { cardCount, cardTitle, titleBar } from "@/lib/ui/styles";
 
 export type RefField = {
   key: string;
@@ -188,7 +189,9 @@ export function ReferencePage<T extends RefItem>({
     <div className="mx-auto max-w-2xl space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+          <h1 className={`text-2xl font-semibold tracking-tight ${titleBar}`}>
+            {title}
+          </h1>
           <p className="text-sm text-muted-foreground">{intro}</p>
         </div>
         <button
@@ -247,11 +250,9 @@ export function ReferencePage<T extends RefItem>({
       </label>
 
       <section className="overflow-hidden rounded-xl border bg-surface shadow-card">
-        <h2 className="flex items-center justify-between border-b bg-muted/60 px-5 py-2.5 text-sm font-medium">
+        <h2 className={cardTitle}>
           {title}
-          <span className="rounded-full bg-surface px-2 py-0.5 text-xs text-muted-foreground tabular-nums">
-            {active.length}
-          </span>
+          <span className={cardCount}>{active.length}</span>
         </h2>
         {list.isPending ? (
           <p className="px-5 py-4 text-sm text-muted-foreground">Loading…</p>

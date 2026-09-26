@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { useId } from "react";
+import { titleBar } from "@/lib/ui/styles";
 
 export const inputClass =
   "w-full rounded-md border border-input bg-surface px-3 py-3 text-lg tabular-nums outline-none transition focus:border-primary focus:ring-3 focus:ring-brand-100 aria-invalid:border-danger";
@@ -20,7 +21,9 @@ export function FormHeader({ title, hint }: { title: string; hint?: string }) {
       >
         <ChevronLeft aria-hidden className="size-4" /> Trip
       </Link>
-      <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+      <h1 className={`text-2xl font-semibold tracking-tight ${titleBar}`}>
+        {title}
+      </h1>
       {hint && <p className="text-sm text-muted-foreground">{hint}</p>}
     </div>
   );

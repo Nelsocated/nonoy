@@ -20,6 +20,7 @@ import { RecordList } from "@/components/trip/record-list";
 import { useTrip } from "@/components/trip/use-trip";
 import { peso } from "@/lib/trip/money";
 import { showDialog } from "@/lib/ui/dialog";
+import { iconBadge } from "@/lib/ui/styles";
 
 const ACTIONS = [
   { href: "/field/pickup", label: "Pickup", icon: PackagePlus },
@@ -121,7 +122,9 @@ export default function FieldHome() {
           <div className="grid grid-cols-2 gap-3">
             {ACTIONS.map(({ href, label, icon: Icon }) => (
               <Link key={href} href={href} className={tile}>
-                <Icon aria-hidden className="size-6 text-primary" />
+                <span className={iconBadge}>
+                  <Icon aria-hidden className="size-5" />
+                </span>
                 {label}
               </Link>
             ))}
@@ -171,9 +174,9 @@ export default function FieldHome() {
 
       <Link
         href="/field/sales"
-        className="block rounded-xl bg-surface p-5 shadow-card transition-colors hover:bg-muted active:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-100"
+        className="block rounded-xl border-l-4 border-l-primary bg-surface p-5 shadow-card transition-colors hover:bg-muted active:bg-muted focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-100"
       >
-        <h2 className="flex items-center justify-between text-sm text-muted-foreground">
+        <h2 className="flex items-center justify-between text-sm font-semibold text-primary">
           Today · {today.sales} {today.sales === 1 ? "sale" : "sales"}
           <span className="inline-flex items-center gap-1 text-xs font-medium">
             Receipts <ChevronRight aria-hidden className="size-4" />
@@ -189,9 +192,7 @@ export default function FieldHome() {
 
       {!trip && data.recentTrips.length > 0 && (
         <section className="space-y-2">
-          <h2 className="text-sm font-medium text-muted-foreground">
-            Recent trips
-          </h2>
+          <h2 className="text-sm font-semibold text-primary">Recent trips</h2>
           <ul className="divide-y rounded-xl bg-surface shadow-card">
             {data.recentTrips.map((t) => (
               <li key={t.clientId} className="px-4 py-3 text-sm">

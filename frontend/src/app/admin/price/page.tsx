@@ -13,6 +13,7 @@ import { typedAmount } from "@/lib/trip/input";
 import { peso } from "@/lib/trip/money";
 import { amount, InvalidRecordError } from "@/lib/offline/validate";
 import { showDialog } from "@/lib/ui/dialog";
+import { cardCount, cardTitle, titleBar } from "@/lib/ui/styles";
 
 const when = (iso: string) =>
   new Date(iso).toLocaleString("en-PH", {
@@ -75,7 +76,9 @@ export default function PricePage() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight">Price</h1>
+        <h1 className={`text-2xl font-semibold tracking-tight ${titleBar}`}>
+          Price
+        </h1>
         <p className="text-sm text-muted-foreground">
           Workers&apos; phones use this price per kilo for every sale. They can
           change it on a sale, and those sales are flagged for you.
@@ -150,11 +153,9 @@ export default function PricePage() {
       </section>
 
       <section className="overflow-hidden rounded-xl border bg-surface shadow-card">
-        <h2 className="flex items-center justify-between border-b bg-muted/60 px-5 py-2.5 text-sm font-medium">
+        <h2 className={cardTitle}>
           History
-          <span className="rounded-full bg-surface px-2 py-0.5 text-xs text-muted-foreground tabular-nums">
-            {history.data?.length ?? 0}
-          </span>
+          <span className={cardCount}>{history.data?.length ?? 0}</span>
         </h2>
         {history.data?.length ? (
           <>

@@ -6,6 +6,7 @@ import { TONE } from "@/components/offline/sync-bar";
 import { useOnline, useSyncData } from "@/components/offline/use-sync-data";
 import type { OutboxKind } from "@/lib/offline/db";
 import { summarize } from "@/lib/offline/status";
+import { titleBar } from "@/lib/ui/styles";
 
 const KIND: Record<OutboxKind, string> = {
   trip: "Trip started",
@@ -44,7 +45,9 @@ export default function SyncPage() {
   return (
     <div className="space-y-5 pb-4">
       <div className="space-y-1">
-        <h1 className="text-xl font-semibold tracking-tight">Sync</h1>
+        <h1 className={`text-xl font-semibold tracking-tight ${titleBar}`}>
+          Sync
+        </h1>
         <p className="text-sm text-muted-foreground">
           What you record is saved on this phone first and sent when there’s
           signal.

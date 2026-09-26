@@ -6,6 +6,7 @@ import { useOffline } from "@/components/offline/offline-provider";
 import { useTrip } from "@/components/trip/use-trip";
 import { receiptCode } from "@/lib/receipt/receipt";
 import { peso } from "@/lib/trip/money";
+import { titleBar } from "@/lib/ui/styles";
 
 const time = (iso: string) =>
   new Date(iso).toLocaleTimeString("en-PH", {
@@ -23,7 +24,9 @@ export default function SalesPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-semibold">Today&apos;s sales</h1>
+        <h1 className={`text-xl font-semibold tracking-tight ${titleBar}`}>
+          Today&apos;s sales
+        </h1>
         <p className="text-sm text-muted-foreground">
           Tap a sale to show its receipt.
         </p>
