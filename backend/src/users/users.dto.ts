@@ -1,12 +1,16 @@
+import { Transform } from 'class-transformer';
 import {
   IsBoolean,
   IsEnum,
   IsNotEmpty,
-  IsOptional,
   IsString,
   MinLength,
 } from 'class-validator';
+import { IfSent } from '../common/if-sent.decorator.js';
 import { Role } from '../generated/prisma/enums.js';
+
+const trim = ({ value }: { value: unknown }) =>
+  typeof value === 'string' ? value.trim() : value;
 
 export class CreateUserDto {
   @IsString()
@@ -17,7 +21,9 @@ export class CreateUserDto {
   @MinLength(6)
   password: string;
 
+  @Transform(trim)
   @IsString()
+  @IsNotEmpty({ message: 'Enter a name' })
   name: string;
   // no `role` here: an undecorated field makes forbidNonWhitelisted reject
   // every request, and public sign-up must never pick its own role anyway
@@ -36,12 +42,13 @@ export class SetActiveDto {
 
 // PATCH /users/:id — fix a name or change the login phone
 export class UpdateUserDto {
-  @IsOptional()
+  @IfSent()
+  @Transform(trim)
   @IsString()
   @IsNotEmpty({ message: 'Enter a name' })
   name?: string;
 
-  @IsOptional()
+  @IfSent()
   @IsString()
   @MinLength(11, { message: 'Insert a valid phone number' })
   phone?: string;
