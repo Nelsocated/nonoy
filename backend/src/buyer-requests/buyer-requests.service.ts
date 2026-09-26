@@ -1,6 +1,17 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { Prisma } from '../generated/prisma/client.js';
+import { BuyerRequestStatus } from '../generated/prisma/enums.js';
 import { PrismaService } from '../prisma/prisma.service.js';
-import { CreateBuyerRequestDto } from './buyer-requests.dto.js';
+import {
+  ApproveBuyerRequestDto,
+  CreateBuyerRequestDto,
+} from './buyer-requests.dto.js';
 
 const DAY = 24 * 60 * 60 * 1000;
 // how far back a phone keeps its own decided requests
@@ -55,6 +66,84 @@ export class BuyerRequestsService {
         buyerId: true,
         createdAtClient: true,
       },
+    });
+  }
+
+  // what the owner still has to decide, oldest first
+  async pending() {
+    const rows = await this.prisma.buyerRequest.findMany({
+      where: { status: 'PENDING' },
+      orderBy: { createdAtClient: 'asc' },
+      select: {
+        id: true,
+        name: true,
+        location: true,
+        createdAtClient: true,
+        requestedBy: { select: { id: true, name: true } },
+        _count: { select: { sales: true } },
+      },
+    });
+    return rows.map(({ _count, ...r }) => ({ ...r, sales: _count.sales }));
+  }
+
+  approve(id: string, dto: ApproveBuyerRequestDto, userId: string) {
+    return this.decide(id, async (tx) => {
+      const buyer = await tx.buyer.create({
+        data: { name: dto.name, location: dto.location ?? null },
+      });
+      return this.settle(tx, id, BuyerRequestStatus.APPROVED, buyer.id, userId);
+    });
+  }
+
+  // it's really a buyer already in the list
+  merge(id: string, buyerId: string, userId: string) {
+    return this.decide(id, async (tx) => {
+      const buyer = await tx.buyer.findUnique({ where: { id: buyerId } });
+      if (!buyer || buyer.archivedAt)
+        throw new BadRequestException('Pick an active buyer');
+      return this.settle(tx, id, BuyerRequestStatus.MERGED, buyer.id, userId);
+    });
+  }
+
+  // its sales stay walk-in
+  reject(id: string, userId: string) {
+    return this.decide(id, (tx) =>
+      this.settle(tx, id, BuyerRequestStatus.REJECTED, null, userId),
+    );
+  }
+
+  // One decision, all at once. The row lock makes a second decision (and a
+  // sale joining this request) wait, then see it's no longer PENDING.
+  private decide<T>(
+    id: string,
+    fn: (tx: Prisma.TransactionClient) => Promise<T>,
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT 1 FROM buyer_requests WHERE id = ${id} FOR UPDATE`;
+      const request = await tx.buyerRequest.findUnique({ where: { id } });
+      if (!request) throw new NotFoundException('Buyer request not found');
+      if (request.status !== BuyerRequestStatus.PENDING)
+        throw new ConflictException('Already decided');
+      return fn(tx);
+    });
+  }
+
+  private async settle(
+    tx: Prisma.TransactionClient,
+    id: string,
+    status: BuyerRequestStatus,
+    buyerId: string | null,
+    userId: string,
+  ) {
+    if (buyerId)
+      await tx.sale.updateMany({
+        where: { buyerRequestId: id },
+        data: { buyerId },
+      });
+    return tx.buyerRequest.update({
+      where: { id },
+      data: { status, buyerId, decidedById: userId, decidedAt: new Date() },
+      include: { buyer: true },
     });
   }
 }
