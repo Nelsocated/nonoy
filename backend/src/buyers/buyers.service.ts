@@ -29,7 +29,8 @@ export class BuyersService {
     return this.prisma.buyer.update({ where: { id }, data: dto });
   }
 
-  // no sales → gone for good; with sales → archived so history keeps the name
+  // no sales or requests → gone for good; otherwise archived so history
+  // keeps the name
   async remove(id: string) {
     return this.prisma.$transaction(async (tx) => {
       // lock the row: a sale saved meanwhile waits, so it can't slip in
@@ -38,7 +39,10 @@ export class BuyersService {
       const row = await tx.buyer.findUnique({ where: { id } });
       if (!row) throw new NotFoundException('Buyer not found');
       const uses = await tx.sale.count({ where: { buyerId: id } });
-      if (uses === 0) {
+      // a new-buyer request that became (or merged into) this buyer keeps the
+      // link too: its sales still syncing need it
+      const requests = await tx.buyerRequest.count({ where: { buyerId: id } });
+      if (uses === 0 && !requests) {
         await tx.buyer.delete({ where: { id } });
         return { result: 'deleted' as const, uses };
       }

@@ -9,6 +9,7 @@ describe('BuyersService', () => {
     $executeRaw: vi.fn(),
     buyer: { findUnique: vi.fn(), delete: vi.fn(), update: vi.fn() },
     sale: { count: vi.fn() },
+    buyerRequest: { count: vi.fn() },
   };
   const prisma = {
     buyer: { findMany: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
@@ -50,6 +51,17 @@ describe('BuyersService', () => {
       uses: 0,
     });
     expect(tx.buyer.delete).toHaveBeenCalledWith({ where: { id: 'b1' } });
+  });
+
+  it('archives a buyer a new-buyer request became, even with no sales yet', async () => {
+    tx.buyer.findUnique.mockResolvedValue({ id: 'b1', archivedAt: null });
+    tx.sale.count.mockResolvedValue(0);
+    tx.buyerRequest.count.mockResolvedValue(1);
+    await expect(service.remove('b1')).resolves.toEqual({
+      result: 'archived',
+      uses: 0,
+    });
+    expect(tx.buyer.delete).not.toHaveBeenCalled();
   });
 
   it('archives a buyer that has sales, keeping history', async () => {
