@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, CloudOff, Printer } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Logo } from "@/components/logo";
 import { useOnline } from "@/components/offline/use-sync-data";
 import { api } from "@/lib/api/browser";
@@ -72,7 +73,12 @@ export function ReportsScreen() {
     queryKey: ["daily", "today"],
     queryFn: () => api.reports.daily(),
   });
-  const todayDay = today.data?.to;
+  // the dashboard's cached copy may be from yesterday (a new month at
+  // midnight): online, wait for the refresh; offline, the saved one will do
+  const todayDay =
+    today.isFetching && online && !today.isFetchedAfterMount
+      ? undefined
+      : today.data?.to;
   const current = todayDay ? monthOf(todayDay) : null;
   const month = current
     ? clampMonth(parseMonth(params.get("month")) ?? current, current)
@@ -90,6 +96,14 @@ export function ReportsScreen() {
   const t = monthTotals(days);
   const label = month ? monthLabel(month) : "";
 
+  // the time on paper is when it was printed, not when the page opened
+  const [printed, setPrinted] = useState(printedAt);
+  useEffect(() => {
+    const stamp = () => setPrinted(printedAt());
+    window.addEventListener("beforeprint", stamp);
+    return () => window.removeEventListener("beforeprint", stamp);
+  }, []);
+
   return (
     <div className="mx-auto max-w-5xl space-y-6">
       {/* only on paper */}
@@ -97,7 +111,7 @@ export function ReportsScreen() {
         <Logo className="size-10" />
         <div>
           <p className="font-semibold">Mang Frito · Monthly sales summary</p>
-          <p className="text-sm">Printed {printedAt()}</p>
+          <p className="text-sm">Printed {printed}</p>
         </div>
       </div>
 
@@ -162,8 +176,16 @@ export function ReportsScreen() {
               Try again
             </button>
           </div>
+        ) : report.fetchStatus === "paused" ? (
+          // offline and this month was never opened on this device
+          <p className="rounded-xl bg-surface p-6 text-center text-muted-foreground shadow-card">
+            {label || "This month"} isn&apos;t saved on this device yet. Connect
+            to load it.
+          </p>
         ) : (
-          <p className="text-sm text-muted-foreground">Loading…</p>
+          <p role="status" className="text-sm text-muted-foreground">
+            Loading…
+          </p>
         )
       ) : t.activeDays === 0 ? (
         <p className="rounded-xl bg-surface p-6 text-center text-muted-foreground shadow-card">
@@ -196,12 +218,20 @@ export function ReportsScreen() {
             </p>
           </section>
 
-          <section className="overflow-hidden rounded-xl border bg-surface shadow-card print:overflow-visible print:shadow-none">
-            <h2 className={cardTitle}>Day by day</h2>
+          <section
+            aria-labelledby="day-by-day"
+            className="overflow-hidden rounded-xl border bg-surface shadow-card print:overflow-visible print:shadow-none"
+          >
+            <h2 id="day-by-day" className={cardTitle}>
+              Day by day
+            </h2>
             {/* phones scroll the table, not the page */}
             <div className="overflow-x-auto print:overflow-visible">
               <table className="w-full min-w-[44rem] text-sm print:min-w-0">
-                <thead className="border-b bg-muted/50 text-xs text-muted-foreground">
+                <caption className="sr-only">
+                  Sales and expenses for each day of {label}
+                </caption>
+                <thead className="border-b bg-muted text-xs text-muted-foreground">
                   <tr>
                     <th
                       scope="col"

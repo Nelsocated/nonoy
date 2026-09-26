@@ -201,6 +201,15 @@
   [class*="border-t-primary"] {
     border-top-color: #000 !important;
   }
+  /* backgrounds don't print unless "Background graphics" is on: the title
+   * bar becomes a border, and red text turns black */
+  [class*="before:bg-primary"]::before {
+    background: none !important;
+    border-top: 2px solid #000;
+  }
+  [class*="text-primary"] {
+    color: #000 !important;
+  }
   thead {
     display: table-header-group;
   }
