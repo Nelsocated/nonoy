@@ -18,6 +18,7 @@ import { RecountsModule } from './recounts/recounts.module.js';
 import { ExpensesModule } from './expenses/expenses.module.js';
 import { ActivityLogsModule } from './activity-logs/activity-logs.module.js';
 import { PricesModule } from './prices/prices.module.js';
+import { PaymentQrsModule } from './payment-qrs/payment-qrs.module.js';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { PricesModule } from './prices/prices.module.js';
     ExpensesModule,
     ActivityLogsModule,
     PricesModule,
+    PaymentQrsModule,
   ],
   controllers: [AppController],
   providers: [

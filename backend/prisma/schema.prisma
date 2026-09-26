@@ -223,3 +223,15 @@ model Price {
   @@index([createdAt])
   @@map("prices")
 }
+
+// Owner's payment QR codes (GCash, Maya, bank…). Only the text inside the QR
+// is kept; phones redraw it, so it works offline and syncs in a few bytes.
+model PaymentQr {
+  id        String   @id @default(uuid())
+  label     String
+  payload   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("payment_qrs")
+}
