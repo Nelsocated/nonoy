@@ -1,10 +1,11 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, CloudOff, Printer } from "lucide-react";
+import { CloudOff, Printer } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Logo } from "@/components/logo";
+import { MonthPicker } from "@/components/admin/month-picker";
 import { useOnline } from "@/components/offline/use-sync-data";
 import { api } from "@/lib/api/browser";
 import {
@@ -15,7 +16,6 @@ import {
   monthRange,
   monthTotals,
   parseMonth,
-  shiftMonth,
 } from "@/lib/admin/month";
 import { asOf } from "@/lib/offline/admin-cache";
 import { peso, twoDp } from "@/lib/trip/money";
@@ -122,25 +122,8 @@ export function ReportsScreen() {
           </h1>
           <p className="text-3xl font-bold tracking-tight">{label || "…"}</p>
         </div>
-        <div className="flex flex-wrap gap-2 print:hidden">
-          <button
-            type="button"
-            onClick={() => month && go(shiftMonth(month, -1))}
-            disabled={!month}
-            aria-label="Previous month"
-            className={button}
-          >
-            <ChevronLeft aria-hidden className="size-5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => month && go(shiftMonth(month, 1))}
-            disabled={!month || month === current}
-            aria-label="Next month"
-            className={button}
-          >
-            <ChevronRight aria-hidden className="size-5" />
-          </button>
+        <div className="flex flex-wrap items-end gap-2 print:hidden">
+          <MonthPicker value={month} current={current} onChange={go} />
           <button
             type="button"
             onClick={() => window.print()}

@@ -91,3 +91,35 @@ export function monthTotals(days: DailyReport["days"]): MonthTotals {
     activeDays,
   };
 }
+
+// ---- month picker (a month dropdown + a year dropdown) ----
+
+// the app went live in 2026: nothing to pick before that
+const FIRST_YEAR = 2026;
+
+// newest first, from this year back to the first one
+export function yearChoices(current: Month): number[] {
+  const [y] = split(current);
+  const years = [];
+  for (let n = y; n >= Math.min(FIRST_YEAR, y); n--) years.push(n);
+  return years;
+}
+
+// the 12 months of `year`; months after the current one can't be picked
+export function monthChoices(year: number, current: Month) {
+  return Array.from({ length: 12 }, (_, i) => {
+    const value = pad(i + 1);
+    return {
+      value,
+      label: new Date(Date.UTC(2000, i, 1)).toLocaleDateString("en-PH", {
+        month: "long",
+        timeZone: "UTC",
+      }),
+      disabled: `${year}-${value}` > current,
+    };
+  });
+}
+
+// the month a year + month choice lands on, never after the current month
+export const pickMonth = (year: string, month: string, current: Month) =>
+  clampMonth(`${year}-${month}`, current);

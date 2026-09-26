@@ -3,6 +3,9 @@ import type { DailyReport } from "@/lib/api/types";
 import {
   clampMonth,
   daysUpTo,
+  monthChoices,
+  pickMonth,
+  yearChoices,
   monthLabel,
   monthOf,
   monthRange,
@@ -145,5 +148,29 @@ describe("month helpers", () => {
       0,
     );
     expect(monthTotals([]).amount).toBe("0.00");
+  });
+});
+
+describe("month picker", () => {
+  it("offers years from when the app started up to this year", () => {
+    expect(yearChoices("2028-03")).toEqual([2028, 2027, 2026]);
+    expect(yearChoices("2026-09")).toEqual([2026]);
+  });
+  it("lists the 12 months, later ones disabled in the current year", () => {
+    const now = monthChoices(2026, "2026-09");
+    expect(now).toHaveLength(12);
+    expect(now[0]).toEqual({ value: "01", label: "January", disabled: false });
+    expect(now[8]).toEqual({
+      value: "09",
+      label: "September",
+      disabled: false,
+    });
+    expect(now[9].disabled).toBe(true);
+    expect(monthChoices(2025, "2026-09").every((m) => !m.disabled)).toBe(true);
+  });
+  it("picking a year keeps the month unless it would be in the future", () => {
+    expect(pickMonth("2027", "11", "2027-03")).toBe("2027-03");
+    expect(pickMonth("2026", "11", "2027-03")).toBe("2026-11");
+    expect(pickMonth("2026", "02", "2026-09")).toBe("2026-02");
   });
 });
