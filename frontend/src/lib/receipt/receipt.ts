@@ -1,6 +1,7 @@
 import type { PaymentMethod, SaleReceipt } from "@/lib/api/types";
 import type { LocalSale } from "@/lib/offline/db";
 import { twoDp } from "@/lib/trip/money";
+import { saleBuyerName, type BuyerNames } from "@/lib/trip/buyer-name";
 
 // Everything a receipt shows — built the same way on the phone and the admin side.
 export type ReceiptData = {
@@ -43,15 +44,14 @@ export function receiptDate(iso: string) {
 // sale numbers are padded to 2 decimals ("10.5" → "10.50")
 export function receiptFromLocalSale(
   sale: LocalSale,
-  buyers: Map<string, string>,
+  names: BuyerNames,
   workerName: string,
 ): ReceiptData {
   return {
     code: receiptCode(sale.clientId),
     issuedAt: sale.createdAtClient,
     workerName,
-    // phones keep archived buyers; unknown = not pulled yet (or deleted)
-    buyerName: sale.buyerId ? (buyers.get(sale.buyerId) ?? "Buyer") : "Walk-in",
+    buyerName: saleBuyerName(sale, names),
     chickenCount: sale.chickenCount,
     totalKilo: twoDp(sale.totalKilo),
     pricePerKilo: sale.pricePerKilo ? twoDp(sale.pricePerKilo) : null,

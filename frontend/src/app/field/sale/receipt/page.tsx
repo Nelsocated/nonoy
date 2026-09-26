@@ -35,9 +35,16 @@ function SaleReceipt() {
     const sale = id ? await db.sales.get(id) : undefined;
     if (!sale || sale.userId !== userId) return null;
     const buyers = await db.buyers.toArray();
+    const requests = await db.buyerRequests
+      .where("userId")
+      .equals(userId)
+      .toArray();
     return receiptFromLocalSale(
       sale,
-      new Map(buyers.map((b) => [b.id, b.name])),
+      {
+        buyers: new Map(buyers.map((b) => [b.id, b.name])),
+        requests: new Map(requests.map((r) => [r.clientId, r])),
+      },
       userName,
     );
   }, [id, userId, userName]);

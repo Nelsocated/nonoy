@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useOffline } from "@/components/offline/offline-provider";
 import { useTrip } from "@/components/trip/use-trip";
 import { receiptCode } from "@/lib/receipt/receipt";
+import { saleBuyerName } from "@/lib/trip/buyer-name";
 import { peso } from "@/lib/trip/money";
 import { titleBar } from "@/lib/ui/styles";
 import { FieldPageSkeleton } from "@/components/skeleton";
@@ -20,7 +21,7 @@ export default function SalesPage() {
   const { userId } = useOffline();
   const data = useTrip(userId);
   if (!data) return <FieldPageSkeleton />;
-  const { todaySales, buyers } = data;
+  const { todaySales } = data;
 
   return (
     <div className="space-y-4">
@@ -43,7 +44,7 @@ export default function SalesPage() {
                 <Receipt aria-hidden className="size-5 shrink-0 text-primary" />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium">
-                    {s.buyerId ? (buyers.get(s.buyerId) ?? "Buyer") : "Walk-in"}
+                    {saleBuyerName(s, data)}
                   </span>
                   <span className="block text-xs text-muted-foreground">
                     {time(s.createdAtClient)} ·{" "}

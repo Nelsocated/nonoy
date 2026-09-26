@@ -24,6 +24,7 @@ const sale = (over: Partial<LocalSale> = {}): LocalSale => ({
   ...over,
 });
 const buyers = new Map([["b1", "Aling Nena"]]);
+const names = { buyers, requests: new Map() };
 
 describe("receiptCode", () => {
   it("is MF- plus the first 8 characters of the sale id, in capitals", () => {
@@ -34,8 +35,22 @@ describe("receiptCode", () => {
 });
 
 describe("receiptFromLocalSale", () => {
+  it("a waiting new buyer shows as waiting", () => {
+    expect(
+      receiptFromLocalSale(
+        sale({ buyerId: null, buyerRequestId: "r1" }),
+        {
+          buyers,
+          requests: new Map([
+            ["r1", { name: "Nena", status: "PENDING" as const, buyerId: null }],
+          ]),
+        },
+        "Juan",
+      ).buyerName,
+    ).toBe("Nena (waiting)");
+  });
   it("builds the receipt with padded kilos and prices", () => {
-    expect(receiptFromLocalSale(sale(), buyers, "Juan")).toEqual({
+    expect(receiptFromLocalSale(sale(), names, "Juan")).toEqual({
       code: "MF-3F9A2C7E",
       issuedAt: "2026-09-26T06:41:00.000Z",
       workerName: "Juan",
@@ -50,29 +65,29 @@ describe("receiptFromLocalSale", () => {
 
   it("whole kilos get 2 decimals", () => {
     expect(
-      receiptFromLocalSale(sale({ totalKilo: "7" }), buyers, "Juan").totalKilo,
+      receiptFromLocalSale(sale({ totalKilo: "7" }), names, "Juan").totalKilo,
     ).toBe("7.00");
   });
 
   it("no buyer → Walk-in", () => {
     expect(
-      receiptFromLocalSale(sale({ buyerId: null }), buyers, "Juan").buyerName,
+      receiptFromLocalSale(sale({ buyerId: null }), names, "Juan").buyerName,
     ).toBe("Walk-in");
     expect(
-      receiptFromLocalSale(sale({ buyerId: undefined }), buyers, "Juan")
+      receiptFromLocalSale(sale({ buyerId: undefined }), names, "Juan")
         .buyerName,
     ).toBe("Walk-in");
   });
 
   it("buyer no longer on the phone (archived) → Buyer", () => {
     expect(
-      receiptFromLocalSale(sale({ buyerId: "gone" }), buyers, "Juan").buyerName,
+      receiptFromLocalSale(sale({ buyerId: "gone" }), names, "Juan").buyerName,
     ).toBe("Buyer");
   });
 
   it("sale from before prices existed → no price", () => {
     expect(
-      receiptFromLocalSale(sale({ pricePerKilo: null }), buyers, "Juan")
+      receiptFromLocalSale(sale({ pricePerKilo: null }), names, "Juan")
         .pricePerKilo,
     ).toBeNull();
   });

@@ -10,6 +10,7 @@ import {
   Wallet,
 } from "lucide-react";
 import type { MirrorState } from "@/lib/offline/db";
+import { saleBuyerName } from "@/lib/trip/buyer-name";
 import { peso, toCenti } from "@/lib/trip/money";
 import type { TripData } from "./use-trip";
 
@@ -58,7 +59,7 @@ export function RecordList({ data }: { data: TripData }) {
       at: s.createdAtClient,
       icon: Receipt,
       title: `Sale · ${peso(s.amount)}`,
-      detail: `${s.buyerId ? (data.buyers.get(s.buyerId) ?? "Buyer") : "Walk-in"} · ${s.chickenCount} chickens · ${s.totalKilo} kg · ${s.paymentMethod === "QR" ? "QR" : "Cash"}${
+      detail: `${saleBuyerName(s, data)} · ${s.chickenCount} chickens · ${s.totalKilo} kg · ${s.paymentMethod === "QR" ? "QR" : "Cash"}${
         // compare as centavos: the server sends "175", the phone stores "175.00"
         s.pricePerKilo &&
         s.listPricePerKilo &&

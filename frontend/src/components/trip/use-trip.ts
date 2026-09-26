@@ -3,6 +3,7 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import {
   getDb,
+  type LocalBuyerRequest,
   type LocalExpense,
   type LocalPickup,
   type LocalRecount,
@@ -24,6 +25,10 @@ export type TripData = {
   buyers: Map<string, string>;
   /** buyers a new sale can pick */
   activeBuyers: Map<string, string>;
+  /** this worker's new-buyer requests */
+  requests: Map<string, LocalBuyerRequest>;
+  /** waiting ones a new sale can reuse, by name */
+  waitingRequests: LocalBuyerRequest[];
   plantations: Map<string, string>;
   today: { cash: string; qr: string; total: string; sales: number };
   todaySales: LocalSale[]; // today, newest first (receipts list)
@@ -47,7 +52,7 @@ export function useTrip(userId: string): TripData | undefined {
     const byTime = <T extends { createdAtClient: string }>(rows: T[]) =>
       rows.sort((a, b) => a.createdAtClient.localeCompare(b.createdAtClient));
 
-    const [pickups, sales, recounts, expenses, buyers, plantations] =
+    const [pickups, sales, recounts, expenses, buyers, plantations, requests] =
       await Promise.all([
         db.pickups.where("userId").equals(userId).toArray(),
         db.sales.where("userId").equals(userId).toArray(),
@@ -55,6 +60,7 @@ export function useTrip(userId: string): TripData | undefined {
         db.expenses.where("userId").equals(userId).toArray(),
         db.buyers.toArray(),
         db.plantations.toArray(),
+        db.buyerRequests.where("userId").equals(userId).toArray(),
       ]);
 
     const tripPickups = byTime(forTrip(pickups));
@@ -72,6 +78,10 @@ export function useTrip(userId: string): TripData | undefined {
       activeBuyers: new Map(
         buyers.filter((b) => !b.archivedAt).map((b) => [b.id, b.name]),
       ),
+      requests: new Map(requests.map((r) => [r.clientId, r])),
+      waitingRequests: requests
+        .filter((r) => r.status === "PENDING")
+        .sort((a, b) => a.name.localeCompare(b.name)),
       plantations: new Map(plantations.map((p) => [p.id, p.name])),
       today: {
         cash: sumAmount(todaySales.filter((s) => s.paymentMethod === "CASH")),
