@@ -70,6 +70,11 @@ export type BuyerInput = { name: string; location?: string; notes?: string };
 /** DELETE on a buyer/plantation: deleted when unused, archived when it has history */
 export type RemoveResult = { result: "deleted" | "archived"; uses: number };
 
+// ---- payment QR codes ----
+/** the text inside the owner's payment QR; phones redraw it */
+export type PaymentQr = { id: string; label: string; payload: string };
+export type PaymentQrInput = { label: string; payload: string };
+
 /** owner/admin marked this problem as checked on the dashboard */
 type Checked = {
   checkedAt: IsoDate | null;
