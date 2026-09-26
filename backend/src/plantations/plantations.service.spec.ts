@@ -6,6 +6,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 describe('PlantationsService', () => {
   let service: PlantationsService;
   const tx = {
+    $executeRaw: vi.fn(),
     plantation: { findUnique: vi.fn(), delete: vi.fn(), update: vi.fn() },
     pickup: { count: vi.fn() },
   };
@@ -79,6 +80,17 @@ describe('PlantationsService', () => {
       uses: 3,
     });
     expect(tx.plantation.update).not.toHaveBeenCalled();
+  });
+
+  it('locks the plantation before counting, so a new pickup waits', async () => {
+    tx.plantation.findUnique.mockResolvedValue({ id: 'x1', archivedAt: null });
+    tx.pickup.count.mockResolvedValue(0);
+    await service.remove('x1');
+    const [sql] = tx.$executeRaw.mock.calls[0];
+    expect(sql.join('?')).toMatch(/FROM plantations WHERE id = \? FOR UPDATE/);
+    expect(tx.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(
+      tx.pickup.count.mock.invocationCallOrder[0],
+    );
   });
 
   it('404s for an unknown plantation on remove and restore', async () => {

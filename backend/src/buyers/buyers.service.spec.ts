@@ -6,6 +6,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 describe('BuyersService', () => {
   let service: BuyersService;
   const tx = {
+    $executeRaw: vi.fn(),
     buyer: { findUnique: vi.fn(), delete: vi.fn(), update: vi.fn() },
     sale: { count: vi.fn() },
   };
@@ -76,6 +77,17 @@ describe('BuyersService', () => {
       uses: 3,
     });
     expect(tx.buyer.update).not.toHaveBeenCalled();
+  });
+
+  it('locks the buyer before counting, so a new sale waits', async () => {
+    tx.buyer.findUnique.mockResolvedValue({ id: 'x1', archivedAt: null });
+    tx.sale.count.mockResolvedValue(0);
+    await service.remove('x1');
+    const [sql] = tx.$executeRaw.mock.calls[0];
+    expect(sql.join('?')).toMatch(/FROM buyers WHERE id = \? FOR UPDATE/);
+    expect(tx.$executeRaw.mock.invocationCallOrder[0]).toBeLessThan(
+      tx.sale.count.mock.invocationCallOrder[0],
+    );
   });
 
   it('404s for an unknown buyer on remove and restore', async () => {

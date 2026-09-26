@@ -34,6 +34,9 @@ export class PlantationsService {
   // no pickups → gone for good; with pickups → archived so history keeps the name
   async remove(id: string) {
     return this.prisma.$transaction(async (tx) => {
+      // lock the row: a pickup saved meanwhile waits, so it can't slip in
+      // between the count and the delete
+      await tx.$executeRaw`SELECT 1 FROM plantations WHERE id = ${id} FOR UPDATE`;
       const row = await tx.plantation.findUnique({ where: { id } });
       if (!row) throw new NotFoundException('Plantation not found');
       const uses = await tx.pickup.count({ where: { plantationId: id } });

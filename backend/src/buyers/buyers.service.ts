@@ -32,6 +32,9 @@ export class BuyersService {
   // no sales → gone for good; with sales → archived so history keeps the name
   async remove(id: string) {
     return this.prisma.$transaction(async (tx) => {
+      // lock the row: a sale saved meanwhile waits, so it can't slip in
+      // between the count and the delete
+      await tx.$executeRaw`SELECT 1 FROM buyers WHERE id = ${id} FOR UPDATE`;
       const row = await tx.buyer.findUnique({ where: { id } });
       if (!row) throw new NotFoundException('Buyer not found');
       const uses = await tx.sale.count({ where: { buyerId: id } });
