@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isAppNavigation, PAGES_MATCH_OPTIONS } from "./sw-routes";
+import { isAppNavigation, pageCacheKey } from "./sw-routes";
 
 const nav = (path: string, { mode = "navigate", sameOrigin = true } = {}) => ({
   request: { mode } as Request,
@@ -20,8 +20,18 @@ describe("isAppNavigation", () => {
   });
 });
 
-describe("PAGES_MATCH_OPTIONS", () => {
-  it("serves a cached page for any ?id= (receipts open offline the first time)", () => {
-    expect(PAGES_MATCH_OPTIONS).toEqual({ ignoreSearch: true });
+// One cache entry (and one expiry record) per page, whatever its ?id= — so a
+// receipt for a sale saved offline opens, and old copies can't pile up.
+describe("pageCacheKey", () => {
+  it("drops the query string", () => {
+    const req = new Request(
+      "https://app.example/field/sale/receipt?id=abc&saved=1",
+    );
+    expect(pageCacheKey(req)).toBe("https://app.example/field/sale/receipt");
+  });
+  it("leaves plain pages alone", () => {
+    expect(pageCacheKey(new Request("https://app.example/field"))).toBe(
+      "https://app.example/field",
+    );
   });
 });

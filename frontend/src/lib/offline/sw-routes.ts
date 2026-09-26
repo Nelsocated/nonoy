@@ -5,9 +5,13 @@
 export const PAGES_CACHE = "mangfrito-pages";
 export const PAGES_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 
-// Pages read their ?id= / ?saved= in the browser, so one cached copy serves any
-// query — a receipt for a sale saved offline a second ago still opens.
-export const PAGES_MATCH_OPTIONS = { ignoreSearch: true };
+// Pages read their ?id= / ?saved= in the browser, so each page is cached (and
+// expired) under its plain path: a receipt for a sale saved offline a second
+// ago still opens, and ?id= copies never pile up or outlive a deploy.
+export function pageCacheKey(request: Request) {
+  const url = new URL(request.url);
+  return url.origin + url.pathname;
+}
 
 export function isAppNavigation({
   request,
