@@ -9,6 +9,7 @@ import {
   type LocalSale,
   type LocalTrip,
 } from "@/lib/offline/db";
+import { salesOfDay } from "@/lib/receipt/receipt";
 import { fromCenti, toCenti } from "@/lib/trip/money";
 import { stockOnTruck, type Stock } from "@/lib/trip/stock";
 
@@ -22,11 +23,9 @@ export type TripData = {
   buyers: Map<string, string>;
   plantations: Map<string, string>;
   today: { cash: string; qr: string; total: string; sales: number };
+  todaySales: LocalSale[]; // today, newest first (receipts list)
   recentTrips: LocalTrip[];
 };
-
-const isToday = (iso: string) =>
-  new Date(iso).toDateString() === new Date().toDateString();
 
 const sumAmount = (rows: { amount: string }[]) =>
   fromCenti(rows.reduce((n, r) => n + toCenti(r.amount), 0));
@@ -57,7 +56,7 @@ export function useTrip(userId: string): TripData | undefined {
 
     const tripPickups = byTime(forTrip(pickups));
     const tripSales = byTime(forTrip(sales));
-    const todaySales = sales.filter((s) => isToday(s.createdAtClient));
+    const todaySales = salesOfDay(sales, new Date());
 
     return {
       trip,
@@ -74,6 +73,7 @@ export function useTrip(userId: string): TripData | undefined {
         total: sumAmount(todaySales),
         sales: todaySales.length,
       },
+      todaySales,
       recentTrips: trips.filter((t) => t.endedAt).slice(0, 5),
     };
   }, [userId]);

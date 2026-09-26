@@ -33,6 +33,8 @@ describe("warmFieldPages", () => {
         "/field/recount",
         "/field/expense",
         "/field/sync",
+        "/field/sales",
+        "/field/sale/receipt",
       ]),
     );
   });
@@ -47,7 +49,7 @@ describe("warmFieldPages", () => {
       }),
     );
     await expect(warmFieldPages()).resolves.toBeUndefined();
-    expect(put).toHaveBeenCalledTimes(5);
+    expect(put).toHaveBeenCalledTimes(FIELD_PAGES.length - 1);
   });
 
   // an expired session redirects to /login — that must not be saved as /field
@@ -67,7 +69,7 @@ describe("warmFieldPages", () => {
     const saved = put.mock.calls.map((c) => c[0]);
     expect(saved).not.toContain("/field");
     expect(saved).not.toContain("/field/sale");
-    expect(saved).toHaveLength(4);
+    expect(saved).toHaveLength(FIELD_PAGES.length - 2);
   });
 
   // pages hold the worker's name; logout mid-warm must leave the cache empty

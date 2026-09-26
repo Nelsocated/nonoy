@@ -14,7 +14,11 @@ export default async function FieldLayout({ children }: LayoutProps<"/field">) {
   // owner/admin out with the staff: same screens, but they may see the stock
   const staff = session.user.role !== "WORKER";
   return (
-    <OfflineProvider userId={session.user.id} seesStock={staff}>
+    <OfflineProvider
+      userId={session.user.id}
+      userName={session.user.name}
+      seesStock={staff}
+    >
       <div className="flex flex-1 flex-col pb-16">
         <header className="flex items-center gap-3 border-b bg-surface px-4 py-3">
           <Logo className="size-8" />

@@ -20,6 +20,8 @@ export async function clearPageCaches() {
 export const FIELD_PAGES = [
   "/field",
   "/field/sale",
+  "/field/sales",
+  "/field/sale/receipt",
   "/field/pickup",
   "/field/recount",
   "/field/expense",

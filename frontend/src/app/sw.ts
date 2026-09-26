@@ -5,6 +5,7 @@ import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
 import { ExpirationPlugin, NetworkFirst, NetworkOnly, Serwist } from "serwist";
 import {
   PAGES_CACHE,
+  PAGES_MATCH_OPTIONS,
   PAGES_MAX_AGE_SECONDS,
   isAppNavigation,
 } from "@/lib/offline/sw-routes";
@@ -35,6 +36,7 @@ const serwist = new Serwist({
       handler: new NetworkFirst({
         cacheName: PAGES_CACHE,
         networkTimeoutSeconds: 5,
+        matchOptions: PAGES_MATCH_OPTIONS,
         plugins: [
           new ExpirationPlugin({
             maxEntries: 50,

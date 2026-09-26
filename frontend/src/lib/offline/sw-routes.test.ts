@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isAppNavigation } from "./sw-routes";
+import { isAppNavigation, PAGES_MATCH_OPTIONS } from "./sw-routes";
 
 const nav = (path: string, { mode = "navigate", sameOrigin = true } = {}) => ({
   request: { mode } as Request,
@@ -17,5 +17,11 @@ describe("isAppNavigation", () => {
     expect(isAppNavigation(nav("/api/trips/me"))).toBe(false);
     expect(isAppNavigation(nav("/field", { mode: "cors" }))).toBe(false);
     expect(isAppNavigation(nav("/field", { sameOrigin: false }))).toBe(false);
+  });
+});
+
+describe("PAGES_MATCH_OPTIONS", () => {
+  it("serves a cached page for any ?id= (receipts open offline the first time)", () => {
+    expect(PAGES_MATCH_OPTIONS).toEqual({ ignoreSearch: true });
   });
 });
