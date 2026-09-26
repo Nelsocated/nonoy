@@ -7,6 +7,10 @@ export type BuyerNames = {
   requests: Map<string, Pick<LocalBuyerRequest, "name" | "status" | "buyerId">>;
 };
 
+// A new buyer the worker typed, until the owner decides. The admin screens
+// and the server's receipts show the same.
+export const waitingLabel = (name: string) => `${name} (waiting)`;
+
 // The buyer a sale shows on the phone: the buyer, else the new buyer the
 // worker typed ("(waiting)" until the owner decides), else Walk-in.
 export function saleBuyerName(
@@ -18,7 +22,7 @@ export function saleBuyerName(
   if (!sale.buyerRequestId) return "Walk-in";
   const r = requests.get(sale.buyerRequestId);
   if (!r) return "New buyer";
-  if (r.status === "PENDING") return `${r.name} (waiting)`;
+  if (r.status === "PENDING") return waitingLabel(r.name);
   if (r.buyerId) return buyers.get(r.buyerId) ?? r.name;
   return "Walk-in"; // rejected
 }
