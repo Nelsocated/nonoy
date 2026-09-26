@@ -129,7 +129,10 @@ export function Select({
     };
     const onDown = (e: PointerEvent) => {
       const t = e.target as Node;
-      if (!button.current?.contains(t) && !list.current?.contains(t)) hide();
+      if (button.current?.contains(t) || list.current?.contains(t)) return;
+      // the field's own label clicks the button, which toggles it shut
+      if (t instanceof Element && t.closest(`label[for="${buttonId}"]`)) return;
+      hide();
     };
     window.addEventListener("scroll", onMove, true);
     window.addEventListener("resize", onMove);
@@ -139,7 +142,7 @@ export function Select({
       window.removeEventListener("resize", onMove);
       document.removeEventListener("pointerdown", onDown);
     };
-  }, [open]);
+  }, [open, buttonId]);
 
   // keep the highlighted row in view
   useEffect(() => {
