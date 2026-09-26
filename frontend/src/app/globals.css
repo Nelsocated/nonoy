@@ -135,3 +135,43 @@
     color: var(--color-ink-400);
   }
 }
+
+/* Side menu (<dialog>) that slides in from the right and fades its backdrop.
+ * @starting-style + allow-discrete let a dialog animate both opening and
+ * closing; browsers without them simply show it without the slide. */
+.slide-panel {
+  translate: 100% 0;
+  transition:
+    translate 0.28s cubic-bezier(0.32, 0.72, 0, 1),
+    overlay 0.28s allow-discrete,
+    display 0.28s allow-discrete;
+}
+.slide-panel[open] {
+  translate: 0 0;
+}
+@starting-style {
+  .slide-panel[open] {
+    translate: 100% 0;
+  }
+}
+.slide-panel::backdrop {
+  background-color: transparent;
+  transition:
+    background-color 0.28s ease,
+    overlay 0.28s allow-discrete,
+    display 0.28s allow-discrete;
+}
+.slide-panel[open]::backdrop {
+  background-color: color-mix(in oklch, var(--color-ink-950) 50%, transparent);
+}
+@starting-style {
+  .slide-panel[open]::backdrop {
+    background-color: transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .slide-panel,
+  .slide-panel::backdrop {
+    transition: none;
+  }
+}

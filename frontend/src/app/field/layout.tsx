@@ -21,8 +21,9 @@ export default async function FieldLayout({ children }: LayoutProps<"/field">) {
       seesStock={staff}
     >
       <div className="flex flex-1 flex-col pb-16">
-        <div aria-hidden className={topStrip} />
-        <header className="flex items-center gap-3 border-b bg-surface px-4 py-3">
+        <div aria-hidden className={`${topStrip} sticky top-0 z-10`} />
+        {/* stays on screen while scrolling (sticky under the red strip) */}
+        <header className="sticky top-1 z-10 flex items-center gap-3 border-b bg-surface/95 px-4 py-3 backdrop-blur-sm">
           <Logo className="size-8" />
           <div className="flex-1">
             <UserMenu user={session.user} />

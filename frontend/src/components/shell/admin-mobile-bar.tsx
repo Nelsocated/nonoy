@@ -25,7 +25,8 @@ export function AdminMobileBar({ user }: { user: SessionUser }) {
   }, []);
 
   return (
-    <header className="flex items-center gap-3 border-b bg-surface px-4 py-2 md:hidden">
+    // sticky under the red top strip, so the menu button stays in reach
+    <header className="sticky top-1 z-10 flex items-center gap-3 border-b bg-surface/95 px-4 py-2 backdrop-blur-sm md:hidden">
       <Logo className="size-9" />
       <span className="flex-1 font-semibold tracking-tight">Mang Frito</span>
       <button
@@ -43,7 +44,7 @@ export function AdminMobileBar({ user }: { user: SessionUser }) {
         aria-label="Menu"
         // tapping the dimmed area outside the panel closes it
         onClick={(e) => e.target === panel.current && close()}
-        className="ml-auto mr-0 h-dvh max-h-dvh w-[min(18rem,85vw)] bg-surface p-0 text-foreground shadow-card backdrop:bg-ink-950/50"
+        className="slide-panel ml-auto mr-0 h-dvh max-h-dvh w-[min(18rem,85vw)] bg-surface p-0 text-foreground shadow-card"
       >
         <div className="flex h-full flex-col gap-6 p-4">
           <div className="flex items-center justify-between">
