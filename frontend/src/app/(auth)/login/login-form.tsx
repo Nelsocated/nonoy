@@ -5,7 +5,7 @@ import { PasswordInput } from "@/components/password-input";
 import { login } from "./actions";
 
 const input =
-  "w-full rounded-md border border-input bg-surface px-3 py-2.5 text-sm outline-none transition focus:border-primary focus:ring-3 focus:ring-brand-100";
+  "w-full rounded-md border border-input bg-surface px-3 py-2.5 text-base outline-none transition focus:border-primary focus:ring-3 focus:ring-brand-100";
 
 export function LoginForm() {
   const [state, action, pending] = useActionState(login, undefined);
@@ -18,7 +18,7 @@ export function LoginForm() {
     <form
       action={action}
       onSubmit={() => setAttempt((a) => a + 1)}
-      className="space-y-4 rounded-xl bg-surface p-6 shadow-card"
+      className="space-y-4 rounded-xl border-t-3 border-t-primary bg-surface p-6 shadow-lg"
     >
       <label className="block space-y-1.5">
         <span className="text-sm font-medium">Phone number</span>
@@ -61,7 +61,7 @@ export function LoginForm() {
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-primary transition-colors hover:bg-primary-hover active:bg-primary-active disabled:opacity-60"
+        className="min-h-11 w-full rounded-md bg-primary px-4 py-2.5 text-base font-semibold text-primary-foreground shadow-primary transition-colors hover:bg-primary-hover active:bg-primary-active disabled:opacity-60"
       >
         {pending ? "Signing in…" : "Sign in"}
       </button>
