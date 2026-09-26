@@ -41,6 +41,8 @@ type Props<T extends RefItem> = {
   fields: RefField[];
   subtitle: (item: T) => string | null;
   usesNoun: "sale" | "pickup";
+  /** shown above the search box (the Buyers screen's new-buyer requests) */
+  top?: React.ReactNode;
   api: {
     list: (o: { archived?: boolean }) => Promise<T[]>;
     create: (input: RefInput) => Promise<unknown>;
@@ -85,6 +87,7 @@ export function ReferencePage<T extends RefItem>({
   subtitle,
   usesNoun,
   api,
+  top,
 }: Props<T>) {
   const queryClient = useQueryClient();
   const online = useOnline();
@@ -230,6 +233,8 @@ export function ReferencePage<T extends RefItem>({
           {list.dataUpdatedAt > 0 && ` ${asOf(list.dataUpdatedAt)}`}
         </p>
       )}
+
+      {top}
 
       <label className="relative block">
         <span className="sr-only">Search</span>

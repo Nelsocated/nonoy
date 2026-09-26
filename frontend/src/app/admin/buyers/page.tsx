@@ -4,6 +4,7 @@ import {
   ReferencePage,
   type RefInput,
 } from "@/components/admin/reference-page";
+import { BuyerRequestsCard } from "@/components/admin/buyer-requests";
 import { api } from "@/lib/api/browser";
 import type { Buyer, BuyerInput } from "@/lib/api/types";
 
@@ -24,6 +25,7 @@ export default function BuyersPage() {
       ]}
       subtitle={(b) => b.location}
       usesNoun="sale"
+      top={<BuyerRequestsCard />}
       api={{
         list: api.buyers.list,
         create: (i) => api.buyers.create(asInput(i)),
