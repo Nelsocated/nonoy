@@ -10,7 +10,8 @@ Live: https://mang-frito.up.railway.app (Railway, auto-deploys on push to `main`
 
 - Next.js (App Router) + React, TypeScript, Tailwind CSS (red and white theme, see `/theme`)
 - TanStack Query (admin screens, with a persisted read cache for offline viewing)
-- Dexie (IndexedDB) outbox and mirror tables for offline field work; Serwist service worker (pages cached 30 days)
+- Dexie (IndexedDB) outbox and mirror tables for offline field work; Serwist service worker (pages cached 30 days, keyed by path without the query string, so `?id=` pages open offline)
+- `jsqr` (reads a QR from an image) and `qrcode` (draws one as SVG) for payment QR codes
 - Vitest, ESLint, Prettier
 
 ## Setup
@@ -39,8 +40,8 @@ Local development uses the **same database as production**, so what you record l
 ## How it fits together
 
 - **Auth**: login stores httpOnly cookies; `/api/*` forwards to the backend with the token. `src/proxy.ts` guards pages by role: workers → `/field`; owner and admin → `/admin`, and they may also open `/field` for their own trips.
-- **Field (`/field`)**: home (current trip), pickup, sale (owner's price, editable and flagged), recount (blind for workers), expense, end trip, sync. Everything saves to the phone first and syncs in batches of 50 to `/sync`; the sync bar shows what's waiting. Owners and admins on a trip see the stock on the truck; workers never do.
-- **Admin (`/admin`)**: dashboard (today's totals, who's out right now, problems to check, auto-refresh every minute), trip detail (`/admin/trips/[id]`), price, buyers, plantations (delete or archive, restore), users (add, edit, reset password, activate). Every list shows 15 rows per page.
+- **Field (`/field`)**: home (current trip), pickup, sale (owner's price, editable and flagged; paying by QR shows the owner's payment QR full-screen with the amount), receipt after each sale (`/field/sale/receipt?id=`) and today's sales to reopen them (`/field/sales`), recount (blind for workers), expense, end trip, sync. Everything saves to the phone first and syncs in batches of 50 to `/sync`; the sync bar shows what's waiting. Owners and admins on a trip see the stock on the truck; workers never do.
+- **Admin (`/admin`)**: dashboard (today's totals, who's out right now, problems to check, auto-refresh every minute), trip detail (`/admin/trips/[id]`) with a receipt per sale (`/admin/receipts/[clientId]`), price, QR codes (add a payment QR from a screenshot, rename, replace, remove; up to 10), buyers, plantations (delete or archive, restore), users (add, edit, reset password, activate). Every list shows 15 rows per page.
 
 ## Layout (`src/`)
 
@@ -48,8 +49,11 @@ Local development uses the **same database as production**, so what you record l
 | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
 | `app/field`, `app/admin`, `app/(auth)`                                          | pages                                                                         |
 | `components/admin`, `components/trip`, `components/offline`, `components/shell` | UI                                                                            |
+| `components/receipt`, `components/qr`                                           | the receipt card and the QR drawing, shared by phone and admin                |
 | `lib/api`                                                                       | typed API client (`api.buyers.list()` …) and types mirroring the backend      |
 | `lib/offline`                                                                   | Dexie db, writer (validates like the backend DTOs), sync engine, pull, caches |
+| `lib/receipt`                                                                   | receipt data and code (`MF-XXXXXXXX`), today's sales                          |
+| `lib/qr`                                                                        | read a QR from an image, draw one, when "Show QR" is ready                    |
 | `lib/trip`                                                                      | money (half-up to the centavo), stock, input filters                          |
 | `lib/admin`                                                                     | paging (15 per page), search, problem sentences, sync age                     |
 | `lib/auth`                                                                      | cookies, session, role rules                                                  |
