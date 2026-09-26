@@ -15,3 +15,35 @@ export function groupByRole(users: User[]) {
       .sort((a, b) => a.name.localeCompare(b.name)),
   })).filter((g) => g.users.length > 0);
 }
+
+export type UserFormMode = "add" | "edit" | "password";
+export type UserFormValues = {
+  name: string;
+  phone: string;
+  password: string;
+  confirm: string;
+};
+
+// bcrypt (on the server) only uses the first 72 bytes of a password
+const PASSWORD_BYTES = 72;
+
+// Checks the users dialog before it talks to the server; field → message.
+export function userFormErrors(
+  mode: UserFormMode,
+  values: UserFormValues,
+): Record<string, string> {
+  const err: Record<string, string> = {};
+  if (mode === "add" || mode === "edit") {
+    if (!values.name.trim()) err.name = "Enter a name.";
+    if (values.phone.trim().length < 11)
+      err.phone = "Enter the 11-digit phone number.";
+  }
+  if (mode === "add" || mode === "password") {
+    if (values.password.length < 6) err.password = "Use at least 6 characters.";
+    else if (new TextEncoder().encode(values.password).length > PASSWORD_BYTES)
+      err.password = "Use a shorter password (72 characters at most).";
+    if (mode === "password" && values.confirm !== values.password)
+      err.confirm = "Passwords don't match.";
+  }
+  return err;
+}

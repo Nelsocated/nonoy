@@ -12,7 +12,7 @@ import {
 import { useId, useRef, useState } from "react";
 import { useOnline } from "@/components/offline/use-sync-data";
 import { pagedList, pageOf } from "@/lib/admin/paging";
-import { groupByRole } from "@/lib/admin/users";
+import { groupByRole, userFormErrors } from "@/lib/admin/users";
 import { Pager } from "./pager";
 import { ApiError } from "@/lib/api";
 import { api } from "@/lib/api/browser";
@@ -43,8 +43,9 @@ const empty: Values = {
   role: "WORKER",
 };
 
-// Server messages mentioning the phone go under the Phone field
-const fieldFor = (msg: string) => (/phone/i.test(msg) ? "phone" : "form");
+// Server messages mentioning the phone or password go under that field
+const fieldFor = (msg: string) =>
+  /phone/i.test(msg) ? "phone" : /password/i.test(msg) ? "password" : "form";
 
 export function UsersScreen({ meId }: { meId: string }) {
   const queryClient = useQueryClient();
@@ -116,18 +117,10 @@ export function UsersScreen({ meId }: { meId: string }) {
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
-    const err: Record<string, string> = {};
-    if (mode === "add" || mode === "edit") {
-      if (!values.name.trim()) err.name = "Enter a name.";
-      if (values.phone.trim().length < 11)
-        err.phone = "Enter the 11-digit phone number.";
-    }
-    if (mode === "add" || mode === "password") {
-      if (values.password.length < 6)
-        err.password = "Use at least 6 characters.";
-      if (mode === "password" && values.confirm !== values.password)
-        err.confirm = "Passwords don't match.";
-    }
+    const err =
+      mode === "add" || mode === "edit" || mode === "password"
+        ? userFormErrors(mode, values)
+        : {};
     setErrors(err);
     if (!Object.keys(err).length) act.mutate();
   }

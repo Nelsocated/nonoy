@@ -1,6 +1,7 @@
 import { Transform } from 'class-transformer';
 import {
   IsBoolean,
+  IsByteLength,
   IsEnum,
   IsNotEmpty,
   IsString,
@@ -8,6 +9,12 @@ import {
 } from 'class-validator';
 import { IfSent } from '../common/if-sent.decorator.js';
 import { Role } from '../generated/prisma/enums.js';
+
+// bcrypt only uses the first 72 bytes: longer would be silently cut off
+const MaxPasswordBytes = () =>
+  IsByteLength(0, 72, {
+    message: 'Use a shorter password (72 characters at most)',
+  });
 
 const trim = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.trim() : value;
@@ -19,6 +26,7 @@ export class CreateUserDto {
 
   @IsString()
   @MinLength(6)
+  @MaxPasswordBytes()
   password: string;
 
   @Transform(trim)
@@ -58,5 +66,6 @@ export class UpdateUserDto {
 export class ResetPasswordDto {
   @IsString()
   @MinLength(6)
+  @MaxPasswordBytes()
   password: string;
 }
