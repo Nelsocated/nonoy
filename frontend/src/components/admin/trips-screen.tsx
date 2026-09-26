@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { ChevronDown, ChevronRight, CloudOff } from "lucide-react";
+import { ChevronRight, CloudOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useId } from "react";
@@ -24,9 +24,8 @@ import { peso } from "@/lib/trip/money";
 import { cardCount, cardTitle, titleBar } from "@/lib/ui/styles";
 import { Pager } from "./pager";
 import { SkeletonRows } from "@/components/skeleton";
+import { Select } from "@/components/select";
 
-const select =
-  "min-h-11 w-full appearance-none rounded-md border border-input bg-surface py-2 pr-9 pl-3 text-base font-medium outline-none transition focus:border-primary focus:ring-3 focus:ring-brand-100";
 const retry =
   "inline-flex min-h-11 items-center rounded-md border border-input bg-surface px-3 text-sm font-medium hover:bg-primary-soft focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-100 disabled:opacity-50";
 
@@ -197,25 +196,16 @@ export function TripsScreen() {
           >
             Worker
           </label>
-          <div className="relative">
-            <select
-              id={`${ids}-worker`}
-              value={worker}
-              onChange={(e) => set({ worker: e.target.value })}
-              className={select}
-            >
-              <option value="">All workers</option>
-              {people.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name}
-                </option>
-              ))}
-            </select>
-            <ChevronDown
-              aria-hidden
-              className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-primary"
-            />
-          </div>
+          <Select
+            id={`${ids}-worker`}
+            value={worker}
+            onChange={(v) => set({ worker: v })}
+            className="font-medium"
+            options={[
+              { value: "", label: "All workers" },
+              ...people.map((u) => ({ value: u.id, label: u.name })),
+            ]}
+          />
         </div>
       </div>
 

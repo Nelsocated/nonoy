@@ -24,6 +24,7 @@ import { overSell } from "@/lib/trip/stock";
 import { matchBuyer } from "@/lib/trip/buyer-name";
 import { showDialog } from "@/lib/ui/dialog";
 import { FormSkeleton } from "@/components/skeleton";
+import { Select } from "@/components/select";
 
 const TWO_DP = /^\d{1,8}(\.\d{1,2})?$/;
 const asOf = (iso: string) =>
@@ -174,28 +175,28 @@ export default function SalePage() {
 
       <Field label="Buyer" hint={picked ?? undefined}>
         {(a) => (
-          <select
+          <Select
             {...a}
+            size="lg"
             value={buyer}
-            onChange={(e) => {
-              setBuyer(e.target.value);
+            onChange={(v) => {
+              setBuyer(v);
               setPicked(null);
             }}
-            className={inputClass}
-          >
-            <option value="">Walk-in</option>
-            {data.waitingRequests.map((r) => (
-              <option key={r.clientId} value={`r:${r.clientId}`}>
-                {r.name} (waiting)
-              </option>
-            ))}
-            {buyers.map(([id, name]) => (
-              <option key={id} value={`b:${id}`}>
-                {name}
-              </option>
-            ))}
-            <option value="new">+ New buyer…</option>
-          </select>
+            options={[
+              { value: "", label: "Walk-in" },
+              ...data.waitingRequests.map((r) => ({
+                value: `r:${r.clientId}`,
+                label: r.name,
+                hint: "waiting",
+              })),
+              ...buyers.map(([id, name]) => ({
+                value: `b:${id}`,
+                label: name,
+              })),
+              { value: "new", label: "+ New buyer…" },
+            ]}
+          />
         )}
       </Field>
 

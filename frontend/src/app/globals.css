@@ -221,3 +221,21 @@
     break-inside: avoid;
   }
 }
+
+/* Custom dropdown list (components/select.tsx): a quick fade and drop. */
+.select-pop {
+  transition:
+    opacity 0.12s ease-out,
+    translate 0.12s ease-out;
+}
+@starting-style {
+  .select-pop:popover-open {
+    opacity: 0;
+    translate: 0 -0.25rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .select-pop {
+    transition: none;
+  }
+}

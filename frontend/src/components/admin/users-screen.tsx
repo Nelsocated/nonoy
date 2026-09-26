@@ -22,6 +22,7 @@ import { asOf } from "@/lib/offline/admin-cache";
 import { showDialog } from "@/lib/ui/dialog";
 import { cardCount, cardTitle, titleBar } from "@/lib/ui/styles";
 import { ContentSkeleton } from "@/components/skeleton";
+import { Select } from "@/components/select";
 
 const input =
   "w-full rounded-md border border-input bg-surface px-3 py-2.5 text-base outline-none transition focus:border-primary focus:ring-3 focus:ring-brand-100 aria-invalid:border-danger";
@@ -131,10 +132,8 @@ export function UsersScreen({ meId, myRole }: { meId: string; myRole: Role }) {
     if (!Object.keys(err).length) act.mutate();
   }
 
-  const set =
-    (k: keyof Values) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-      setValues((v) => ({ ...v, [k]: e.target.value }));
+  const set = (k: keyof Values) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setValues((v) => ({ ...v, [k]: e.target.value }));
 
   function field(
     k: "name" | "phone" | "password" | "confirm",
@@ -365,16 +364,23 @@ export function UsersScreen({ meId, myRole }: { meId: string; myRole: Role }) {
                   >
                     Role
                   </label>
-                  <select
+                  <Select
                     id={`${ids}-role`}
                     value={values.role}
-                    onChange={set("role")}
-                    className={input}
-                  >
-                    <option value="WORKER">Worker</option>
-                    <option value="OWNER">Owner</option>
-                    {myRole === "ADMIN" && <option value="ADMIN">Admin</option>}
-                  </select>
+                    onChange={(v) =>
+                      setValues((old) => ({
+                        ...old,
+                        role: v as Values["role"],
+                      }))
+                    }
+                    options={[
+                      { value: "WORKER", label: "Worker" },
+                      { value: "OWNER", label: "Owner" },
+                      ...(myRole === "ADMIN"
+                        ? [{ value: "ADMIN", label: "Admin" }]
+                        : []),
+                    ]}
+                  />
                 </div>
               </>
             )}

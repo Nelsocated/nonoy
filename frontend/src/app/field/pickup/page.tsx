@@ -16,6 +16,7 @@ import { InvalidRecordError } from "@/lib/offline/validate";
 import { digits, typedAmount } from "@/lib/trip/input";
 import { toCenti } from "@/lib/trip/money";
 import { FormSkeleton } from "@/components/skeleton";
+import { Select } from "@/components/select";
 
 const TWO_DP = /^\d{1,8}(\.\d{1,2})?$/;
 
@@ -96,18 +97,16 @@ export default function PickupPage() {
       ) : (
         <Field label="Plantation" error={errors.plantation}>
           {(a) => (
-            <select
+            <Select
               {...a}
+              size="lg"
               value={chosen}
-              onChange={(e) => setPlantationId(e.target.value)}
-              className={inputClass}
-            >
-              {plantations.map(([id, name]) => (
-                <option key={id} value={id}>
-                  {name}
-                </option>
-              ))}
-            </select>
+              onChange={setPlantationId}
+              options={plantations.map(([id, name]) => ({
+                value: id,
+                label: name,
+              }))}
+            />
           )}
         </Field>
       )}

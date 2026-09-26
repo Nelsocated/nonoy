@@ -1,12 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  ChevronDown,
-  CircleAlert,
-  CircleCheck,
-  TriangleAlert,
-} from "lucide-react";
+import { CircleAlert, CircleCheck, TriangleAlert } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { useOnline } from "@/components/offline/use-sync-data";
 import { ApiError } from "@/lib/api";
@@ -23,6 +18,7 @@ import { pagedList, pageOf } from "@/lib/admin/paging";
 import { showDialog } from "@/lib/ui/dialog";
 import { cardCount, cardTitle } from "@/lib/ui/styles";
 import { Pager } from "./pager";
+import { Select } from "@/components/select";
 
 const input =
   "w-full rounded-md border border-input bg-surface px-3 py-2.5 text-base outline-none transition focus:border-primary focus:ring-3 focus:ring-brand-100 aria-invalid:border-danger";
@@ -286,26 +282,20 @@ export function BuyerRequestsCard() {
             )}
 
             {open.kind === "merge" && (
-              <label className="block space-y-1">
-                <span className="text-sm font-medium">Buyer</span>
-                <span className="relative block">
-                  <select
-                    className={`${input} appearance-none pr-9`}
-                    value={target}
-                    onChange={(e) => setTarget(e.target.value)}
-                  >
-                    <option value="">Pick a buyer</option>
-                    {active.map((b) => (
-                      <option key={b.id} value={b.id}>
-                        {b.name}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown
-                    aria-hidden
-                    className="pointer-events-none absolute top-1/2 right-3 size-4 -translate-y-1/2 text-primary"
-                  />
-                </span>
+              <div className="block space-y-1">
+                <label
+                  htmlFor={`${ids}-merge`}
+                  className="block text-sm font-medium"
+                >
+                  Buyer
+                </label>
+                <Select
+                  id={`${ids}-merge`}
+                  value={target}
+                  onChange={setTarget}
+                  placeholder="Pick a buyer"
+                  options={active.map((b) => ({ value: b.id, label: b.name }))}
+                />
                 {into && (
                   <span className="block text-sm text-muted-foreground">
                     {r.sales === 1
@@ -314,7 +304,7 @@ export function BuyerRequestsCard() {
                     to {into}.
                   </span>
                 )}
-              </label>
+              </div>
             )}
 
             {open.kind === "reject" && (
