@@ -16,7 +16,12 @@ import { useTrip } from "@/components/trip/use-trip";
 import type { PaymentMethod } from "@/lib/api/types";
 import { getDb, getPaymentQrs } from "@/lib/offline/db";
 import { getPrice } from "@/lib/offline/price";
-import { InvalidRecordError } from "@/lib/offline/validate";
+import {
+  buyerName,
+  InvalidRecordError,
+  place,
+  problem,
+} from "@/lib/offline/validate";
 import { digits, typedAmount } from "@/lib/trip/input";
 import { showQrState } from "@/lib/qr/qr";
 import { peso, saleAmount, toCenti } from "@/lib/trip/money";
@@ -101,11 +106,10 @@ export default function SalePage() {
       e.buyer =
         "The owner already checked this new buyer. Pick the buyer again.";
     if (buyer === "new") {
-      if (!newName.trim()) e.newName = "Enter the buyer's name.";
-      else if (newName.trim().length > 100)
-        e.newName = "Name is too long (100 characters max).";
-      if (newPlace.trim().length > 100)
-        e.newPlace = "Place is too long (100 characters max).";
+      const name = problem(() => buyerName(newName));
+      const where = problem(() => place(newPlace));
+      if (name) e.newName = name;
+      if (where) e.newPlace = where;
     }
     setErrors(e);
     return Object.keys(e).length === 0 && !tooBig; // shown under the total

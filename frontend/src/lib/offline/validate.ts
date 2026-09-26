@@ -17,6 +17,16 @@ const fail = (message: string): never => {
   throw new InvalidRecordError(message);
 };
 
+// a form showing the same rule under its field: the message, or undefined
+export function problem(check: () => void): string | undefined {
+  try {
+    check();
+  } catch (e) {
+    if (e instanceof InvalidRecordError) return e.message;
+    throw e;
+  }
+}
+
 export function uuid(value: string, label: string) {
   if (!UUID.test(value)) fail(`Pick a ${label}.`);
 }
