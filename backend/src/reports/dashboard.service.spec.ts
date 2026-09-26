@@ -116,18 +116,58 @@ describe('DashboardService', () => {
   });
 
   describe('checkProblem', () => {
+    const flagged = { id: 'r1', discrepancyFlagged: true, checkedAt: null };
+    const conflict = { id: 's1', syncStatus: 'CONFLICT', checkedAt: null };
+
     it('404s for an unknown problem', async () => {
-      prisma.sale.updateMany.mockResolvedValue({ count: 0 });
       prisma.sale.findUnique.mockResolvedValue(null);
       await expect(
         service.checkProblem('sale', 'x', undefined, 'me'),
       ).rejects.toThrow(NotFoundException);
+      expect(prisma.sale.updateMany).not.toHaveBeenCalled();
+    });
+
+    // only what the problems list shows can be marked checked
+    it('404s for a recount that matched or a normal sale', async () => {
+      prisma.recount.findUnique.mockResolvedValue({
+        id: 'r2',
+        discrepancyFlagged: false,
+      });
+      await expect(
+        service.checkProblem('recount', 'r2', undefined, 'me'),
+      ).rejects.toThrow(NotFoundException);
+      prisma.sale.findUnique.mockResolvedValue({
+        id: 's2',
+        syncStatus: 'SYNCED',
+        pricePerKilo: new Decimal('180'),
+        listPricePerKilo: new Decimal('180.00'),
+      });
+      await expect(
+        service.checkProblem('sale', 's2', undefined, 'me'),
+      ).rejects.toThrow(NotFoundException);
+      expect(prisma.recount.updateMany).not.toHaveBeenCalled();
+      expect(prisma.sale.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('accepts a sale whose price was changed', async () => {
+      const sale = {
+        id: 's3',
+        syncStatus: 'SYNCED',
+        pricePerKilo: new Decimal('175'),
+        listPricePerKilo: new Decimal('180'),
+      };
+      prisma.sale.findUnique.mockResolvedValue(sale);
+      prisma.sale.updateMany.mockResolvedValue({ count: 1 });
+      await expect(
+        service.checkProblem('sale', 's3', undefined, 'me'),
+      ).resolves.toBe(sale);
+      expect(prisma.sale.updateMany).toHaveBeenCalled();
     });
 
     // two owners pressing Checked together: only an unchecked row is written,
     // so the first checker's name and note stay
     it('only writes a row that is still unchecked (first checker kept)', async () => {
-      const row = { id: 'r1', checkedAt: new Date(), checkedById: 'other' };
+      const row = { ...flagged, checkedAt: new Date(), checkedById: 'other' };
       prisma.recount.updateMany.mockResolvedValue({ count: 0 });
       prisma.recount.findUnique.mockResolvedValue(row);
       await expect(
@@ -141,7 +181,7 @@ describe('DashboardService', () => {
 
     it('records who checked it, when, and the note (empty → none)', async () => {
       prisma.sale.updateMany.mockResolvedValue({ count: 1 });
-      prisma.sale.findUnique.mockResolvedValue({ id: 's1' });
+      prisma.sale.findUnique.mockResolvedValue(conflict);
       await service.checkProblem('sale', 's1', '', 'me');
       expect(prisma.sale.updateMany).toHaveBeenCalledWith({
         where: { id: 's1', checkedAt: null },

@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { Decimal } from '@prisma/client/runtime/client';
 import { Prisma } from '../generated/prisma/client.js';
 
 export const PAGE_SIZE = 15;
@@ -134,12 +135,21 @@ export class DashboardService {
   }
 
   // Owner/admin looked at it. The first checker is kept if two check at once.
+  // Only rows the problems list would show can be checked.
   async checkProblem(
     kind: ProblemKind,
     id: string,
     note: string | undefined,
     userId: string,
   ) {
+    const find = () =>
+      kind === 'recount'
+        ? this.prisma.recount.findUnique({ where: { id } })
+        : this.prisma.sale.findUnique({ where: { id } });
+    const before = await find();
+    if (!before || !isProblem(kind, before))
+      throw new NotFoundException('Problem not found');
+
     const data = {
       checkedAt: new Date(),
       checkedById: userId,
@@ -151,11 +161,24 @@ export class DashboardService {
     if (kind === 'recount')
       await this.prisma.recount.updateMany({ where, data });
     else await this.prisma.sale.updateMany({ where, data });
-    const row =
-      kind === 'recount'
-        ? await this.prisma.recount.findUnique({ where: { id } })
-        : await this.prisma.sale.findUnique({ where: { id } });
-    if (!row) throw new NotFoundException('Problem not found');
-    return row;
+    return (await find()) ?? before;
   }
+}
+
+// same rule as the problems query: a flagged recount, or a sale that
+// conflicted or had its price changed
+type ProblemRow = {
+  discrepancyFlagged?: boolean;
+  syncStatus?: string;
+  pricePerKilo?: Decimal | null;
+  listPricePerKilo?: Decimal | null;
+};
+function isProblem(kind: ProblemKind, row: ProblemRow) {
+  if (kind === 'recount') return row.discrepancyFlagged === true;
+  return (
+    row.syncStatus === 'CONFLICT' ||
+    (row.pricePerKilo != null &&
+      row.listPricePerKilo != null &&
+      !row.pricePerKilo.equals(row.listPricePerKilo))
+  );
 }
