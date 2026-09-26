@@ -51,3 +51,20 @@ export class CheckProblemDto {
   @MaxLength(200)
   note?: string;
 }
+
+// GET /reports/trips?month=2026-09[&workerId=…][&page=2] — 15 per page
+export class TripsListQueryDto {
+  @Matches(/^2\d{3}-(0[1-9]|1[0-2])$/, { message: 'month must be YYYY-MM' })
+  month: string;
+
+  @IsOptional()
+  @IsUUID()
+  workerId?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(10_000)
+  page?: number;
+}

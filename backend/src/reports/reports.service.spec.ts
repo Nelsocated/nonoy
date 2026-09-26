@@ -7,7 +7,7 @@ import { TripAccessService } from '../trips/trips-access.service.js';
 describe('ReportsService', () => {
   let service: ReportsService;
   const prisma = {
-    $queryRaw: vi.fn(async () => [
+    $queryRaw: vi.fn(async (..._args: unknown[]): Promise<unknown[]> => [
       { start: '2026-08-31 16:00:00', end: '2026-09-07 16:00:00' },
     ]),
     trip: { findUnique: vi.fn() },
@@ -60,6 +60,59 @@ describe('ReportsService', () => {
       await expect(
         service.resolveRange({ from: '2026-13-45', to: '2026-09-07' }),
       ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('tripsList', () => {
+    it('lists a Manila month, newest first, shaped for the page', async () => {
+      prisma.$queryRaw
+        .mockResolvedValueOnce([
+          { start: '2026-08-31 16:00:00', end: '2026-09-30 16:00:00' },
+        ]) // resolveRange
+        .mockResolvedValueOnce([
+          {
+            id: 't1',
+            startedAt: new Date('2026-09-02T22:10:00Z'),
+            endedAt: null,
+            workerId: 'w1',
+            workerName: 'Juan',
+            chicken: 40,
+            kilo: '80.50',
+            saleCount: 3,
+            amount: '1500.00',
+            expenses: '200.00',
+            net: '1300.00',
+            problems: 2,
+          },
+        ])
+        .mockResolvedValueOnce([{ total: 16 }]);
+      const r = await service.tripsList({ month: '2026-09', page: 2 });
+      expect(r).toEqual({
+        items: [
+          {
+            id: 't1',
+            startedAt: new Date('2026-09-02T22:10:00Z'),
+            endedAt: null,
+            worker: { id: 'w1', name: 'Juan' },
+            pickedUp: { chicken: 40, kilo: '80.50' },
+            sales: { count: 3, amount: '1500.00' },
+            expenses: '200.00',
+            net: '1300.00',
+            problems: 2,
+          },
+        ],
+        total: 16,
+        page: 2,
+        pageSize: 15,
+      });
+      // the month became a report-time-zone window (last day included)
+      const range = JSON.stringify(prisma.$queryRaw.mock.calls[0]);
+      expect(range).toContain('"2026-09-01"');
+      expect(range).toContain('"2026-09-30"');
+      // page 2 skips the first 15
+      expect(prisma.$queryRaw.mock.calls[1].slice(1)).toEqual(
+        expect.arrayContaining([15]),
+      );
     });
   });
 

@@ -9,7 +9,12 @@ import { Prisma } from '../generated/prisma/client.js';
 import { Role } from '../generated/prisma/enums.js';
 import { TripAccessService } from '../trips/trips-access.service.js';
 import type { AuthenticatedUser } from '../auth/auth.controller.js';
-import { DailyReportDto, ReportRangeDto } from './reports.dto.js';
+import {
+  DailyReportDto,
+  ReportRangeDto,
+  TripsListQueryDto,
+} from './reports.dto.js';
+import { PAGE_SIZE } from './dashboard.service.js';
 
 const MAX_RANGE_DAYS = 366;
 
@@ -365,6 +370,90 @@ export class ReportsService {
         expenses: expenses.toFixed(2),
         net: salesAmount.minus(expenses).toFixed(2),
       },
+    };
+  }
+
+  // Every trip started in a month (report time zone), newest first, 15 per
+  // page, with its totals and how many unchecked problems it has.
+  async tripsList(dto: TripsListQueryDto) {
+    const page = dto.page ?? 1;
+    const [y, m] = dto.month.split('-').map(Number);
+    const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    const { start, end } = await this.resolveRange({
+      from: `${dto.month}-01`,
+      to: `${dto.month}-${String(last).padStart(2, '0')}`,
+    });
+    const where = Prisma.sql`t."startedAt" >= ${start} AND t."startedAt" < ${end}
+      ${dto.workerId ? Prisma.sql`AND t."workerId" = ${dto.workerId}` : Prisma.empty}`;
+
+    type Row = {
+      id: string;
+      startedAt: Date;
+      endedAt: Date | null;
+      workerId: string;
+      workerName: string;
+      chicken: number;
+      kilo: string;
+      saleCount: number;
+      amount: string;
+      expenses: string;
+      net: string;
+      problems: number;
+    };
+    const [rows, [{ total }]] = await Promise.all([
+      this.prisma.$queryRaw<Row[]>`
+        SELECT t.id, t."startedAt", t."endedAt",
+               u.id AS "workerId", u.name AS "workerName",
+               COALESCE(p.chicken, 0)::int AS chicken,
+               COALESCE(p.kilo, 0)::numeric(12,2)::text AS kilo,
+               COALESCE(s.count, 0)::int AS "saleCount",
+               COALESCE(s.amount, 0)::numeric(12,2)::text AS amount,
+               COALESCE(e.amount, 0)::numeric(12,2)::text AS expenses,
+               (COALESCE(s.amount, 0) - COALESCE(e.amount, 0))::numeric(12,2)::text AS net,
+               (COALESCE(s.problems, 0) + COALESCE(r.problems, 0))::int AS problems
+        FROM trips t
+        JOIN users u ON u.id = t."workerId"
+        LEFT JOIN LATERAL (
+          SELECT SUM("chickenCount") AS chicken, SUM("totalKilo") AS kilo
+          FROM pickups WHERE "tripId" = t.id
+        ) p ON true
+        LEFT JOIN LATERAL (
+          SELECT COUNT(*) AS count, SUM(amount) AS amount,
+                 COUNT(*) FILTER (WHERE "checkedAt" IS NULL AND (
+                   "syncStatus" = 'CONFLICT' OR (
+                     "pricePerKilo" IS NOT NULL AND "listPricePerKilo" IS NOT NULL
+                     AND "pricePerKilo" <> "listPricePerKilo"))) AS problems
+          FROM sales WHERE "tripId" = t.id
+        ) s ON true
+        LEFT JOIN LATERAL (
+          SELECT COUNT(*) FILTER (WHERE "discrepancyFlagged" AND "checkedAt" IS NULL) AS problems
+          FROM recounts WHERE "tripId" = t.id
+        ) r ON true
+        LEFT JOIN LATERAL (
+          SELECT SUM(amount) AS amount FROM expenses WHERE "tripId" = t.id
+        ) e ON true
+        WHERE ${where}
+        ORDER BY t."startedAt" DESC, t.id
+        LIMIT ${PAGE_SIZE} OFFSET ${(page - 1) * PAGE_SIZE}`,
+      this.prisma.$queryRaw<{ total: number }[]>`
+        SELECT COUNT(*)::int AS total FROM trips t WHERE ${where}`,
+    ]);
+
+    return {
+      items: rows.map((r) => ({
+        id: r.id,
+        startedAt: r.startedAt,
+        endedAt: r.endedAt,
+        worker: { id: r.workerId, name: r.workerName },
+        pickedUp: { chicken: r.chicken, kilo: r.kilo },
+        sales: { count: r.saleCount, amount: r.amount },
+        expenses: r.expenses,
+        net: r.net,
+        problems: r.problems,
+      })),
+      total,
+      page,
+      pageSize: PAGE_SIZE,
     };
   }
 

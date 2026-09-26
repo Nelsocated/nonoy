@@ -20,6 +20,7 @@ import {
   DailyReportDto,
   ProblemsQueryDto,
   ReportRangeDto,
+  TripsListQueryDto,
 } from './reports.dto.js';
 
 @Controller('reports')
@@ -74,6 +75,13 @@ export class ReportsController {
   @Get('discrepancies')
   discrepancies(@Query() dto: ReportRangeDto) {
     return this.reportsService.discrepancies(dto);
+  }
+
+  // every trip in a month, 15 per page (owner/admin trips screen)
+  @Roles(Role.OWNER, Role.ADMIN)
+  @Get('trips')
+  trips(@Query() dto: TripsListQueryDto) {
+    return this.reportsService.tripsList(dto);
   }
 
   // any role — workers can see their own trips (checked in the service)
