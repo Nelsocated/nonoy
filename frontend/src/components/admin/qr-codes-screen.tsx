@@ -9,7 +9,7 @@ import {
   Plus,
   Trash,
 } from "lucide-react";
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useOnline } from "@/components/offline/use-sync-data";
 import { QrImage } from "@/components/qr/qr-image";
 import { ApiError } from "@/lib/api";
@@ -55,6 +55,12 @@ export function QrCodesScreen() {
   const [status, setStatus] = useState<{ text: string; ok: boolean } | null>(
     null,
   );
+  // a success note fades after a few seconds; a problem stays until the next action
+  useEffect(() => {
+    if (!status?.ok) return;
+    const t = setTimeout(() => setStatus(null), 6000);
+    return () => clearTimeout(t);
+  }, [status]);
   const [editing, setEditing] = useState<PaymentQr | "new" | null>(null);
   const [label, setLabel] = useState("");
   const [payload, setPayload] = useState<string | null>(null);
@@ -115,6 +121,7 @@ export function QrCodesScreen() {
   function open(item: PaymentQr | "new") {
     opening.current += 1;
     setReading(false);
+    setStatus(null);
     setEditing(item);
     setLabel(item === "new" ? "" : item.label);
     setPayload(item === "new" ? null : item.payload);
