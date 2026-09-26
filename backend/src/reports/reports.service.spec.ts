@@ -77,6 +77,25 @@ describe('ReportsService', () => {
       ).rejects.toThrow('Trip not found');
       expect(access.assertOwnership).not.toHaveBeenCalled();
     });
+
+    it("leaves the owner's check notes out for workers", async () => {
+      prisma.trip.findUnique.mockResolvedValue(null);
+      const omit = { checkedAt: true, checkedById: true, checkNote: true };
+      await service
+        .tripDetail('t1', { id: 'w1', role: 'WORKER' })
+        .catch(() => {});
+      const worker = prisma.trip.findUnique.mock.calls[0][0].include;
+      expect(worker.sales.omit).toEqual(omit);
+      expect(worker.recounts.omit).toEqual(omit);
+
+      prisma.trip.findUnique.mockClear();
+      await service
+        .tripDetail('t1', { id: 'o1', role: 'OWNER' })
+        .catch(() => {});
+      const owner = prisma.trip.findUnique.mock.calls[0][0].include;
+      expect(owner.sales.omit).toBeUndefined();
+      expect(owner.recounts.omit).toBeUndefined();
+    });
   });
 
   describe('discrepancies', () => {

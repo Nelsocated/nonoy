@@ -304,6 +304,10 @@ export class ReportsService {
     }
 
     const byTime = { orderBy: { createdAtClient: 'asc' as const } };
+    // the owner's check notes are between owners/admins, not for the worker
+    const checks = user.role === Role.WORKER && {
+      omit: { checkedAt: true, checkedById: true, checkNote: true },
+    };
     const trip = await this.prisma.trip.findUnique({
       where: { id: tripId },
       include: {
@@ -314,9 +318,10 @@ export class ReportsService {
         },
         sales: {
           ...byTime,
+          ...checks,
           include: { buyer: { select: { id: true, name: true } } },
         },
-        recounts: byTime,
+        recounts: { ...byTime, ...checks },
         expenses: byTime,
       },
     });
