@@ -1,10 +1,5 @@
 // pickups/dto/create-pickup.dto.ts
-import {
-  IsUUID,
-  IsInt,
-  IsPositive,
-  IsDateString,
-} from 'class-validator';
+import { IsUUID, IsInt, IsPositive, IsDateString } from 'class-validator';
 import { IsDecimalAmount } from '../common/is-decimal-amount.decorator.js';
 
 export class CreatePickupDto {

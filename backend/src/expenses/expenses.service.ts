@@ -25,7 +25,9 @@ export class ExpensesService {
       });
       if (existing) {
         if (existing.workerId !== workerId) {
-          throw new ForbiddenException('You do not have access to this expense');
+          throw new ForbiddenException(
+            'You do not have access to this expense',
+          );
         }
         return existing;
       }

@@ -1,9 +1,4 @@
-import {
-  IsUUID,
-  IsInt,
-  Min,
-  IsDateString,
-} from 'class-validator';
+import { IsUUID, IsInt, Min, IsDateString } from 'class-validator';
 import { IsDecimalAmount } from '../common/is-decimal-amount.decorator.js';
 
 export class CreateRecountDto {

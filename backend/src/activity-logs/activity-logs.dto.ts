@@ -30,4 +30,6 @@ export class CreateActivityLogDto {
 
 // What the service records: workerId always comes from the authenticated
 // user (or the calling service), never from the request body
-export type RecordActivityLogInput = CreateActivityLogDto & { workerId: string };
+export type RecordActivityLogInput = CreateActivityLogDto & {
+  workerId: string;
+};

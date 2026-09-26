@@ -10,13 +10,18 @@ describe('AuthService', () => {
   // in-memory stand-in for the users table
   let db: Record<string, any>;
   const users = {
-    findByPhone: vi.fn(async (phone: string) => Object.values(db).find((u) => u.phone === phone) ?? null),
+    findByPhone: vi.fn(
+      async (phone: string) =>
+        Object.values(db).find((u) => u.phone === phone) ?? null,
+    ),
     findById: vi.fn(async (id: string) => db[id] ?? null),
-    updateRefreshTokenHash: vi.fn(async (id: string, h: string | null, previous: string | null = null) => {
-      db[id].refreshTokenHash = h;
-      db[id].previousRefreshTokenHash = previous;
-      db[id].refreshRotatedAt = previous ? new Date() : null;
-    }),
+    updateRefreshTokenHash: vi.fn(
+      async (id: string, h: string | null, previous: string | null = null) => {
+        db[id].refreshTokenHash = h;
+        db[id].previousRefreshTokenHash = previous;
+        db[id].refreshRotatedAt = previous ? new Date() : null;
+      },
+    ),
   };
 
   beforeAll(() => {
@@ -29,32 +34,52 @@ describe('AuthService', () => {
   beforeEach(async () => {
     db = {
       u1: {
-        id: 'u1', name: 'Ana', phone: '09170000001', role: 'WORKER', isActive: true,
-        passwordHash: await bcrypt.hash('secret1', 4), refreshTokenHash: null,
-        previousRefreshTokenHash: null, refreshRotatedAt: null,
+        id: 'u1',
+        name: 'Ana',
+        phone: '09170000001',
+        role: 'WORKER',
+        isActive: true,
+        passwordHash: await bcrypt.hash('secret1', 4),
+        refreshTokenHash: null,
+        previousRefreshTokenHash: null,
+        refreshRotatedAt: null,
       },
     };
     const module: TestingModule = await Test.createTestingModule({
-      providers: [AuthService, JwtService, { provide: UsersService, useValue: users }],
+      providers: [
+        AuthService,
+        JwtService,
+        { provide: UsersService, useValue: users },
+      ],
     }).compile();
     service = module.get(AuthService);
   });
 
   describe('validateUser', () => {
     it('returns the user without secrets on a correct password', async () => {
-      const u = await service.validateUser({ phone: '09170000001', password: 'secret1' });
+      const u = await service.validateUser({
+        phone: '09170000001',
+        password: 'secret1',
+      });
       expect(u).toMatchObject({ id: 'u1', role: 'WORKER' });
       expect(u).not.toHaveProperty('passwordHash');
       expect(u).not.toHaveProperty('refreshTokenHash');
     });
 
     it('rejects a wrong password', async () => {
-      expect(await service.validateUser({ phone: '09170000001', password: 'nope' })).toBeNull();
+      expect(
+        await service.validateUser({ phone: '09170000001', password: 'nope' }),
+      ).toBeNull();
     });
 
     it('rejects an inactive user', async () => {
       db.u1.isActive = false;
-      expect(await service.validateUser({ phone: '09170000001', password: 'secret1' })).toBeNull();
+      expect(
+        await service.validateUser({
+          phone: '09170000001',
+          password: 'secret1',
+        }),
+      ).toBeNull();
     });
   });
 
@@ -66,7 +91,9 @@ describe('AuthService', () => {
       const { refreshToken: second } = await service.refresh(first);
 
       expect(second).not.toBe(first);
-      await expect(service.refresh(second!)).resolves.toHaveProperty('accessToken');
+      await expect(service.refresh(second!)).resolves.toHaveProperty(
+        'accessToken',
+      );
     });
 
     // Two requests racing to refresh with the same cookie: the loser presents the
@@ -79,7 +106,9 @@ describe('AuthService', () => {
       const late = await service.refresh(first);
       expect(late.accessToken).toEqual(expect.any(String));
       expect(late.refreshToken).toBeNull();
-      await expect(service.refresh(second!)).resolves.toHaveProperty('accessToken');
+      await expect(service.refresh(second!)).resolves.toHaveProperty(
+        'accessToken',
+      );
     });
 
     it('rejects the old token once the grace window has passed', async () => {
@@ -88,14 +117,18 @@ describe('AuthService', () => {
       await service.refresh(first);
 
       vi.setSystemTime(Date.now() + 11_000);
-      await expect(service.refresh(first)).rejects.toThrow(UnauthorizedException);
+      await expect(service.refresh(first)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('gives no grace after logout', async () => {
       const { refreshToken: first } = await service.login(db.u1);
       await service.refresh(first);
       await service.logout('u1');
-      await expect(service.refresh(first)).rejects.toThrow(UnauthorizedException);
+      await expect(service.refresh(first)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('two tokens issued back-to-back are distinct (bcrypt 72-byte trap)', async () => {
@@ -108,17 +141,23 @@ describe('AuthService', () => {
     it('is rejected after logout', async () => {
       const { refreshToken } = await service.login(db.u1);
       await service.logout('u1');
-      await expect(service.refresh(refreshToken)).rejects.toThrow(UnauthorizedException);
+      await expect(service.refresh(refreshToken)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('is rejected for an inactive user', async () => {
       const { refreshToken } = await service.login(db.u1);
       db.u1.isActive = false;
-      await expect(service.refresh(refreshToken)).rejects.toThrow(UnauthorizedException);
+      await expect(service.refresh(refreshToken)).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
 
     it('rejects garbage', async () => {
-      await expect(service.refresh('not-a-jwt')).rejects.toThrow(UnauthorizedException);
+      await expect(service.refresh('not-a-jwt')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 });

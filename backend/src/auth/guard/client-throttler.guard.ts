@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { timingSafeEqual } from 'node:crypto';
 
-type Req = { ip?: string; headers: Record<string, string | string[] | undefined> };
+type Req = {
+  ip?: string;
+  headers: Record<string, string | string[] | undefined>;
+};
 
 const header = (req: Req, name: string) => {
   const v = req.headers[name];
