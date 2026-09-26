@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   ForbiddenException,
+  NotFoundException,
   Get,
   Param,
   ParseUUIDPipe,
@@ -9,39 +10,30 @@ import {
   Post,
   Req,
 } from '@nestjs/common';
-import { Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
 import { UsersService } from './users.service.js';
-import { Public } from '../auth/decorators/public.decorator.js';
 import { Roles } from '../auth/decorators/roles.decorator.js';
 import { Role } from '../generated/prisma/enums.js';
 import type { AuthenticatedUser } from '../auth/auth.controller.js';
 import {
   AdminCreateUserDto,
-  CreateUserDto,
   ResetPasswordDto,
   SetActiveDto,
   UpdateUserDto,
 } from './users.dto.js';
 
 // Which roles each role may create, list and manage. Owner and admin share
-// one UI and the same powers (decided 2026-09-26).
+// one UI, but admin accounts are hidden from the owner (decided 2026-09-26).
 const CAN_MANAGE: Partial<Record<Role, Role[]>> = {
   [Role.ADMIN]: [Role.ADMIN, Role.OWNER, Role.WORKER],
-  [Role.OWNER]: [Role.ADMIN, Role.OWNER, Role.WORKER],
+  [Role.OWNER]: [Role.OWNER, Role.WORKER],
 };
 
 @Controller('users')
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
-  // public sign-up — always creates a WORKER
-  @Public()
-  @Throttle({ default: { limit: 3, ttl: 60000 } })
-  @Post('register')
-  register(@Body() dto: CreateUserDto) {
-    return this.usersService.create(dto);
-  }
+  // no public sign-up: accounts are made by the owner or an admin
 
   @Roles(Role.OWNER, Role.ADMIN)
   @Post()
@@ -65,7 +57,7 @@ export class UsersController {
     return this.usersService.getProfile(req.user.id);
   }
 
-  // ADMIN sees everyone; OWNER sees workers
+  // ADMIN sees everyone; OWNER sees owners and workers
   @Roles(Role.OWNER, Role.ADMIN)
   @Get()
   list(@Req() req: Request & { user: AuthenticatedUser }) {
@@ -115,10 +107,8 @@ export class UsersController {
   private async assertCanManage(id: string, me: AuthenticatedUser) {
     const target = await this.usersService.getProfile(id);
     const allowed = CAN_MANAGE[me.role as Role] ?? [];
-    if (!allowed.includes(target.role)) {
-      throw new ForbiddenException(
-        `${me.role} cannot manage ${target.role} accounts`,
-      );
-    }
+    // same answer as a missing user, so a hidden account stays hidden
+    if (!allowed.includes(target.role))
+      throw new NotFoundException('User not found');
   }
 }

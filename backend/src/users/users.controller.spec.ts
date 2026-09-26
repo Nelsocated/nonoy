@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ForbiddenException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { UsersController } from './users.controller.js';
 import { UsersService } from './users.service.js';
 import { Role } from '../generated/prisma/enums.js';
@@ -44,7 +44,6 @@ describe('UsersController', () => {
     [Role.ADMIN, Role.WORKER],
     [Role.OWNER, Role.WORKER],
     [Role.OWNER, Role.OWNER],
-    [Role.OWNER, Role.ADMIN],
   ])('%s can create %s', async (me, target) => {
     await expect(controller.create(dto(target), as(me))).resolves.toEqual({
       id: 'new',
@@ -57,29 +56,24 @@ describe('UsersController', () => {
     );
   });
 
-  it.each([[Role.WORKER, Role.WORKER]])(
-    '%s cannot create %s',
-    async (me, target) => {
-      expect(() => controller.create(dto(target), as(me))).toThrow(
-        ForbiddenException,
-      );
-      expect(users.create).not.toHaveBeenCalled();
-    },
-  );
+  it.each([
+    [Role.WORKER, Role.WORKER],
+    [Role.OWNER, Role.ADMIN], // admin accounts are hidden from the owner
+  ])('%s cannot create %s', async (me, target) => {
+    expect(() => controller.create(dto(target), as(me))).toThrow(
+      ForbiddenException,
+    );
+    expect(users.create).not.toHaveBeenCalled();
+  });
 
-  it('public register always creates a WORKER', async () => {
-    await controller.register({
-      phone: '09170000009',
-      password: 'secret1',
-      name: 'X',
-    });
-    expect(users.create).toHaveBeenCalledWith(expect.anything());
-    expect(users.create.mock.calls[0]).toHaveLength(1); // default role = WORKER
+  // accounts are only made by the owner or an admin
+  it('has no public sign-up', () => {
+    expect('register' in controller).toBe(false);
   });
 
   describe('management', () => {
-    // owner and admin share one UI and the same powers
-    it('ADMIN and OWNER both list every role', async () => {
+    // admins see everyone; the owner never sees admin accounts
+    it('ADMIN lists every role, OWNER all but admins', async () => {
       await controller.list(as(Role.ADMIN));
       expect(users.list).toHaveBeenLastCalledWith([
         Role.ADMIN,
@@ -87,11 +81,26 @@ describe('UsersController', () => {
         Role.WORKER,
       ]);
       await controller.list(as(Role.OWNER));
-      expect(users.list).toHaveBeenLastCalledWith([
-        Role.ADMIN,
-        Role.OWNER,
-        Role.WORKER,
-      ]);
+      expect(users.list).toHaveBeenLastCalledWith([Role.OWNER, Role.WORKER]);
+    });
+
+    // "not found" rather than "not allowed", so the owner can't even tell
+    // an admin account exists
+    it('OWNER gets "not found" for anything on an admin account', async () => {
+      users.getProfile.mockResolvedValue({ id: 'a1', role: Role.ADMIN });
+      const owner = as(Role.OWNER);
+      await expect(
+        controller.setActive('a1', { isActive: false }, owner),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        controller.update('a1', { name: 'X' }, owner),
+      ).rejects.toThrow(NotFoundException);
+      await expect(
+        controller.resetPassword('a1', { password: 'newpass' }, owner),
+      ).rejects.toThrow(NotFoundException);
+      expect(users.setActive).not.toHaveBeenCalled();
+      expect(users.update).not.toHaveBeenCalled();
+      expect(users.resetPassword).not.toHaveBeenCalled();
     });
 
     it.each([
@@ -99,7 +108,6 @@ describe('UsersController', () => {
       [Role.ADMIN, Role.ADMIN],
       [Role.OWNER, Role.WORKER],
       [Role.OWNER, Role.OWNER],
-      [Role.OWNER, Role.ADMIN],
     ])('%s can deactivate %s', async (me, target) => {
       users.getProfile.mockResolvedValue({ id: 'u2', role: target });
       await expect(
@@ -119,7 +127,7 @@ describe('UsersController', () => {
     });
 
     it('resets another user’s password but never your own', async () => {
-      users.getProfile.mockResolvedValue({ id: 'u2', role: Role.ADMIN });
+      users.getProfile.mockResolvedValue({ id: 'u2', role: Role.WORKER });
       await controller.resetPassword(
         'u2',
         { password: 'newpass' },

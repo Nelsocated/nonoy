@@ -34,8 +34,12 @@ export type User = {
   isActive: boolean;
   createdAt: IsoDate;
 };
-export type RegisterInput = { phone: string; password: string; name: string };
-export type CreateUserInput = RegisterInput & { role: Role };
+export type CreateUserInput = {
+  phone: string;
+  password: string;
+  name: string;
+  role: Role;
+};
 export type UpdateUserInput = { name?: string; phone?: string };
 
 // ---- price ----

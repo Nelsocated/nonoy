@@ -50,7 +50,7 @@ const empty: Values = {
 const fieldFor = (msg: string) =>
   /phone/i.test(msg) ? "phone" : /password/i.test(msg) ? "password" : "form";
 
-export function UsersScreen({ meId }: { meId: string }) {
+export function UsersScreen({ meId, myRole }: { meId: string; myRole: Role }) {
   const queryClient = useQueryClient();
   const online = useOnline();
   const ids = useId();
@@ -372,7 +372,7 @@ export function UsersScreen({ meId }: { meId: string }) {
                   >
                     <option value="WORKER">Worker</option>
                     <option value="OWNER">Owner</option>
-                    <option value="ADMIN">Admin</option>
+                    {myRole === "ADMIN" && <option value="ADMIN">Admin</option>}
                   </select>
                 </div>
               </>
