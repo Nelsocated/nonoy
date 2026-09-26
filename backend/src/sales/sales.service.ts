@@ -6,7 +6,11 @@ import {
 import { Decimal } from '@prisma/client/runtime/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { ActivityLogsService } from '../activity-logs/activity-logs.service.js';
-import { ActionType, SyncStatus } from '../generated/prisma/enums.js';
+import {
+  ActionType,
+  BuyerRequestStatus,
+  SyncStatus,
+} from '../generated/prisma/enums.js';
 import { TripAccessService } from '../trips/trips-access.service.js';
 import { CreateSaleDto } from './sales.dto.js';
 
@@ -30,6 +34,8 @@ export class SalesService {
     ) {
       throw new BadRequestException("amount doesn't match kilos × price");
     }
+    if (dto.buyerId && dto.buyerRequestId)
+      throw new BadRequestException('Send either a buyer or a new buyer');
 
     const trip = await this.tripAccessService.assertOwnership(
       dto.tripId,
@@ -41,6 +47,24 @@ export class SalesService {
         where: { clientId: dto.clientId },
       });
       if (existing) return existing;
+
+      // a new buyer the worker typed: once the owner decided, the sale gets
+      // that buyer right away (rejected → walk-in). FOR SHARE waits for a
+      // decision being made right now, so its sales update can't miss this one.
+      let buyerId = dto.buyerId ?? null;
+      if (dto.buyerRequestId) {
+        await tx.$executeRaw`SELECT 1 FROM buyer_requests WHERE id = ${dto.buyerRequestId} FOR SHARE`;
+        const request = await tx.buyerRequest.findUnique({
+          where: { id: dto.buyerRequestId },
+        });
+        if (!request || request.requestedById !== workerId)
+          throw new NotFoundException('Buyer request not found');
+        if (
+          request.status === BuyerRequestStatus.APPROVED ||
+          request.status === BuyerRequestStatus.MERGED
+        )
+          buyerId = request.buyerId;
+      }
 
       // a sale can't happen on a trip that's already been closed out — flag it
       // for owner review rather than rejecting, so no field data is lost
@@ -56,7 +80,8 @@ export class SalesService {
         data: {
           clientId: dto.clientId,
           tripId: dto.tripId,
-          buyerId: dto.buyerId,
+          buyerId,
+          buyerRequestId: dto.buyerRequestId ?? null,
           chickenCount: dto.chickenCount,
           totalKilo: dto.totalKilo,
           amount: dto.amount,
@@ -77,7 +102,8 @@ export class SalesService {
           actionType: ActionType.SALE_RECORDED,
           payload: {
             saleId: sale.id,
-            buyerId: dto.buyerId,
+            buyerId,
+            buyerRequestId: dto.buyerRequestId,
             chickenCount: dto.chickenCount,
             totalKilo: dto.totalKilo,
             amount: dto.amount,

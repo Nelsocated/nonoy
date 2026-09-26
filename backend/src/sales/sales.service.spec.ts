@@ -8,7 +8,11 @@ import { TripAccessService } from '../trips/trips-access.service.js';
 
 describe('SalesService', () => {
   let service: SalesService;
-  const tx = { sale: { findUnique: vi.fn(), create: vi.fn() } };
+  const tx = {
+    sale: { findUnique: vi.fn(), create: vi.fn() },
+    buyerRequest: { findUnique: vi.fn() },
+    $executeRaw: vi.fn(),
+  };
   const prisma = {
     $transaction: vi.fn((fn: (t: typeof tx) => unknown) => fn(tx)),
     sale: { findUnique: vi.fn() },
@@ -153,6 +157,73 @@ describe('SalesService', () => {
     it('still accepts sales from older app versions that send no price', async () => {
       await service.create(sale('2026-01-01T10:00:00Z'), 'w1');
       expect(tx.sale.create.mock.calls[0][0].data.pricePerKilo).toBeUndefined();
+    });
+  });
+
+  describe('buyer requests', () => {
+    const withRequest = (over = {}) => ({
+      ...sale('2026-01-01T10:00:00Z'),
+      buyerRequestId: 'r1',
+      ...over,
+    });
+    beforeEach(() =>
+      access.assertOwnership.mockResolvedValue({ endedAt: null }),
+    );
+
+    it('buyer and request together → 400', async () => {
+      await expect(
+        service.create(withRequest({ buyerId: 'b1' }), 'w1'),
+      ).rejects.toThrow('either a buyer or a new buyer');
+    });
+
+    it('waiting request: sale points at it, no buyer yet (row locked first)', async () => {
+      tx.buyerRequest.findUnique.mockResolvedValue({
+        id: 'r1',
+        requestedById: 'w1',
+        status: 'PENDING',
+        buyerId: null,
+      });
+      const s = await service.create(withRequest(), 'w1');
+      expect(tx.$executeRaw).toHaveBeenCalled(); // FOR SHARE: waits for a decision in progress
+      expect(s).toMatchObject({ buyerRequestId: 'r1', buyerId: null });
+    });
+
+    it.each(['APPROVED', 'MERGED'])(
+      'already %s → gets that buyer',
+      async (status) => {
+        tx.buyerRequest.findUnique.mockResolvedValue({
+          id: 'r1',
+          requestedById: 'w1',
+          status,
+          buyerId: 'b9',
+        });
+        const s = await service.create(withRequest(), 'w1');
+        expect(s).toMatchObject({ buyerRequestId: 'r1', buyerId: 'b9' });
+      },
+    );
+
+    it('already rejected → walk-in', async () => {
+      tx.buyerRequest.findUnique.mockResolvedValue({
+        id: 'r1',
+        requestedById: 'w1',
+        status: 'REJECTED',
+        buyerId: null,
+      });
+      const s = await service.create(withRequest(), 'w1');
+      expect(s).toMatchObject({ buyerRequestId: 'r1', buyerId: null });
+    });
+
+    it.each([
+      ['missing (its request failed to sync)', null],
+      [
+        "someone else's",
+        { id: 'r1', requestedById: 'w2', status: 'PENDING', buyerId: null },
+      ],
+    ])('%s request → Buyer request not found', async (_, row) => {
+      tx.buyerRequest.findUnique.mockResolvedValue(row);
+      await expect(service.create(withRequest(), 'w1')).rejects.toThrow(
+        'Buyer request not found',
+      );
     });
   });
 

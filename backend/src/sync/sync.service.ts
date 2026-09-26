@@ -9,6 +9,7 @@ import { PickupsService } from '../pickups/pickups.service.js';
 import { SalesService } from '../sales/sales.service.js';
 import { RecountsService } from '../recounts/recounts.service.js';
 import { ExpensesService } from '../expenses/expenses.service.js';
+import { BuyerRequestsService } from '../buyer-requests/buyer-requests.service.js';
 import { SyncBatchDto } from './sync.dto.js';
 
 type SyncResult = {
@@ -28,12 +29,14 @@ export class SyncService {
     private salesService: SalesService,
     private recountsService: RecountsService,
     private expensesService: ExpensesService,
+    private buyerRequestsService: BuyerRequestsService,
   ) {}
 
   async processBatch(dto: SyncBatchDto, workerId: string) {
     const results = {
       trips: [] as SyncResult[],
       tripEndings: [] as SyncResult[],
+      buyerRequests: [] as SyncResult[],
       pickups: [] as SyncResult[],
       sales: [] as SyncResult[],
       recounts: [] as SyncResult[],
@@ -85,6 +88,15 @@ export class SyncService {
         );
       }
     }
+
+    // New buyers a worker typed go before sales: a sale points at its request
+    results.buyerRequests = await Promise.all(
+      (dto.buyerRequests ?? []).map((item) =>
+        this.safely(item.id, () =>
+          this.buyerRequestsService.create(item, workerId),
+        ),
+      ),
+    );
 
     // Pickups and sales don't depend on each other, but both need their
     // trip to exist first — safe to run after trips, order between them

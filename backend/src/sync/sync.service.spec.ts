@@ -6,6 +6,7 @@ import { PickupsService } from '../pickups/pickups.service.js';
 import { SalesService } from '../sales/sales.service.js';
 import { RecountsService } from '../recounts/recounts.service.js';
 import { ExpensesService } from '../expenses/expenses.service.js';
+import { BuyerRequestsService } from '../buyer-requests/buyer-requests.service.js';
 
 describe('SyncService', () => {
   let service: SyncService;
@@ -15,6 +16,7 @@ describe('SyncService', () => {
   const sales = { create: vi.fn() };
   const recounts = { create: vi.fn() };
   const expenses = { create: vi.fn() };
+  const buyerRequests = { create: vi.fn() };
 
   // each mock records when it ran and echoes an id back
   const track = (name: string) => async (dto: { clientId?: string }) => {
@@ -34,6 +36,10 @@ describe('SyncService', () => {
     sales.create.mockImplementation(track('sale'));
     recounts.create.mockImplementation(track('recount'));
     expenses.create.mockImplementation(track('expense'));
+    buyerRequests.create.mockImplementation(async (dto: { id: string }) => {
+      calls.push('request');
+      return { id: dto.id };
+    });
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -43,6 +49,7 @@ describe('SyncService', () => {
         { provide: SalesService, useValue: sales },
         { provide: RecountsService, useValue: recounts },
         { provide: ExpensesService, useValue: expenses },
+        { provide: BuyerRequestsService, useValue: buyerRequests },
       ],
     }).compile();
 
@@ -58,6 +65,22 @@ describe('SyncService', () => {
     pickups: [{ clientId: 'p1' }],
     trips: [{ clientId: 't1' }],
   } as any;
+
+  it('saves buyer requests after trips and before sales, keyed by id', async () => {
+    const r = await service.processBatch(
+      {
+        trips: [{ clientId: 't1', startedAt: '2026-09-26T00:00:00Z' } as never],
+        sales: [{ clientId: 's1' } as never],
+        buyerRequests: [{ id: 'r1' } as never],
+      },
+      'w1',
+    );
+    expect(calls).toEqual(['trip', 'request', 'sale']);
+    expect(r.buyerRequests).toEqual([
+      { clientId: 'r1', status: 'ok', serverId: 'r1' },
+    ]);
+    expect(buyerRequests.create).toHaveBeenCalledWith({ id: 'r1' }, 'w1');
+  });
 
   it('processes trips → pickups → sales → expenses → recounts → trip endings', async () => {
     await service.processBatch(batch, 'w1');
@@ -200,6 +223,7 @@ describe('SyncService', () => {
     expect(await service.processBatch({}, 'w1')).toEqual({
       trips: [],
       tripEndings: [],
+      buyerRequests: [],
       pickups: [],
       sales: [],
       recounts: [],

@@ -25,6 +25,11 @@ export class CreateSaleDto {
   @IsUUID()
   buyerId?: string;
 
+  // a new buyer the worker typed (sent in the same /sync batch, or earlier)
+  @IsOptional()
+  @IsUUID()
+  buyerRequestId?: string;
+
   @IsInt()
   @IsPositive()
   chickenCount: number;

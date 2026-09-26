@@ -6,6 +6,7 @@ import { CreatePickupDto } from '../pickups/pickups.dto.js';
 import { CreateSaleDto } from '../sales/sales.dto.js';
 import { CreateRecountDto } from '../recounts/recounts.dto.js';
 import { CreateExpenseDto } from '../expenses/expenses.dto.js';
+import { CreateBuyerRequestDto } from '../buyer-requests/buyer-requests.dto.js';
 
 class EndTripSyncDto extends EndTripDto {
   @IsUUID()
@@ -30,6 +31,12 @@ export class SyncBatchDto {
   @ValidateNested({ each: true })
   @Type(() => CreatePickupDto)
   pickups?: CreatePickupDto[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateBuyerRequestDto)
+  buyerRequests?: CreateBuyerRequestDto[];
 
   @IsOptional()
   @IsArray()
