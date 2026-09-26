@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
+  QrCode,
   Store,
   Tag,
   Truck,
@@ -16,6 +17,7 @@ import {
 const NAV: { href: string; label: string; icon: LucideIcon }[] = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/price", label: "Price", icon: Tag },
+  { href: "/admin/qr-codes", label: "QR codes", icon: QrCode },
   { href: "/admin/buyers", label: "Buyers", icon: Store },
   { href: "/admin/plantations", label: "Plantations", icon: Warehouse },
   { href: "/admin/users", label: "Users", icon: Users },
