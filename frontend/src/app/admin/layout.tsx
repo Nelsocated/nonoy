@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { AdminQueryProvider } from "@/components/offline/admin-query-provider";
+import { PageWarmer } from "@/components/offline/page-warmer";
 import { AdminSidebar } from "@/components/shell/admin-sidebar";
 import { getSession } from "@/lib/auth/session";
 import { topStrip } from "@/lib/ui/styles";
@@ -9,6 +10,7 @@ export default async function AdminLayout({ children }: LayoutProps<"/admin">) {
   if (!session) redirect("/login"); // proxy normally handles this
   return (
     <AdminQueryProvider>
+      <PageWarmer role={session.user.role} />
       <div
         aria-hidden
         className={`${topStrip} sticky top-0 z-10 print:hidden`}

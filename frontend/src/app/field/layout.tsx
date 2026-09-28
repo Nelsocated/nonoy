@@ -3,6 +3,7 @@ import Link from "next/link";
 import { LayoutDashboard } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { OfflineProvider } from "@/components/offline/offline-provider";
+import { PageWarmer } from "@/components/offline/page-warmer";
 import { SyncBar } from "@/components/offline/sync-bar";
 import { FieldNav } from "@/components/shell/field-nav";
 import { UserMenu } from "@/components/shell/user-menu";
@@ -20,6 +21,7 @@ export default async function FieldLayout({ children }: LayoutProps<"/field">) {
       userName={session.user.name}
       seesStock={staff}
     >
+      <PageWarmer role={session.user.role} />
       <div className="flex flex-1 flex-col pb-16">
         <div aria-hidden className={`${topStrip} sticky top-0 z-10`} />
         {/* stays on screen while scrolling (sticky under the red strip) */}

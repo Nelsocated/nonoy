@@ -11,7 +11,6 @@ import { createApi } from "@/lib/api";
 import { OFFLINE_USER_HEADER } from "@/lib/api/forward";
 import { createHttp } from "@/lib/api/http";
 import { getDb } from "@/lib/offline/db";
-import { warmFieldPages } from "@/lib/offline/sw-caches";
 import { createSyncEngine } from "@/lib/offline/engine";
 import { pullInto } from "@/lib/offline/pull";
 import { createRuntime, type SyncPhase } from "@/lib/offline/runtime";
@@ -65,10 +64,6 @@ export function OfflineProvider({
   );
 
   useEffect(() => runtime.start(), [runtime]);
-  // with signal, keep a copy of every worker screen so all of them open offline
-  useEffect(() => {
-    if (navigator.onLine) void warmFieldPages();
-  }, [userId]);
   const phase = useSyncExternalStore(
     runtime.subscribe,
     runtime.getPhase,

@@ -1,5 +1,11 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { clearPageCaches, FIELD_PAGES, warmFieldPages } from "./sw-caches";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  ADMIN_PAGES,
+  clearPageCaches,
+  FIELD_PAGES,
+  pagesFor,
+  warmPages,
+} from "./sw-caches";
 
 const page = (over: Partial<Response> = {}) =>
   ({ ok: true, redirected: false, ...over }) as Response;
@@ -13,7 +19,12 @@ function stubCaches() {
   return { put, open };
 }
 
-describe("warmFieldPages", () => {
+describe("warmPages", () => {
+  // forget the last warm-up so each test starts cold
+  beforeEach(async () => {
+    stubCaches();
+    await clearPageCaches();
+  });
   afterEach(() => vi.unstubAllGlobals());
 
   it("includes Help and the info pages, so a worker can read them offline", () => {
@@ -28,7 +39,7 @@ describe("warmFieldPages", () => {
       "fetch",
       vi.fn(async () => page()),
     );
-    await warmFieldPages();
+    await warmPages("WORKER");
     expect(open).toHaveBeenCalledWith("mangfrito-pages");
     expect(put.mock.calls.map((c) => c[0])).toEqual(FIELD_PAGES);
     expect(FIELD_PAGES).toEqual(
@@ -54,7 +65,7 @@ describe("warmFieldPages", () => {
         return page();
       }),
     );
-    await expect(warmFieldPages()).resolves.toBeUndefined();
+    await expect(warmPages("WORKER")).resolves.toBeUndefined();
     expect(put).toHaveBeenCalledTimes(FIELD_PAGES.length - 1);
   });
 
@@ -71,7 +82,7 @@ describe("warmFieldPages", () => {
             : page(),
       ),
     );
-    await warmFieldPages();
+    await warmPages("WORKER");
     const saved = put.mock.calls.map((c) => c[0]);
     expect(saved).not.toContain("/field");
     expect(saved).not.toContain("/field/sale");
@@ -90,15 +101,53 @@ describe("warmFieldPages", () => {
         return page();
       }),
     );
-    const warming = warmFieldPages();
+    const warming = warmPages("WORKER");
     await clearPageCaches();
     release();
     await warming;
     expect(put).not.toHaveBeenCalled();
   });
 
+  it("gives owner/admin every fixed admin screen plus the phone screens", async () => {
+    expect(pagesFor("WORKER")).toEqual(FIELD_PAGES);
+    for (const role of ["OWNER", "ADMIN"] as const)
+      expect(pagesFor(role)).toEqual([...ADMIN_PAGES, ...FIELD_PAGES]);
+    expect(ADMIN_PAGES).toEqual(
+      expect.arrayContaining([
+        "/admin",
+        "/admin/trips",
+        "/admin/reports",
+        "/admin/buyers",
+        "/admin/plantations",
+        "/admin/price",
+        "/admin/qr-codes",
+        "/admin/users",
+      ]),
+    );
+    const { put } = stubCaches();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => page()),
+    );
+    await warmPages("OWNER");
+    expect(put.mock.calls.map((c) => c[0])).toEqual(pagesFor("OWNER"));
+  });
+
+  // moving between /admin and /field mounts the warmer again
+  it("doesn't fetch everything again right after a warm-up, but does after logout", async () => {
+    stubCaches();
+    const fetch = vi.fn(async () => page());
+    vi.stubGlobal("fetch", fetch);
+    await warmPages("WORKER");
+    await warmPages("WORKER");
+    expect(fetch).toHaveBeenCalledTimes(FIELD_PAGES.length);
+    await clearPageCaches();
+    await warmPages("WORKER");
+    expect(fetch).toHaveBeenCalledTimes(FIELD_PAGES.length * 2);
+  });
+
   it("does nothing where the Cache API doesn't exist", async () => {
     vi.stubGlobal("caches", undefined);
-    await expect(warmFieldPages()).resolves.toBeUndefined();
+    await expect(warmPages("WORKER")).resolves.toBeUndefined();
   });
 });
