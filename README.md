@@ -24,13 +24,13 @@ cp .env.example .env         # fill it in (see below)
 npm run dev                  # http://localhost:3000
 ```
 
-| Variable                                                     | What it is                                                                           |
-| ------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
-| `DATABASE_URL`                                               | Postgres connection string (on Vercel: Railway's public URL with `?sslmode=require`) |
-| `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`                    | signing secrets                                                                      |
-| `JWT_ACCESS_EXPIRY`, `JWT_REFRESH_EXPIRY`                    | e.g. `15m`, `30d`                                                                    |
-| `REPORT_TIMEZONE`                                            | calendar days for reports, default `Asia/Manila`                                     |
-| `SEED_ADMIN_PHONE`, `SEED_ADMIN_PASSWORD`, `SEED_ADMIN_NAME` | first admin, created by `npm run seed`                                               |
+| Variable                                                     | What it is                                                                                                                                                                   |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                                               | Postgres connection string (on Vercel: Railway's public URL with `?sslmode=no-verify`: encrypted, and accepts Railway's self-signed certificate (`require` would reject it)) |
+| `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`                    | signing secrets                                                                                                                                                              |
+| `JWT_ACCESS_EXPIRY`, `JWT_REFRESH_EXPIRY`                    | e.g. `15m`, `30d`                                                                                                                                                            |
+| `REPORT_TIMEZONE`                                            | calendar days for reports, default `Asia/Manila`                                                                                                                             |
+| `SEED_ADMIN_PHONE`, `SEED_ADMIN_PASSWORD`, `SEED_ADMIN_NAME` | first admin, created by `npm run seed`                                                                                                                                       |
 
 > **One database for everything.** Local development uses the **same database as production**, so what you record locally is real data. Never run `prisma migrate dev` or `migrate reset`: they can wipe it. Migrations are applied by production deploys only (`scripts/migrate-if-production.mjs` runs `prisma migrate deploy` when `VERCEL_ENV=production`); preview builds never touch the schema.
 
