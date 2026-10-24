@@ -1,3 +1,4 @@
+import "server-only";
 import { db } from "../db";
 import { UsersService } from "../services/users";
 import { AuthService } from "./auth-service";
