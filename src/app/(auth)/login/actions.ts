@@ -1,10 +1,13 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { homeFor } from "@/lib/auth/roles";
 import { clearSession, setSession } from "@/lib/auth/session";
 import { authService, session } from "@/server/auth";
+import { clientIp } from "@/server/client-ip";
+import { db } from "@/server/db";
+import { hitLoginLimit } from "@/server/rate-limit";
 
 export type LoginState = { error?: string } | undefined;
 
@@ -16,6 +19,9 @@ export async function login(
   const password = String(form.get("password") ?? "");
   if (!phone || !password)
     return { error: "Enter your phone number and password." };
+
+  if (await hitLoginLimit(db, clientIp(await headers())))
+    return { error: "Too many attempts. Wait a minute and try again." };
 
   let res: Awaited<ReturnType<typeof authService.login>>;
   try {

@@ -277,3 +277,13 @@ model PaymentQr {
 
   @@map("payment_qrs")
 }
+
+// login rate limit: attempts per client per minute (old rows deleted as it goes)
+model LoginAttempt {
+  key         String
+  windowStart DateTime @map("window_start") @db.Timestamptz(6)
+  count       Int
+
+  @@id([key, windowStart])
+  @@map("login_attempts")
+}

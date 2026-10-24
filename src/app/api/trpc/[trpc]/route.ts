@@ -9,16 +9,11 @@ import {
 } from "@/lib/auth/cookies";
 import { OFFLINE_USER_HEADER } from "@/lib/trpc/client";
 import { session } from "@/server/auth";
+import { clientIp } from "@/server/client-ip";
 import { db } from "@/server/db";
 import { appRouter } from "@/server/routers/_app";
 import { createServices } from "@/server/services";
 import type { Ctx } from "@/server/trpc";
-
-// Vercel sets x-forwarded-for itself; the first entry is the real client.
-const clientIp = (h: Headers) =>
-  h.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-  h.get("x-real-ip")?.trim() ||
-  "unknown";
 
 // Reads the signed-in user from the cookies; an expired access token is
 // refreshed once here and the rotated cookies go back on the response.
