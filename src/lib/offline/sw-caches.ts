@@ -1,4 +1,4 @@
-import type { Role } from "@/lib/api/types";
+import type { Role } from "@/lib/trpc/types";
 import { INFO_PAGES } from "@/lib/auth/roles";
 import { PAGES_CACHE } from "./sw-routes";
 

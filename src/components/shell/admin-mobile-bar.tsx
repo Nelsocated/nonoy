@@ -4,7 +4,7 @@ import { LayoutDashboard, X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { InfoMenu } from "@/components/info/info-menu";
 import { Logo } from "@/components/logo";
-import type { SessionUser } from "@/lib/api/types";
+import type { SessionUser } from "@/lib/trpc/types";
 import { AdminNav } from "./admin-nav";
 import { UserMenu } from "./user-menu";
 import { showDialog } from "@/lib/ui/dialog";

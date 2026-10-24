@@ -13,8 +13,8 @@ import {
 } from "lucide-react";
 import { useId, useRef, useState } from "react";
 import { useOnline } from "@/components/offline/use-sync-data";
-import { ApiError } from "@/lib/api";
-import type { RemoveResult } from "@/lib/api/types";
+import { ApiError } from "@/lib/trpc/errors";
+import type { RemoveResult } from "@/lib/trpc/types";
 import { pagedList, pageOf } from "@/lib/admin/paging";
 import { matchesSearch, removedMessage } from "@/lib/admin/search";
 import { Pager } from "./pager";

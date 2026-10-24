@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { canAccess, guard, homeFor, isPublic } from "./roles";
-import type { SessionUser } from "@/lib/api/types";
+import type { SessionUser } from "@/lib/trpc/types";
 
 const owner: SessionUser = { id: "1", name: "O", role: "OWNER" };
 const worker: SessionUser = { id: "2", name: "W", role: "WORKER" };

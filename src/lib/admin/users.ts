@@ -1,4 +1,4 @@
-import type { Role, User } from "@/lib/api/types";
+import type { Role, User } from "@/lib/trpc/types";
 
 const ORDER: { role: Role; label: string }[] = [
   { role: "WORKER", label: "Workers" },

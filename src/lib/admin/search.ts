@@ -1,4 +1,4 @@
-import type { RemoveResult } from "@/lib/api/types";
+import type { RemoveResult } from "@/lib/trpc/types";
 
 // list search on the admin screens: any field, case-insensitive
 export function matchesSearch(

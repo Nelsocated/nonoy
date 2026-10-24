@@ -1,4 +1,4 @@
-import type { Role } from "@/lib/api/types";
+import type { Role } from "@/lib/trpc/types";
 
 // Reads a JWT payload without verifying it — only for refresh timing and the
 // role hint in the user cookie. The backend verifies every request.

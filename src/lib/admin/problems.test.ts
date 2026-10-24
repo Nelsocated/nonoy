@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Problem } from "@/lib/api/types";
+import type { Problem } from "@/lib/trpc/types";
 import { problemSentence } from "./problems";
 
 const recount = (chickenDifference: number, kiloDifference: string) =>

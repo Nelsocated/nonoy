@@ -13,7 +13,7 @@ import {
 } from "@/components/trip/form";
 import { QrDialog } from "@/components/trip/qr-dialog";
 import { useTrip } from "@/components/trip/use-trip";
-import type { PaymentMethod } from "@/lib/api/types";
+import type { PaymentMethod } from "@/lib/trpc/types";
 import { getDb, getPaymentQrs } from "@/lib/offline/db";
 import { getPrice } from "@/lib/offline/price";
 import {

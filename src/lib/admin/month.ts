@@ -1,4 +1,4 @@
-import type { DailyReport } from "@/lib/api/types";
+import type { DailyReport } from "@/lib/trpc/types";
 import { fromCenti, toCenti } from "@/lib/trip/money";
 
 // A calendar month as "YYYY-MM". Days are "YYYY-MM-DD" in the report time

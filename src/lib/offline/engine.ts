@@ -1,9 +1,5 @@
-import {
-  ApiError,
-  type SyncBatch,
-  type SyncResult,
-  type SyncResults,
-} from "@/lib/api";
+import { ApiError } from "@/lib/trpc/errors";
+import type { SyncBatch, SyncResult, SyncResults } from "@/lib/trpc/types";
 import {
   type OfflineDb,
   type OutboxItem,

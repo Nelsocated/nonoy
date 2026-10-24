@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import { Logo } from "@/components/logo";
 import { MonthPicker } from "@/components/admin/month-picker";
 import { useOnline } from "@/components/offline/use-sync-data";
-import { api } from "@/lib/api/browser";
+import { trpc } from "@/lib/trpc/browser";
 import {
   clampMonth,
   daysUpTo,
@@ -77,7 +77,7 @@ export function ReportsScreen() {
   // "today" from the server's report time zone (shared with the dashboard)
   const today = useQuery({
     queryKey: ["daily", "today"],
-    queryFn: () => api.reports.daily(),
+    queryFn: () => trpc.reports.daily.query(),
   });
   // the dashboard's cached copy may be from yesterday (a new month at
   // midnight): online, wait for the refresh; offline, the saved one will do
@@ -94,7 +94,7 @@ export function ReportsScreen() {
 
   const report = useQuery({
     queryKey: ["month", month],
-    queryFn: () => api.reports.daily(monthRange(month!)),
+    queryFn: () => trpc.reports.daily.query(monthRange(month!)),
     enabled: !!month,
   });
 

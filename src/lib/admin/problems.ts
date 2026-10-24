@@ -1,4 +1,4 @@
-import type { Problem } from "@/lib/api/types";
+import type { Problem } from "@/lib/trpc/types";
 import { peso } from "@/lib/trip/money";
 import { saleBuyerLabel } from "./buyer-label";
 

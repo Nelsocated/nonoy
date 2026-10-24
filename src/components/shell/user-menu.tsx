@@ -1,4 +1,4 @@
-import type { SessionUser } from "@/lib/api/types";
+import type { SessionUser } from "@/lib/trpc/types";
 import { LogoutButton } from "./logout-button";
 
 const ROLE_LABEL = {

@@ -4,8 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Receipt } from "@/components/receipt/receipt";
-import { ApiError } from "@/lib/api";
-import { api } from "@/lib/api/browser";
+import { ApiError } from "@/lib/trpc/errors";
+import { trpc } from "@/lib/trpc/browser";
 import { receiptFromServer } from "@/lib/receipt/receipt";
 import { ReceiptSkeleton } from "@/components/skeleton";
 
@@ -20,7 +20,7 @@ const notFound = (e: unknown) =>
 export function SaleReceiptScreen({ clientId }: { clientId: string }) {
   const sale = useQuery({
     queryKey: ["receipt", clientId],
-    queryFn: () => api.sales.receipt(clientId),
+    queryFn: () => trpc.sales.receipt.query({ clientId }),
     retry: (n, e) => !notFound(e) && n < 2,
   });
 

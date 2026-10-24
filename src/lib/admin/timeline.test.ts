@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { TripDetail } from "@/lib/api/types";
+import type { TripDetail } from "@/lib/trpc/types";
 import { stamp, tripTimeline } from "./timeline";
 
 const at = (h: number) => `2026-09-26T0${h}:00:00.000Z`;

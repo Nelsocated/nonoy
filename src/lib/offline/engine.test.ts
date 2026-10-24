@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { ApiError, type SyncBatch, type SyncResults } from "@/lib/api";
+import { ApiError } from "@/lib/trpc/errors";
+import type { SyncBatch, SyncResults } from "@/lib/trpc/types";
 import { testDb } from "./test-db";
 import { createWriter } from "./writer";
 import { BACKOFF_MS, createSyncEngine, toBatch } from "./engine";

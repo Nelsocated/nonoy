@@ -4,8 +4,8 @@ import {
   ReferencePage,
   type RefInput,
 } from "@/components/admin/reference-page";
-import { api } from "@/lib/api/browser";
-import type { Plantation, PlantationInput } from "@/lib/api/types";
+import { trpc } from "@/lib/trpc/browser";
+import type { Plantation, PlantationInput } from "@/lib/trpc/types";
 
 // null clears an optional field (the DTO's IsOptional lets it through)
 const asInput = (i: RefInput) => i as unknown as PlantationInput;
@@ -24,11 +24,12 @@ export default function PlantationsPage() {
       subtitle={(p) => p.address}
       usesNoun="pickup"
       api={{
-        list: api.plantations.list,
-        create: (i) => api.plantations.create(asInput(i)),
-        update: (id, i) => api.plantations.update(id, asInput(i)),
-        remove: api.plantations.remove,
-        restore: api.plantations.restore,
+        list: (q) => trpc.plantations.list.query(q),
+        create: (i) => trpc.plantations.create.mutate(asInput(i)),
+        update: (id, i) =>
+          trpc.plantations.update.mutate({ id, ...asInput(i) }),
+        remove: (id) => trpc.plantations.remove.mutate({ id }),
+        restore: (id) => trpc.plantations.restore.mutate({ id }),
       }}
     />
   );

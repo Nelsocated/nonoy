@@ -1,4 +1,4 @@
-import type { Role, SessionUser } from "@/lib/api/types";
+import type { Role, SessionUser } from "@/lib/trpc/types";
 
 const HOME: Record<Role, string> = {
   OWNER: "/admin",

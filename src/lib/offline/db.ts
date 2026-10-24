@@ -5,7 +5,7 @@ import type {
   PaymentMethod,
   PaymentQr,
   Plantation,
-} from "@/lib/api/types";
+} from "@/lib/trpc/types";
 
 // Everything a worker records lives here first; the sync engine sends the outbox.
 export type OutboxKind =

@@ -1,4 +1,4 @@
-import type { RefreshedTokens, Role, SessionUser } from "@/lib/api/types";
+import type { RefreshedTokens, Role, SessionUser } from "@/lib/trpc/types";
 import { tokenRole } from "./tokens";
 
 export const COOKIE = {

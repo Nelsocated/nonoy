@@ -4,9 +4,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Check } from "lucide-react";
 import { useId, useRef, useState } from "react";
 import { useOnline } from "@/components/offline/use-sync-data";
-import { ApiError } from "@/lib/api";
-import { api } from "@/lib/api/browser";
-import type { ProblemKind } from "@/lib/api/types";
+import { ApiError } from "@/lib/trpc/errors";
+import { trpc } from "@/lib/trpc/browser";
+import type { ProblemKind } from "@/lib/trpc/types";
 import { showDialog } from "@/lib/ui/dialog";
 
 const button =
@@ -31,7 +31,8 @@ export function CheckProblem({
   const [error, setError] = useState<string | null>(null);
 
   const check = useMutation({
-    mutationFn: () => api.reports.check(kind, id, note.trim() || undefined),
+    mutationFn: () =>
+      trpc.reports.check.mutate({ kind, id, note: note.trim() || undefined }),
     onSuccess: () => {
       dialog.current?.close();
       void queryClient.invalidateQueries({ queryKey: ["problems"] });

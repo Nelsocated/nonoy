@@ -15,9 +15,9 @@ import { pagedList, pageOf } from "@/lib/admin/paging";
 import { groupByRole, userFormErrors } from "@/lib/admin/users";
 import { PasswordInput } from "@/components/password-input";
 import { Pager } from "./pager";
-import { ApiError } from "@/lib/api";
-import { api } from "@/lib/api/browser";
-import type { Role, User } from "@/lib/api/types";
+import { ApiError } from "@/lib/trpc/errors";
+import { trpc } from "@/lib/trpc/browser";
+import type { Role, User } from "@/lib/trpc/types";
 import { asOf } from "@/lib/offline/admin-cache";
 import { showDialog } from "@/lib/ui/dialog";
 import { cardCount, cardTitle, titleBar } from "@/lib/ui/styles";
@@ -58,7 +58,7 @@ export function UsersScreen({ meId, myRole }: { meId: string; myRole: Role }) {
   const ids = useId();
   const users = useQuery({
     queryKey: ["users"],
-    queryFn: () => api.users.list(),
+    queryFn: () => trpc.users.list.query(),
   });
 
   const [status, setStatus] = useState<string | null>(null);
@@ -74,7 +74,7 @@ export function UsersScreen({ meId, myRole }: { meId: string; myRole: Role }) {
   const act = useMutation({
     mutationFn: async (): Promise<string> => {
       if (mode === "add") {
-        await api.users.create({
+        await trpc.users.create.mutate({
           name: values.name.trim(),
           phone: values.phone.trim(),
           password: values.password,
@@ -90,14 +90,20 @@ export function UsersScreen({ meId, myRole }: { meId: string; myRole: Role }) {
         if (values.phone.trim() !== (target.phone ?? ""))
           change.phone = values.phone.trim();
         if (Object.keys(change).length)
-          await api.users.update(target.id, change);
+          await trpc.users.update.mutate({ id: target.id, ...change });
         return "Saved.";
       }
       if (mode === "password") {
-        await api.users.resetPassword(target.id, values.password);
+        await trpc.users.resetPassword.mutate({
+          id: target.id,
+          password: values.password,
+        });
         return "Password reset.";
       }
-      await api.users.setActive(target.id, !target.isActive);
+      await trpc.users.setActive.mutate({
+        id: target.id,
+        isActive: !target.isActive,
+      });
       return target.isActive ? "Deactivated." : "Activated.";
     },
     onSuccess: (text) => {

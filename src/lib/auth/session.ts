@@ -1,6 +1,6 @@
 // Server components, server actions and route handlers only (next/headers).
 import { cookies } from "next/headers";
-import type { SessionUser, Tokens } from "@/lib/api/types";
+import type { SessionUser, Tokens } from "@/lib/trpc/types";
 import {
   COOKIE,
   clearSessionCookies,

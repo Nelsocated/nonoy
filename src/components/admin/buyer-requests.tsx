@@ -4,9 +4,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CircleAlert, CircleCheck, TriangleAlert } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
 import { useOnline } from "@/components/offline/use-sync-data";
-import { ApiError } from "@/lib/api";
-import { api } from "@/lib/api/browser";
-import type { PendingBuyerRequest } from "@/lib/api/types";
+import { ApiError } from "@/lib/trpc/errors";
+import { trpc } from "@/lib/trpc/browser";
+import type { PendingBuyerRequest } from "@/lib/trpc/types";
 import {
   askedLine,
   clashNote,
@@ -42,12 +42,12 @@ export function BuyerRequestsCard() {
   const ids = useId();
   const requests = useQuery({
     queryKey: ["buyer-requests"],
-    queryFn: () => api.buyerRequests.pending(),
+    queryFn: () => trpc.buyerRequests.pending.query(),
   });
   // same query as the buyer list below, so no second fetch
   const buyers = useQuery({
     queryKey: ["buyers", "all"],
-    queryFn: () => api.buyers.list({ archived: true }),
+    queryFn: () => trpc.buyers.list.query({ archived: true }),
   });
   const active = (buyers.data ?? [])
     .filter((b) => !b.archivedAt)
@@ -98,12 +98,14 @@ export function BuyerRequestsCard() {
       into?: string;
     }) => {
       if (kind === "approve")
-        await api.buyerRequests.approve(r.id, {
+        await trpc.buyerRequests.approve.mutate({
+          id: r.id,
           name: name.trim(),
           location: place.trim() || null,
         });
-      else if (kind === "merge") await api.buyerRequests.merge(r.id, target);
-      else await api.buyerRequests.reject(r.id);
+      else if (kind === "merge")
+        await trpc.buyerRequests.merge.mutate({ id: r.id, buyerId: target });
+      else await trpc.buyerRequests.reject.mutate({ id: r.id });
     },
     onSuccess: (_, { kind, r, into = "" }) => {
       box.current?.close();

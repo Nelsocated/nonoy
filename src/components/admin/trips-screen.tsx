@@ -7,8 +7,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useId } from "react";
 import { MonthPicker } from "@/components/admin/month-picker";
 import { useOnline } from "@/components/offline/use-sync-data";
-import { api } from "@/lib/api/browser";
-import type { TripListItem } from "@/lib/api/types";
+import { trpc } from "@/lib/trpc/browser";
+import type { TripListItem } from "@/lib/trpc/types";
 import {
   clampMonth,
   deviceMonth,
@@ -111,7 +111,7 @@ export function TripsScreen() {
   // "today" from the server's report time zone, as on Reports
   const today = useQuery({
     queryKey: ["daily", "today"],
-    queryFn: () => api.reports.daily(),
+    queryFn: () => trpc.reports.daily.query(),
   });
   const todayDay =
     today.isFetching && online && !today.isFetchedAfterMount
@@ -145,7 +145,7 @@ export function TripsScreen() {
 
   const users = useQuery({
     queryKey: ["users"],
-    queryFn: () => api.users.list(),
+    queryFn: () => trpc.users.list.query(),
   });
   const people = [...(users.data ?? [])].sort((a, b) =>
     a.name.localeCompare(b.name),
@@ -155,7 +155,7 @@ export function TripsScreen() {
   const trips = useQuery({
     queryKey: ["trips", month, worker, page],
     queryFn: () =>
-      api.reports.trips({
+      trpc.reports.trips.query({
         month: month!,
         workerId: worker || undefined,
         page,

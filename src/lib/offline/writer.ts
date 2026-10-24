@@ -1,4 +1,4 @@
-import type { PaymentMethod } from "@/lib/api/types";
+import type { PaymentMethod } from "@/lib/trpc/types";
 import { type OfflineDb, type OutboxKind, mirrorTable } from "./db";
 import * as check from "./validate";
 import { saleAmount } from "@/lib/trip/money";

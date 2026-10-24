@@ -13,8 +13,8 @@ import {
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useOnline } from "@/components/offline/use-sync-data";
-import { api } from "@/lib/api/browser";
-import type { Problem } from "@/lib/api/types";
+import { trpc } from "@/lib/trpc/browser";
+import type { Problem } from "@/lib/trpc/types";
 import { PAGE_SIZE, pagedList, pageOf } from "@/lib/admin/paging";
 import { problemSentence } from "@/lib/admin/problems";
 import { syncAge } from "@/lib/admin/sync-age";
@@ -71,17 +71,17 @@ export function Dashboard({ name }: { name: string }) {
   const daily = useQuery({
     // no dates: the server's last 7 days end on today in its REPORT_TIMEZONE
     queryKey: ["daily", "today"],
-    queryFn: () => api.reports.daily(),
+    queryFn: () => trpc.reports.daily.query(),
     refetchInterval: REFRESH,
   });
   const trips = useQuery({
     queryKey: ["open-trips"],
-    queryFn: () => api.reports.openTrips(),
+    queryFn: () => trpc.reports.openTrips.query(),
     refetchInterval: REFRESH,
   });
   const problems = useQuery({
     queryKey: ["problems", problemPage],
-    queryFn: () => api.reports.problems(problemPage),
+    queryFn: () => trpc.reports.problems.query({ page: problemPage }),
     refetchInterval: REFRESH,
   });
 

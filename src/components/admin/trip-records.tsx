@@ -8,7 +8,7 @@ import {
   Wallet,
 } from "lucide-react";
 import Link from "next/link";
-import type { TripDetail } from "@/lib/api/types";
+import type { TripDetail } from "@/lib/trpc/types";
 import { saleBuyerLabel } from "@/lib/admin/buyer-label";
 import { problemSentence } from "@/lib/admin/problems";
 import { stamp, type TimelineEntry } from "@/lib/admin/timeline";

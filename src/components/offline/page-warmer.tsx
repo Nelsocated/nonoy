@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import type { Role } from "@/lib/api/types";
+import type { Role } from "@/lib/trpc/types";
 import { warmPages } from "@/lib/offline/sw-caches";
 
 // With signal, keep a copy of every screen this user can open, so after

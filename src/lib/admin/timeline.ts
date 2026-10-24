@@ -5,7 +5,7 @@ import type {
   Sale,
   SaleProblem,
   TripDetail,
-} from "@/lib/api/types";
+} from "@/lib/trpc/types";
 import { fromCenti, toCenti } from "@/lib/trip/money";
 
 type Entry<T extends string, R> = {

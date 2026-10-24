@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { DailyReport } from "@/lib/api/types";
+import type { DailyReport } from "@/lib/trpc/types";
 import {
   clampMonth,
   daysUpTo,

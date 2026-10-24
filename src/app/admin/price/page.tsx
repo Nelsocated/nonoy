@@ -5,8 +5,8 @@ import { CloudOff, Tag } from "lucide-react";
 import { useRef, useState } from "react";
 import { Pager } from "@/components/admin/pager";
 import { useOnline } from "@/components/offline/use-sync-data";
-import { ApiError } from "@/lib/api";
-import { api } from "@/lib/api/browser";
+import { ApiError } from "@/lib/trpc/errors";
+import { trpc } from "@/lib/trpc/browser";
 import { pagedList, pageOf } from "@/lib/admin/paging";
 import { asOf } from "@/lib/offline/admin-cache";
 import { typedAmount } from "@/lib/trip/input";
@@ -36,11 +36,11 @@ export default function PricePage() {
   const online = useOnline();
   const current = useQuery({
     queryKey: ["prices", "current"],
-    queryFn: () => api.prices.current(),
+    queryFn: () => trpc.prices.current.query(),
   });
   const history = useQuery({
     queryKey: ["prices", "history"],
-    queryFn: () => api.prices.history(),
+    queryFn: () => trpc.prices.history.query(),
   });
 
   const [value, setValue] = useState("");
@@ -49,7 +49,8 @@ export default function PricePage() {
   const confirm = useRef<HTMLDialogElement>(null);
 
   const setPrice = useMutation({
-    mutationFn: (pricePerKilo: string) => api.prices.set(pricePerKilo),
+    mutationFn: (pricePerKilo: string) =>
+      trpc.prices.set.mutate({ pricePerKilo }),
     onSuccess: () => {
       setValue("");
       void queryClient.invalidateQueries({ queryKey: ["prices"] });

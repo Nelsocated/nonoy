@@ -4,8 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { ApiError } from "@/lib/api";
-import { api } from "@/lib/api/browser";
+import { ApiError } from "@/lib/trpc/errors";
+import { trpc } from "@/lib/trpc/browser";
 import { pagedList, pageOf } from "@/lib/admin/paging";
 import { tripTimeline } from "@/lib/admin/timeline";
 import { peso } from "@/lib/trip/money";
@@ -53,7 +53,7 @@ export function TripDetailScreen({
 }) {
   const trip = useQuery({
     queryKey: ["trip", id],
-    queryFn: () => api.reports.trip(id),
+    queryFn: () => trpc.reports.trip.query({ id }),
     retry: (n, e) => !(e instanceof ApiError && e.status === 404) && n < 2,
   });
   const [page, setPage] = useState(1);

@@ -12,9 +12,9 @@ import {
 import { useEffect, useId, useRef, useState } from "react";
 import { useOnline } from "@/components/offline/use-sync-data";
 import { QrImage } from "@/components/qr/qr-image";
-import { ApiError } from "@/lib/api";
-import { api } from "@/lib/api/browser";
-import type { PaymentQr } from "@/lib/api/types";
+import { ApiError } from "@/lib/trpc/errors";
+import { trpc } from "@/lib/trpc/browser";
+import type { PaymentQr } from "@/lib/trpc/types";
 import { asOf } from "@/lib/offline/admin-cache";
 import {
   MAX_QR_CODES,
@@ -52,7 +52,7 @@ export function QrCodesScreen() {
   const ids = useId();
   const list = useQuery({
     queryKey: ["paymentQrs"],
-    queryFn: () => api.paymentQrs.list(),
+    queryFn: () => trpc.paymentQrs.list.query(),
   });
 
   const [status, setStatus] = useState<{ text: string; ok: boolean } | null>(
@@ -96,8 +96,8 @@ export function QrCodesScreen() {
   const save = useMutation({
     mutationFn: (body: { label: string; payload: string }) =>
       current
-        ? api.paymentQrs.update(current.id, body)
-        : api.paymentQrs.create(body),
+        ? trpc.paymentQrs.update.mutate({ id: current.id, ...body })
+        : trpc.paymentQrs.create.mutate(body),
     onSuccess: () => {
       form.current?.close();
       done("Saved.");
@@ -108,7 +108,7 @@ export function QrCodesScreen() {
     },
   });
   const remove = useMutation({
-    mutationFn: (id: string) => api.paymentQrs.remove(id),
+    mutationFn: (id: string) => trpc.paymentQrs.remove.mutate({ id }),
     onSuccess: () => {
       confirm.current?.close();
       form.current?.close();

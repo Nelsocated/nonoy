@@ -1,6 +1,6 @@
 import { InfoMenu } from "@/components/info/info-menu";
 import { Logo } from "@/components/logo";
-import type { SessionUser } from "@/lib/api/types";
+import type { SessionUser } from "@/lib/trpc/types";
 import { AdminMobileBar } from "./admin-mobile-bar";
 import { AdminNav } from "./admin-nav";
 import { UserMenu } from "./user-menu";

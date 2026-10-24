@@ -5,8 +5,8 @@ import {
   type RefInput,
 } from "@/components/admin/reference-page";
 import { BuyerRequestsCard } from "@/components/admin/buyer-requests";
-import { api } from "@/lib/api/browser";
-import type { Buyer, BuyerInput } from "@/lib/api/types";
+import { trpc } from "@/lib/trpc/browser";
+import type { Buyer, BuyerInput } from "@/lib/trpc/types";
 
 // null clears an optional field (the DTO's IsOptional lets it through)
 const asInput = (i: RefInput) => i as unknown as BuyerInput;
@@ -27,11 +27,11 @@ export default function BuyersPage() {
       usesNoun="sale"
       top={<BuyerRequestsCard />}
       api={{
-        list: api.buyers.list,
-        create: (i) => api.buyers.create(asInput(i)),
-        update: (id, i) => api.buyers.update(id, asInput(i)),
-        remove: api.buyers.remove,
-        restore: api.buyers.restore,
+        list: (q) => trpc.buyers.list.query(q),
+        create: (i) => trpc.buyers.create.mutate(asInput(i)),
+        update: (id, i) => trpc.buyers.update.mutate({ id, ...asInput(i) }),
+        remove: (id) => trpc.buyers.remove.mutate({ id }),
+        restore: (id) => trpc.buyers.restore.mutate({ id }),
       }}
     />
   );

@@ -1,4 +1,4 @@
-import type { PendingBuyerRequest } from "@/lib/api/types";
+import type { PendingBuyerRequest } from "@/lib/trpc/types";
 import { sameName } from "@/lib/trip/buyer-name";
 
 // "Asked by Juan · Sep 26" (the business's day, Manila)

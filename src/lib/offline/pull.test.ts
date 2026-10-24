@@ -1,9 +1,28 @@
 import { describe, expect, it } from "vitest";
-import type { Api } from "@/lib/api";
 import { testDb } from "./test-db"; // first: sets up fake IndexedDB
 import { getPaymentQrs } from "./db";
 import { createWriter } from "./writer";
-import { pullInto } from "./pull";
+import { pullInto as pullIntoClient } from "./pull";
+
+// the fakes below keep the plain-function shape; this adapts them to the
+// tRPC client's `.query()` calls, reading each fake at call time
+type Fake = FakeApi;
+const asClient = (api: Fake) =>
+  ({
+    buyers: { list: { query: (i?: object) => api.buyers.list(i) } },
+    plantations: { list: { query: () => api.plantations.list() } },
+    trips: { mine: { query: () => api.trips.mine() } },
+    expenses: { mine: { query: () => api.expenses.mine() } },
+    prices: { current: { query: () => api.prices.current() } },
+    paymentQrs: { list: { query: () => api.paymentQrs.list() } },
+    buyerRequests: { mine: { query: () => api.buyerRequests.mine() } },
+    reports: { trip: { query: (i: { id: string }) => api.reports.trip(i.id) } },
+  }) as unknown as Parameters<typeof pullIntoClient>[2];
+const pullInto = (
+  db: Parameters<typeof pullIntoClient>[0],
+  userId: string,
+  api: Fake,
+) => pullIntoClient(db, userId, asClient(api));
 
 const trip = (id: string, startedAt: string) => ({
   id,
@@ -59,18 +78,21 @@ function fakeApi(over: Partial<Record<string, unknown>> = {}) {
         sales: (over.sales as unknown[]) ?? [],
       }),
     },
-  } as unknown as Pick<
-    Api,
-    | "buyers"
-    | "plantations"
-    | "trips"
-    | "expenses"
-    | "reports"
-    | "prices"
-    | "paymentQrs"
-    | "buyerRequests"
-  >;
+  } as unknown as FakeApi;
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Rows = Promise<any>;
+type FakeApi = {
+  buyers: { list(i?: object): Rows };
+  plantations: { list(): Rows };
+  trips: { mine(): Rows };
+  expenses: { mine(): Rows };
+  prices: { current(): Rows };
+  paymentQrs: { list(): Rows };
+  buyerRequests: { mine(): Rows };
+  reports: { trip(id: string): Rows };
+};
 
 describe("pullInto", () => {
   it("stores buyers, plantations and my trips as synced", async () => {

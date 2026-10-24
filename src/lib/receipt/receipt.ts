@@ -1,4 +1,4 @@
-import type { PaymentMethod, SaleReceipt } from "@/lib/api/types";
+import type { PaymentMethod, SaleReceipt } from "@/lib/trpc/types";
 import type { LocalSale } from "@/lib/offline/db";
 import { twoDp } from "@/lib/trip/money";
 import { saleBuyerName, type BuyerNames } from "@/lib/trip/buyer-name";

@@ -1,4 +1,4 @@
-import type { Api } from "@/lib/api";
+import type { ApiClient } from "@/lib/trpc/types";
 import type { OfflineDb } from "./db";
 
 const RECENT_TRIPS = 5;
@@ -9,7 +9,7 @@ export async function pullInto(
   db: OfflineDb,
   userId: string,
   api: Pick<
-    Api,
+    ApiClient,
     | "buyers"
     | "plantations"
     | "trips"
@@ -23,19 +23,21 @@ export async function pullInto(
   const [buyers, plantations, trips, expenses, price, qrs, requests] =
     await Promise.all([
       // archived too: old sales keep their buyer names; the sale form hides them
-      api.buyers.list({ archived: true }),
-      api.plantations.list(),
-      api.trips.mine(),
-      api.expenses.mine(),
+      api.buyers.list.query({ archived: true }),
+      api.plantations.list.query(),
+      api.trips.mine.query(),
+      api.expenses.mine.query(),
       // optional extra: a failed price fetch keeps the saved price, not the old data
-      api.prices.current().catch(() => null),
+      api.prices.current.query().catch(() => null),
       // optional extra like the price: a failed fetch keeps the saved codes
-      api.paymentQrs.list().catch(() => null),
+      api.paymentQrs.list.query().catch(() => null),
       // optional extra: a failed fetch keeps the saved new-buyer requests
-      api.buyerRequests.mine().catch(() => null),
+      api.buyerRequests.mine.query().catch(() => null),
     ]);
   const details = await Promise.all(
-    trips.slice(0, RECENT_TRIPS).map((t) => api.reports.trip(t.id)),
+    trips
+      .slice(0, RECENT_TRIPS)
+      .map((t) => api.reports.trip.query({ id: t.id })),
   );
 
   const pending = new Set(

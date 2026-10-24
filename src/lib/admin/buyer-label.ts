@@ -1,4 +1,4 @@
-import type { BuyerRequestStatus } from "@/lib/api/types";
+import type { BuyerRequestStatus } from "@/lib/trpc/types";
 import { waitingLabel } from "@/lib/trip/buyer-name";
 
 // Buyer shown for a sale on admin screens; same rule as the server's receipts

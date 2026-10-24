@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { User } from "@/lib/api/types";
+import type { User } from "@/lib/trpc/types";
 import { groupByRole, userFormErrors } from "./users";
 
 const u = (name: string, role: User["role"]): User => ({
