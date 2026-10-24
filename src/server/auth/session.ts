@@ -79,9 +79,23 @@ export function createSession({ auth, users }: Deps) {
     return user?.isActive ? { id: user.id, role: user.role } : null;
   }
 
+  // The user lookup can fail (database blip): answer "unavailable" rather
+  // than crash, and still hand back tokens a refresh has already rotated.
+  async function lookup(sub: string, tokens?: RefreshedTokens) {
+    try {
+      return { user: await currentUser(sub), ...(tokens && { tokens }) };
+    } catch {
+      return {
+        user: null,
+        unavailable: true as const,
+        ...(tokens && { tokens }),
+      };
+    }
+  }
+
   async function resolve(jar: Jar): Promise<Resolved> {
     const payload = verifyAccess(jar.get(COOKIE.access)?.value);
-    if (payload) return { user: await currentUser(payload.sub) };
+    if (payload) return lookup(payload.sub);
 
     const refreshToken = jar.get(COOKIE.refresh)?.value;
     if (!refreshToken) return { user: null };
@@ -90,10 +104,8 @@ export function createSession({ auth, users }: Deps) {
     if (r.status === "invalid") return { user: null, invalid: true };
     if (r.status === "unavailable") return { user: null, unavailable: true };
     const fresh = verifyAccess(r.tokens.accessToken);
-    return {
-      user: fresh ? await currentUser(fresh.sub) : null,
-      tokens: r.tokens,
-    };
+    if (!fresh) return { user: null, tokens: r.tokens };
+    return lookup(fresh.sub, r.tokens);
   }
 
   return { refresh, resolve };

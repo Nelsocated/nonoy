@@ -89,6 +89,22 @@ describe("createSession", () => {
     expect(r.invalid).toBeUndefined();
   });
 
+  // the database already holds the new refresh token: the browser must get it
+  // even if the user lookup right after fails, or it's signed out 10 s later
+  it("still returns rotated tokens when the user lookup then fails", async () => {
+    const fresh = { accessToken: access("u1", 600), refreshToken: "r2" };
+    auth.refresh.mockResolvedValue(fresh);
+    users.findById.mockRejectedValue(new Error("connection reset"));
+    const r = await session.resolve(jar({ nonoy_refresh: "r1" }));
+    expect(r).toMatchObject({ user: null, unavailable: true, tokens: fresh });
+  });
+
+  it("answers unavailable, not a crash, when the lookup fails on a valid access token", async () => {
+    users.findById.mockRejectedValue(new Error("connection reset"));
+    const r = await session.resolve(jar({ nonoy_access: access("u1", 600) }));
+    expect(r).toEqual({ user: null, unavailable: true });
+  });
+
   it("is signed out with no cookies at all", async () => {
     expect(await session.resolve(jar({}))).toEqual({ user: null });
   });
