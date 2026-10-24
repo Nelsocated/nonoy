@@ -36,6 +36,21 @@ describe("createApiClient", () => {
     expect(onUnauthorized).toHaveBeenCalledOnce();
   });
 
+  // Vercel's own error pages (timeouts, payload too large) aren't tRPC JSON
+  it("turns a non-JSON error page into ApiError(status)", async () => {
+    const client = createApiClient<never>({
+      url: "http://test/api/trpc",
+      fetch: async () =>
+        new Response("<html>An error occurred</html>", {
+          status: 504,
+          headers: { "Content-Type": "text/html" },
+        }),
+    }) as unknown as { x: { query(): Promise<unknown> } };
+    const e = await client.x.query().catch((err: unknown) => err);
+    expect(e).toBeInstanceOf(ApiError);
+    expect(e).toMatchObject({ status: 504, message: "Request failed (504)" });
+  });
+
   it("leaves network failures alone so sync treats them as offline", async () => {
     const client = createApiClient<never>({
       url: "http://test/api/trpc",

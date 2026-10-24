@@ -24,9 +24,12 @@ type Options = {
 function toApiError(e: unknown, onUnauthorized?: () => void): unknown {
   if (!(e instanceof TRPCClientError)) return e;
   const status = (e.data as { httpStatus?: unknown } | undefined)?.httpStatus;
-  if (typeof status !== "number") return e.cause ?? e;
-  if (status === 401) onUnauthorized?.();
-  return new ApiError(status, e.message);
+  if (typeof status === "number") {
+    if (status === 401) onUnauthorized?.();
+    return new ApiError(status, e.message);
+  }
+  if (e.cause instanceof ApiError && e.cause.status === 401) onUnauthorized?.();
+  return e.cause ?? e;
 }
 
 function wrap(target: unknown, onUnauthorized?: () => void): unknown {
@@ -45,6 +48,17 @@ function wrap(target: unknown, onUnauthorized?: () => void): unknown {
   });
 }
 
+// An answer that isn't tRPC JSON (a Vercel error page: timeout, payload too
+// large) still becomes ApiError(status), as the old fetch wrapper did.
+const keepStatus =
+  (fetchImpl: typeof fetch = fetch): typeof fetch =>
+  async (input, init) => {
+    const res = await fetchImpl(input, init);
+    if (!res.ok && !res.headers.get("content-type")?.includes("json"))
+      throw new ApiError(res.status, `Request failed (${res.status})`);
+    return res;
+  };
+
 export function createApiClient<R extends AnyRouter>({
   url,
   fetch: fetchImpl,
@@ -56,7 +70,7 @@ export function createApiClient<R extends AnyRouter>({
     links: [
       httpLink({
         url,
-        fetch: fetchImpl,
+        fetch: keepStatus(fetchImpl),
         headers: () =>
           offlineUser ? { [OFFLINE_USER_HEADER]: offlineUser } : {},
       }),
