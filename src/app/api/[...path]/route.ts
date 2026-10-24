@@ -15,7 +15,8 @@ import {
   userAfterRefresh,
   writeSessionCookies,
 } from "@/lib/auth/cookies";
-import { refreshTokens, type RefreshResult } from "@/lib/auth/refresh";
+import { session } from "@/server/auth";
+import type { RefreshResult } from "@/server/auth/session";
 
 type Ctx = { params: Promise<{ path: string[] }> };
 
@@ -83,7 +84,7 @@ async function forward(request: NextRequest, { params }: Ctx) {
   try {
     res = await send(jar.get(COOKIE.access)?.value);
     if (res.status === 401) {
-      refreshed = await refreshTokens(API_URL, refresh, forwarding);
+      refreshed = await session.refresh(refresh);
       if (refreshed.status === "ok")
         res = await send(refreshed.tokens.accessToken);
     }

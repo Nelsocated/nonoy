@@ -19,6 +19,7 @@ export function testClient<R extends AnyRouter>(
           user: null,
           ip: "1.2.3.4",
           offlineUser: null,
+          sessionUnavailable: false,
           services: {},
           ...ctx,
         }) as Ctx,

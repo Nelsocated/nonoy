@@ -55,6 +55,16 @@ describe("procedures", () => {
     expect(e).toMatchObject({ status: 401, message: "Not signed in" });
   });
 
+  it("answers 503, not 401, when the session couldn't be checked", async () => {
+    const e = await failure(
+      testClient(app, { sessionUnavailable: true }).mine.query(),
+    );
+    expect(e).toMatchObject({
+      status: 503,
+      message: "Can't reach the server right now.",
+    });
+  });
+
   it("forbids a worker from admin procedures", async () => {
     const e = await failure(testClient(app, { user: worker }).admin.query());
     expect(e).toMatchObject({ status: 403 });

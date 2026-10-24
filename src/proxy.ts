@@ -1,6 +1,4 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { API_URL, INTERNAL_PROXY_SECRET } from "@/lib/env";
-import { backendHeaders } from "@/lib/api/forward";
 import {
   COOKIE,
   clearSessionCookies,
@@ -8,7 +6,7 @@ import {
   userAfterRefresh,
   writeSessionCookies,
 } from "@/lib/auth/cookies";
-import { refreshTokens } from "@/lib/auth/refresh";
+import { session } from "@/server/auth";
 import { canAccess, guard, homeFor } from "@/lib/auth/roles";
 import { isExpiring } from "@/lib/auth/tokens";
 
@@ -40,12 +38,8 @@ export async function proxy(request: NextRequest) {
   )
     return NextResponse.next();
 
-  const result = await refreshTokens(
-    API_URL,
-    refresh,
-    backendHeaders(request.headers, INTERNAL_PROXY_SECRET),
-  );
-  // backend down or throttling: keep the session and let the page show its own error
+  const result = await session.refresh(refresh);
+  // database down: keep the session and let the page show its own error
   if (result.status === "unavailable") return NextResponse.next();
   if (result.status === "invalid") {
     const res = NextResponse.redirect(new URL("/login?expired=1", request.url));

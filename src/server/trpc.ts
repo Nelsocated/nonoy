@@ -12,6 +12,8 @@ export type Ctx = {
   ip: string;
   /** whose offline queue this request carries, if any */
   offlineUser: string | null;
+  /** the database failed while checking the session: don't log them out */
+  sessionUnavailable: boolean;
   services: Services;
 };
 
@@ -47,6 +49,11 @@ const base = t.procedure.use(async ({ ctx, next }) => {
 export const publicProcedure = base;
 
 export const authedProcedure = base.use(({ ctx, next }) => {
+  if (!ctx.user && ctx.sessionUnavailable)
+    throw new TRPCError({
+      code: "SERVICE_UNAVAILABLE",
+      message: "Can't reach the server right now.",
+    });
   if (!ctx.user)
     throw new TRPCError({ code: "UNAUTHORIZED", message: "Not signed in" });
   return next({ ctx: { ...ctx, user: ctx.user } });

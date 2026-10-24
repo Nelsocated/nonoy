@@ -1,11 +1,10 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { ApiError, type LoginResponse } from "@/lib/api";
-import { forwardingHeaders, publicApi } from "@/lib/api/server";
-import { API_URL } from "@/lib/env";
+import { cookies } from "next/headers";
 import { homeFor } from "@/lib/auth/roles";
-import { clearSession, getSession, setSession } from "@/lib/auth/session";
+import { clearSession, setSession } from "@/lib/auth/session";
+import { authService, session } from "@/server/auth";
 
 export type LoginState = { error?: string } | undefined;
 
@@ -18,15 +17,12 @@ export async function login(
   if (!phone || !password)
     return { error: "Enter your phone number and password." };
 
-  let res: LoginResponse;
+  let res: Awaited<ReturnType<typeof authService.login>>;
   try {
-    res = await publicApi.auth.login({ phone, password });
-  } catch (e) {
-    if (e instanceof ApiError && e.status === 401)
-      return { error: "Wrong phone number or password." };
-    if (e instanceof ApiError && e.status === 429)
-      return { error: "Too many attempts. Wait a minute and try again." };
-    if (e instanceof ApiError && e.status === 400) return { error: e.message };
+    const user = await authService.validateUser({ phone, password });
+    if (!user) return { error: "Wrong phone number or password." };
+    res = await authService.login(user);
+  } catch {
     return {
       error: "Can't reach the server. Check your connection and try again.",
     };
@@ -37,18 +33,11 @@ export async function login(
 }
 
 export async function logout() {
-  const session = await getSession();
   // revoke the refresh token server-side; sign out locally even if this fails
-  if (session?.accessToken) {
-    await fetch(`${API_URL}/auth/logout`, {
-      method: "POST",
-      headers: {
-        ...(await forwardingHeaders()),
-        Authorization: `Bearer ${session.accessToken}`,
-      },
-      cache: "no-store",
-    }).catch(() => {});
-  }
+  try {
+    const { user } = await session.resolve(await cookies());
+    if (user) await authService.logout(user.id);
+  } catch {}
   await clearSession();
   redirect("/login");
 }
