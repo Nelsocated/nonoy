@@ -1,0 +1,137 @@
+import Dexie, { type EntityTable } from "dexie";
+import type {
+  Buyer,
+  BuyerRequestStatus,
+  PaymentMethod,
+  PaymentQr,
+  Plantation,
+} from "@/lib/trpc/types";
+
+// Everything a worker records lives here first; the sync engine sends the outbox.
+export type OutboxKind =
+  | "trip"
+  | "tripEnding"
+  | "pickup"
+  | "buyerRequest"
+  | "sale"
+  | "recount"
+  | "expense";
+export type MirrorState = "pending" | "synced" | "error" | "conflict";
+
+export type OutboxItem = {
+  id?: number;
+  userId: string;
+  kind: OutboxKind;
+  clientId: string; // tripEnding uses the trip's id (that's what /sync reports back)
+  payload: Record<string, unknown>; // exactly the /sync item
+  status: "pending" | "error";
+  error?: string;
+  attempts: number;
+  createdAt: string;
+};
+
+type Mirror = {
+  clientId: string;
+  userId: string;
+  state: MirrorState;
+  error?: string;
+  createdAtClient: string;
+};
+export type LocalTrip = Mirror & { startedAt: string; endedAt: string | null };
+export type LocalPickup = Mirror & {
+  tripId: string;
+  plantationId: string;
+  chickenCount: number;
+  totalKilo: string;
+};
+export type LocalSale = Mirror & {
+  tripId: string;
+  buyerId?: string | null;
+  buyerRequestId?: string | null;
+  chickenCount: number;
+  totalKilo: string;
+  amount: string;
+  paymentMethod: PaymentMethod;
+  pricePerKilo?: string | null;
+  listPricePerKilo?: string | null;
+};
+export type LocalRecount = Mirror & {
+  tripId: string;
+  countedChicken: number;
+  countedKilo: string;
+};
+export type LocalExpense = Mirror & {
+  tripId?: string | null;
+  description: string;
+  amount: string;
+};
+
+// a new buyer this worker typed on a sale; clientId is the request's id
+export type LocalBuyerRequest = Mirror & {
+  name: string;
+  location: string | null;
+  status: BuyerRequestStatus;
+  buyerId: string | null;
+};
+
+export type LocalPaymentQr = PaymentQr & { position: number }; // server order
+
+export class OfflineDb extends Dexie {
+  outbox!: EntityTable<OutboxItem, "id">;
+  trips!: EntityTable<LocalTrip, "clientId">;
+  pickups!: EntityTable<LocalPickup, "clientId">;
+  sales!: EntityTable<LocalSale, "clientId">;
+  recounts!: EntityTable<LocalRecount, "clientId">;
+  expenses!: EntityTable<LocalExpense, "clientId">;
+  buyers!: EntityTable<Buyer, "id">;
+  plantations!: EntityTable<Plantation, "id">;
+  paymentQrs!: EntityTable<LocalPaymentQr, "id">;
+  buyerRequests!: EntityTable<LocalBuyerRequest, "clientId">;
+  meta!: EntityTable<{ key: string; value: unknown }, "key">;
+
+  constructor(name = "mangfrito") {
+    super(name);
+    this.version(1).stores({
+      outbox: "++id, userId, [userId+kind+clientId]",
+      trips: "clientId, userId, startedAt",
+      pickups: "clientId, userId, tripId",
+      sales: "clientId, userId, tripId, state",
+      recounts: "clientId, userId, tripId",
+      expenses: "clientId, userId, tripId",
+      buyers: "id",
+      plantations: "id",
+      meta: "key",
+    });
+    // v2: the owner's payment QR codes (tables not listed keep their schema)
+    this.version(2).stores({ paymentQrs: "id" });
+    // v3: new buyers typed on sales, waiting for the owner
+    this.version(3).stores({ buyerRequests: "clientId, userId" });
+  }
+}
+
+let db: OfflineDb | null = null;
+export const getDb = () => (db ??= new OfflineDb());
+
+// the owner's QR codes, in the order the owner added them
+export async function getPaymentQrs(d: OfflineDb) {
+  return (await d.paymentQrs.toArray()).sort((a, b) => a.position - b.position);
+}
+
+// which mirror table an outbox kind updates
+export function mirrorTable(d: OfflineDb, kind: OutboxKind) {
+  switch (kind) {
+    case "trip":
+    case "tripEnding":
+      return d.trips;
+    case "pickup":
+      return d.pickups;
+    case "buyerRequest":
+      return d.buyerRequests;
+    case "sale":
+      return d.sales;
+    case "recount":
+      return d.recounts;
+    case "expense":
+      return d.expenses;
+  }
+}

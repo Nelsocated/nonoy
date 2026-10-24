@@ -1,0 +1,289 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/server/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  OWNER
+  WORKER
+  ADMIN
+}
+
+enum PaymentMethod {
+  CASH
+  QR
+}
+
+enum SyncStatus {
+  SYNCED
+  CONFLICT
+}
+
+enum ActionType {
+  PICKUP_STARTED
+  SALE_RECORDED
+  RECOUNT_PERFORMED
+  TRIP_ENDED
+  EXPENSE_RECORDED
+}
+
+model User {
+  id                       String    @id @default(uuid())
+  name                     String
+  phone                    String?   @unique
+  passwordHash             String
+  role                     Role
+  isActive                 Boolean   @default(true)
+  createdAt                DateTime  @default(now())
+  refreshTokenHash         String?
+  // the token just rotated out, still accepted for a few seconds so two
+  // requests refreshing at once don't log the user out (see AuthService.refresh)
+  previousRefreshTokenHash String?
+  refreshRotatedAt         DateTime?
+
+  trips           Trip[]
+  activityLogs    ActivityLog[]
+  expenses        Expense[]
+  prices          Price[]
+  checkedRecounts Recount[]     @relation("RecountChecks")
+  checkedSales    Sale[]        @relation("SaleChecks")
+
+  buyerRequestsMade    BuyerRequest[] @relation("BuyerRequestsMade")
+  buyerRequestsDecided BuyerRequest[] @relation("BuyerRequestsDecided")
+
+  @@map("users")
+}
+
+model Plantation {
+  id        String   @id @default(uuid())
+  name      String
+  address   String?
+  createdAt DateTime @default(now())
+
+  // set instead of deleting when it has pickups; hidden from phones
+  archivedAt DateTime?
+
+  pickups Pickup[]
+
+  @@map("plantations")
+}
+
+model Buyer {
+  id        String   @id @default(uuid())
+  name      String
+  location  String?
+  notes     String?
+  createdAt DateTime @default(now())
+
+  // set instead of deleting when it has sales; hidden from phones
+  archivedAt DateTime?
+
+  sales    Sale[]
+  requests BuyerRequest[]
+
+  @@map("buyers")
+}
+
+enum BuyerRequestStatus {
+  PENDING
+  APPROVED
+  MERGED
+  REJECTED
+}
+
+// A buyer a worker typed on a sale (not in the list yet). Owner/admin approve
+// it (new buyer), merge it into an existing one, or reject it; its sales
+// follow. Kept after the decision as the record of what happened.
+model BuyerRequest {
+  id              String             @id // made on the phone, the sync dedupe key
+  name            String
+  location        String?
+  requestedById   String
+  requestedBy     User               @relation("BuyerRequestsMade", fields: [requestedById], references: [id])
+  createdAtClient DateTime
+  syncedAt        DateTime           @default(now())
+  status          BuyerRequestStatus @default(PENDING)
+  // APPROVED: the buyer it became; MERGED: the one it was the same as
+  buyerId         String?
+  buyer           Buyer?             @relation(fields: [buyerId], references: [id], onDelete: SetNull)
+  decidedById     String?
+  decidedBy       User?              @relation("BuyerRequestsDecided", fields: [decidedById], references: [id], onDelete: SetNull)
+  decidedAt       DateTime?
+
+  sales Sale[]
+
+  @@index([status])
+  @@index([requestedById])
+  @@map("buyer_requests")
+}
+
+// One work session for a worker: pickup -> route of sales -> recount
+model Trip {
+  id              String    @id @default(uuid())
+  clientId        String    @unique // offline-generated UUID, dedupe key
+  workerId        String
+  worker          User      @relation(fields: [workerId], references: [id])
+  startedAt       DateTime
+  endedAt         DateTime?
+  createdAtClient DateTime
+  syncedAt        DateTime  @default(now())
+
+  pickups      Pickup[]
+  sales        Sale[]
+  recounts     Recount[]
+  expenses     Expense[]
+  activityLogs ActivityLog[]
+
+  @@map("trips")
+}
+
+// Chicken picked up from plantation at trip start (can be multiple pickups per trip)
+model Pickup {
+  id              String     @id @default(uuid())
+  clientId        String     @unique
+  tripId          String
+  trip            Trip       @relation(fields: [tripId], references: [id])
+  plantationId    String
+  plantation      Plantation @relation(fields: [plantationId], references: [id])
+  chickenCount    Int
+  totalKilo       Decimal    @db.Decimal(10, 2)
+  createdAtClient DateTime
+  syncedAt        DateTime   @default(now())
+
+  @@map("pickups")
+}
+
+// The core ledger event — every sale decrements stock
+model Sale {
+  id               String        @id @default(uuid())
+  clientId         String        @unique
+  tripId           String
+  trip             Trip          @relation(fields: [tripId], references: [id])
+  buyerId          String?
+  buyer            Buyer?        @relation(fields: [buyerId], references: [id])
+  // a buyer the worker typed, waiting for the owner; buyerId is set once
+  // it's approved or merged (kept for history)
+  buyerRequestId   String?
+  buyerRequest     BuyerRequest? @relation(fields: [buyerRequestId], references: [id], onDelete: SetNull)
+  chickenCount     Int
+  totalKilo        Decimal       @db.Decimal(10, 2)
+  amount           Decimal       @db.Decimal(10, 2)
+  paymentMethod    PaymentMethod @default(CASH)
+  // price per kilo charged, and the owner's price the phone had at the time;
+  // different = the worker edited the price (shown to the owner). Null on
+  // sales from app versions before prices existed.
+  pricePerKilo     Decimal?      @db.Decimal(10, 2)
+  listPricePerKilo Decimal?      @db.Decimal(10, 2)
+  createdAtClient  DateTime
+  syncedAt         DateTime      @default(now())
+  syncStatus       SyncStatus    @default(SYNCED)
+  conflictReason   String?
+
+  // owner/admin reviewed this problem on the dashboard ("Checked")
+  checkedAt   DateTime?
+  checkedById String?
+  checkedBy   User?     @relation("SaleChecks", fields: [checkedById], references: [id], onDelete: SetNull)
+  checkNote   String?
+
+  @@index([buyerRequestId])
+  @@map("sales")
+}
+
+// End-of-route or end-of-day recount — reconciliation checkpoint, not a stock mutation itself
+model Recount {
+  id                 String   @id @default(uuid())
+  clientId           String   @unique
+  tripId             String
+  trip               Trip     @relation(fields: [tripId], references: [id])
+  countedChicken     Int
+  countedKilo        Decimal  @db.Decimal(10, 2)
+  expectedChicken    Int // computed at sync time: pickups - sales
+  expectedKilo       Decimal  @db.Decimal(10, 2)
+  discrepancyFlagged Boolean  @default(false)
+  createdAtClient    DateTime
+  syncedAt           DateTime @default(now())
+
+  // owner/admin reviewed this problem on the dashboard ("Checked")
+  checkedAt   DateTime?
+  checkedById String?
+  checkedBy   User?     @relation("RecountChecks", fields: [checkedById], references: [id], onDelete: SetNull)
+  checkNote   String?
+
+  @@map("recounts")
+}
+
+// Worker spending (gas, food, tolls...) — optional trip, since some happen between trips
+model Expense {
+  id              String   @id @default(uuid())
+  clientId        String   @unique
+  workerId        String
+  worker          User     @relation(fields: [workerId], references: [id])
+  tripId          String?
+  trip            Trip?    @relation(fields: [tripId], references: [id])
+  description     String
+  amount          Decimal  @db.Decimal(10, 2)
+  createdAtClient DateTime
+  syncedAt        DateTime @default(now())
+
+  @@map("expenses")
+}
+
+// Generic audit trail / logbook — answers "what did the worker do, and when"
+model ActivityLog {
+  id              String     @id @default(uuid())
+  clientId        String     @unique
+  workerId        String
+  worker          User       @relation(fields: [workerId], references: [id])
+  tripId          String?
+  trip            Trip?      @relation(fields: [tripId], references: [id])
+  actionType      ActionType
+  payload         Json // flexible per action type
+  createdAtClient DateTime
+  syncedAt        DateTime   @default(now())
+
+  @@map("activity_logs")
+}
+
+// Owner's price per kilo. The newest row is the current price; older rows are
+// the history (who changed it and when).
+model Price {
+  id           String   @id @default(uuid())
+  pricePerKilo Decimal  @db.Decimal(10, 2)
+  setById      String
+  setBy        User     @relation(fields: [setById], references: [id])
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("prices")
+}
+
+// Owner's payment QR codes (GCash, Maya, bank…). Only the text inside the QR
+// is kept; phones redraw it, so it works offline and syncs in a few bytes.
+model PaymentQr {
+  id        String   @id @default(uuid())
+  label     String
+  payload   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("payment_qrs")
+}
+
+// login rate limit: attempts per client per minute (old rows deleted as it goes)
+model LoginAttempt {
+  key         String
+  windowStart DateTime @map("window_start") @db.Timestamptz(6)
+  count       Int
+
+  @@id([key, windowStart])
+  @@map("login_attempts")
+}

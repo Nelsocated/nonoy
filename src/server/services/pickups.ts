@@ -1,0 +1,57 @@
+import type { Db } from "../db";
+import { ActivityLogsService } from "./activity-logs";
+import { ActionType } from "../generated/prisma/enums";
+import { CreatePickupDto } from "../schemas/trip-flow";
+import { TripAccessService } from "./trip-access";
+export class PickupsService {
+  constructor(
+    private prisma: Db,
+    private activityLogsService: ActivityLogsService,
+    private tripAccessService: TripAccessService,
+  ) {}
+
+  async create(dto: CreatePickupDto, workerId: string) {
+    // confirms tripId exists AND belongs to this worker before anything else runs
+    await this.tripAccessService.assertOwnership(dto.tripId, workerId);
+
+    return this.prisma.$transaction(async (tx) => {
+      // idempotent on clientId — safe if the worker's device retries this
+      // after a dropped connection mid-sync
+      const pickup = await tx.pickup.upsert({
+        where: { clientId: dto.clientId },
+        create: {
+          clientId: dto.clientId,
+          tripId: dto.tripId,
+          plantationId: dto.plantationId,
+          chickenCount: dto.chickenCount,
+          totalKilo: dto.totalKilo,
+          createdAtClient: new Date(dto.createdAtClient),
+        },
+        update: {}, // already synced, no-op
+      });
+
+      await this.activityLogsService.record(
+        {
+          clientId: dto.activityLogClientId,
+          tripId: dto.tripId,
+          workerId,
+          actionType: ActionType.PICKUP_STARTED,
+          payload: {
+            pickupId: pickup.id,
+            plantationId: dto.plantationId,
+            chickenCount: dto.chickenCount,
+            totalKilo: dto.totalKilo,
+          },
+          createdAtClient: dto.createdAtClient,
+        },
+        tx, // pass the transaction client through, see note below
+      );
+
+      return pickup;
+    });
+  }
+
+  async getAll() {
+    return this.prisma.pickup.findMany();
+  }
+}
