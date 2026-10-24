@@ -27,7 +27,10 @@ export class AuthService {
   constructor(
     private usersService: Pick<
       UsersService,
-      "findByPhone" | "findById" | "updateRefreshTokenHash"
+      | "findByPhone"
+      | "findById"
+      | "updateRefreshTokenHash"
+      | "rotateRefreshTokenHash"
     >,
   ) {}
 
@@ -76,7 +79,11 @@ export class AuthService {
     // rotate: the refresh token just used is replaced, so it can't be replayed.
     // Role comes from the DB, not the old token, so role changes take effect.
     if (sameHash(presented, user.refreshTokenHash)) {
-      return this.issueTokens(user, user.refreshTokenHash);
+      const tokens = await this.issueTokens(user, user.refreshTokenHash);
+      // another instance rotated between our read and write: like the grace
+      // case, an access token only, so the browser keeps the winner's token
+      if (tokens) return tokens;
+      return { accessToken: this.signAccess(user), refreshToken: null };
     }
 
     // Grace window: two requests that refresh with the same cookie at once — the
@@ -107,7 +114,16 @@ export class AuthService {
     );
   }
 
-  // `rotatedFrom` = hash of the refresh token being replaced (refresh only)
+  // `rotatedFrom` = hash of the refresh token being replaced (refresh only);
+  // null result = that hash was already replaced by another request
+  private async issueTokens(
+    user: { id: string; role: string },
+    rotatedFrom: string,
+  ): Promise<{ accessToken: string; refreshToken: string } | null>;
+  private async issueTokens(user: {
+    id: string;
+    role: string;
+  }): Promise<{ accessToken: string; refreshToken: string }>;
   private async issueTokens(
     user: { id: string; role: string },
     rotatedFrom: string | null = null,
@@ -121,11 +137,19 @@ export class AuthService {
       jwtid: randomUUID(),
     });
 
-    await this.usersService.updateRefreshTokenHash(
-      user.id,
-      hashToken(refreshToken),
-      rotatedFrom,
-    );
+    if (rotatedFrom) {
+      const won = await this.usersService.rotateRefreshTokenHash(
+        user.id,
+        rotatedFrom,
+        hashToken(refreshToken),
+      );
+      if (!won) return null;
+    } else {
+      await this.usersService.updateRefreshTokenHash(
+        user.id,
+        hashToken(refreshToken),
+      );
+    }
 
     return { accessToken, refreshToken };
   }

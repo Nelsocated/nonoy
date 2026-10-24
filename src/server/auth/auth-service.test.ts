@@ -28,6 +28,16 @@ describe("AuthService", () => {
         db[id].refreshRotatedAt = previous ? new Date() : null;
       },
     ),
+    // compare-and-set, like the real UPDATE … WHERE refresh_token_hash = from
+    rotateRefreshTokenHash: vi.fn(
+      async (id: string, from: string, to: string) => {
+        if (db[id].refreshTokenHash !== from) return false;
+        db[id].refreshTokenHash = to;
+        db[id].previousRefreshTokenHash = from;
+        db[id].refreshRotatedAt = new Date();
+        return true;
+      },
+    ),
   };
 
   beforeAll(() => {
@@ -108,6 +118,31 @@ describe("AuthService", () => {
       await expect(service.refresh(second!)).resolves.toHaveProperty(
         "accessToken",
       );
+    });
+
+    // Two instances refreshing at once both read the old hash before either
+    // writes. Only one may rotate; the other gets the grace answer, so the
+    // browser never keeps a refresh token the database has already replaced.
+    it("lets only one of two simultaneous refreshes rotate", async () => {
+      const { refreshToken: first } = await service.login(db.u1);
+      users.findById.mockImplementation(async (id: string) => {
+        const snapshot = { ...db[id] };
+        await new Promise((r) => setTimeout(r, 0));
+        return snapshot;
+      });
+
+      const results = await Promise.all([
+        service.refresh(first),
+        service.refresh(first),
+      ]);
+
+      const rotated = results.filter((r) => r.refreshToken);
+      expect(rotated).toHaveLength(1);
+      expect(results.every((r) => r.accessToken)).toBe(true);
+      // the one handed back is the one the database now accepts
+      users.findById.mockImplementation(async (id: string) => db[id] ?? null);
+      const next = await service.refresh(rotated[0].refreshToken!);
+      expect(next.refreshToken).toEqual(expect.any(String));
     });
 
     it("rejects the old token once the grace window has passed", async () => {

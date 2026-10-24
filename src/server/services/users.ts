@@ -54,6 +54,21 @@ export class UsersService {
     });
   }
 
+  // Refresh rotation as a compare-and-set: only replaces the hash if it is
+  // still `from`, so two instances refreshing at once can't both rotate.
+  // false = another request rotated first.
+  async rotateRefreshTokenHash(id: string, from: string, to: string) {
+    const { count } = await this.prisma.user.updateMany({
+      where: { id, refreshTokenHash: from },
+      data: {
+        refreshTokenHash: to,
+        previousRefreshTokenHash: from,
+        refreshRotatedAt: new Date(),
+      },
+    });
+    return count === 1;
+  }
+
   // never select passwordHash / refreshTokenHash for API responses
   private static readonly publicFields = {
     id: true,

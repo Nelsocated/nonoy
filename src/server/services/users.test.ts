@@ -5,7 +5,9 @@ import { UsersService } from "./users";
 
 describe("UsersService", () => {
   let service: UsersService;
-  const prisma = { user: { findUnique: vi.fn(), update: vi.fn() } };
+  const prisma = {
+    user: { findUnique: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
+  };
 
   beforeEach(async () => {
     vi.resetAllMocks();
@@ -71,5 +73,22 @@ describe("UsersService", () => {
       previousRefreshTokenHash: null,
       refreshRotatedAt: null,
     });
+  });
+
+  it("rotates the refresh token only if it is still the one presented", async () => {
+    prisma.user.updateMany.mockResolvedValue({ count: 1 });
+    expect(await service.rotateRefreshTokenHash("u1", "old", "new")).toBe(true);
+    expect(prisma.user.updateMany).toHaveBeenCalledWith({
+      where: { id: "u1", refreshTokenHash: "old" },
+      data: {
+        refreshTokenHash: "new",
+        previousRefreshTokenHash: "old",
+        refreshRotatedAt: expect.any(Date),
+      },
+    });
+    prisma.user.updateMany.mockResolvedValue({ count: 0 });
+    expect(await service.rotateRefreshTokenHash("u1", "old", "new")).toBe(
+      false,
+    );
   });
 });
