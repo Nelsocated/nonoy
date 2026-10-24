@@ -47,6 +47,14 @@ export class ConflictException extends AppError {
   }
 }
 
-// every failed rule, in one line (what the old API's error message looked like)
+// every failed rule, in one line (what the old API's error message looked
+// like). Nested problems say where they are, e.g. "sales.0.amount must be …":
+// the message names the field, so the prefix is the object it sits in.
 export const zodMessage = (err: ZodError) =>
-  err.issues.map((i) => i.message).join(", ");
+  err.issues
+    .map((i) => {
+      const where =
+        i.code === "unrecognized_keys" ? i.path : i.path.slice(0, -1);
+      return where.length ? `${where.join(".")}.${i.message}` : i.message;
+    })
+    .join(", ");
