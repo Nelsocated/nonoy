@@ -1,14 +1,8 @@
 // One fetch wrapper for every API call — server (direct to Nest) and browser (via /api).
 
-export class ApiError extends Error {
-  constructor(
-    public status: number,
-    message: string,
-  ) {
-    super(message);
-    this.name = "ApiError";
-  }
-}
+import { ApiError } from "@/lib/trpc/errors";
+
+export { ApiError };
 
 export type Query = Record<string, string | number | boolean | undefined>;
 
